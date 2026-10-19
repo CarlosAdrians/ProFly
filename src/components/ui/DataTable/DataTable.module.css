@@ -1,29 +1,46 @@
 .wrapper {
   border: 1px solid var(--color-border);
-  background: var(--color-white);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
 }
 
+/* border-collapse: separate permite cantos arredondados sem cortar o menu de opções. */
 .table {
   width: 100%;
-  border-collapse: collapse;
-  font-size: clamp(0.95rem, 1.3vw, 1.125rem);
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--font-size-md);
 }
 
 .table th {
-  height: 52px;
+  height: 44px;
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-border);
-  font-weight: var(--font-weight-regular);
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   text-align: left;
   white-space: nowrap;
 }
 
+.table th:first-child {
+  border-top-left-radius: var(--radius-md);
+}
+
+.table th:last-child {
+  border-top-right-radius: var(--radius-md);
+}
+
 .table td {
-  height: 60px;
+  height: 56px;
   padding: var(--space-1) var(--space-3);
   border-bottom: 1px solid var(--color-border);
-  font-weight: var(--font-weight-bold);
   overflow-wrap: break-word;
+}
+
+.table tbody tr:hover td {
+  background: var(--color-row-hover);
 }
 
 .table .nowrap {
@@ -40,7 +57,6 @@
 
 .empty {
   text-align: center;
-  font-weight: var(--font-weight-semibold) !important;
   color: var(--color-text-muted);
 }
 
@@ -72,7 +88,12 @@
     padding: var(--space-2) var(--space-4);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    background: var(--color-white);
+    background: var(--color-bg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .table tbody tr:hover td {
+    background: transparent;
   }
 
   .table td,
@@ -93,7 +114,9 @@
 
   .table td[data-label]::before {
     content: attr(data-label);
+    color: var(--color-text-muted);
     font-weight: var(--font-weight-regular);
+    font-size: var(--font-size-sm);
     text-align: left;
   }
 

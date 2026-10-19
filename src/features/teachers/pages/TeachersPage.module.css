@@ -9,6 +9,11 @@
   width: 96px;
 }
 
+/* Nome em destaque para facilitar a leitura das linhas. */
+.table td:nth-child(2) {
+  font-weight: var(--font-weight-semibold);
+}
+
 @media (max-width: 900px) {
   .table td:first-child {
     justify-content: flex-start;

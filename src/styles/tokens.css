@@ -1,53 +1,56 @@
 /*
- * Tokens visuais extraídos do protótipo (Figma / PDFs em docs/prototipos).
- * Alterações de identidade visual devem ser feitas aqui.
+ * Tokens visuais do ProFly — fonte única de cores, tipografia, espaçamentos e formas.
+ * Direção visual: institucional, inspirada no Canvas da UNIFACISA (navbar azul-marinho,
+ * conteúdo branco, bordas cinza-claro e azul nos destaques).
+ * Contrastes conferidos para WCAG AA.
  */
 :root {
-  /* Cores — marca */
-  --color-navy-900: #00026e; /* botão primário, faixa dos campos */
-  --color-navy-800: #040072; /* topo do gradiente das telas internas */
-  --color-blue-700: #0003a6; /* fundo do login */
-  --color-blue-600: #0700d4; /* base do gradiente */
-  --color-sidebar-top: #000291;
+  /* Cores — marca e navegação */
+  --color-navbar: #21499b; /* navbar lateral; branco sobre ela: 8,4:1 */
+  --color-navbar-hover: #2a55aa;
+  --color-navbar-active: #2e5bb5; /* item selecionado */
+  --color-navbar-divider: rgba(255, 255, 255, 0.2);
+  --color-navbar-outline: rgba(255, 255, 255, 0.6);
+  --color-primary: #2676bb; /* botões e destaques; branco sobre ele: 4,8:1 */
+  --color-primary-hover: #1f64a0;
+  --color-link: #1f5f99; /* 6,7:1 sobre branco */
+  --color-field-accent: var(--color-navbar); /* faixa à esquerda dos campos (identidade ProFly) */
 
-  /* Cores — superfícies */
-  --color-white: #ffffff;
-  --color-surface: #f1f1f1; /* painel de conteúdo e fundo dos campos */
-  --color-surface-active: #e8e8e8; /* item ativo do menu */
-  --color-border: #242424;
-  --color-text: #000000;
-  --color-text-muted: #4a4a4a;
+  /* Cores — superfícies e texto */
+  --color-bg: #ffffff;
+  --color-bg-subtle: #f3f5f8; /* cabeçalho de tabela, áreas secundárias */
+  --color-row-hover: #f7f9fc;
+  --color-border: #d9dee7; /* divisórias e contornos de cartões */
+  --color-border-strong: #8a94a6; /* contorno de campos (3:1 sobre branco) */
+  --color-text: #252b35;
+  --color-text-muted: #5a6372;
   --color-text-inverse: #ffffff;
 
   /* Cores — feedback */
-  --color-success: #15880a; /* "+ Novo" e status Ativo */
-  --color-danger: #b30303; /* Sair */
-  --color-avatar: #24b5d0;
-  --color-link: #0000ee;
-  --color-focus: #ffbf00;
+  --color-success: #15880a;
+  --color-success-bg: #e6f4ea;
+  --color-success-text: #1e6b2b;
+  --color-danger: #b30303;
+  --color-danger-bg: #fdecec;
+  --color-danger-text: #8a0202;
+  --color-neutral-bg: #eceef2;
+  --color-neutral-text: #4a5260;
 
-  /* Gradientes */
-  --gradient-app: linear-gradient(
-    180deg,
-    var(--color-navy-800) 0%,
-    var(--color-navy-800) 45%,
-    var(--color-blue-600) 100%
-  );
-  --gradient-sidebar: linear-gradient(
-    180deg,
-    var(--color-sidebar-top) 0%,
-    var(--color-blue-600) 100%
-  );
+  /* Foco e camadas */
+  --color-focus: var(--color-primary);
+  --color-focus-inverse: #ffffff; /* foco sobre a navbar */
+  --color-scrim: rgba(37, 43, 53, 0.5); /* fundo dos modais */
+  --color-scrim-light: rgba(255, 255, 255, 0.6); /* foto esmaecida (Esqueceu senha) */
 
-  /* Tipografia */
+  /* Tipografia — hierarquia */
   --font-family:
     'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-size-sm: 0.875rem;
-  --font-size-md: 1rem; /* rótulos e botões (Inter Bold 16) */
-  --font-size-lg: 1.3125rem; /* cabeçalhos e linhas de tabela (21px) */
-  --font-size-xl: 1.5rem;
-  --font-size-2xl: 2.625rem; /* nome no perfil (42px) */
+  --font-size-title: 1.5rem; /* título da página */
+  --font-size-subtitle: 1.125rem;
+  --font-size-md: 1rem; /* texto e botões */
+  --font-size-sm: 0.875rem; /* ajuda, erros, selos */
   --font-weight-regular: 400;
+  --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
@@ -61,19 +64,20 @@
   --space-7: 2.5rem;
   --space-8: 3rem;
 
-  /* Bordas e sombras */
-  --radius-sm: 0.5rem;
-  --radius-md: 1rem;
-  --radius-lg: 1.5rem; /* cards e campos */
+  /* Bordas e sombras discretas */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
   --radius-pill: 999px;
-  --shadow-field: 0 4px 10px rgba(0, 0, 0, 0.15);
-  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.18);
+  --shadow-sm: 0 1px 2px rgba(37, 43, 53, 0.06), 0 1px 3px rgba(37, 43, 53, 0.08);
+  --shadow-md: 0 4px 12px rgba(37, 43, 53, 0.12);
+  --shadow-lg: 0 12px 32px rgba(37, 43, 53, 0.18);
 
   /* Controles (campos, botões, busca) — densidade moderada.
      Alturas >= 44px para manter alvos de toque confortáveis. */
   --field-height: 48px;
   --field-accent-width: 5px;
-  --control-radius: 1.25rem;
+  --control-radius: var(--radius-md);
   --control-padding-x: 0.875rem;
   --control-font-size: 1rem; /* 16px evita zoom automático no iOS */
   --label-font-size: 0.9375rem;

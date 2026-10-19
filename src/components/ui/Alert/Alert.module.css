@@ -3,17 +3,17 @@
   border-radius: var(--radius-sm);
   border-left: var(--field-accent-width) solid;
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-medium);
 }
 
 .error {
   border-color: var(--color-danger);
-  background: #fdecec;
-  color: #8a0202;
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
 }
 
 .success {
   border-color: var(--color-success);
-  background: #e9f6e7;
-  color: #0e5f07;
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
 }

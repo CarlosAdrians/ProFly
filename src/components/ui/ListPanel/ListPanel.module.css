@@ -1,23 +1,37 @@
-.panel {
-  position: relative;
+.page {
   max-width: var(--content-max-width);
-  margin: var(--space-7) auto 0;
-  padding: var(--space-7) var(--space-4) var(--space-4);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
+  margin: 0 auto;
 }
 
-/* "+ Novo …" sobreposto à borda superior do painel, como no protótipo. */
-.action {
-  position: absolute;
-  top: calc(var(--field-height) / -2);
-  right: 0;
-  min-width: 190px;
-  font-size: 1.0625rem;
+/* Cabeçalho da página: título à esquerda, "+ Novo" à direita (padrão Canvas). */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.25;
+}
+
+.panel {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
 }
 
 .search {
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 
 .status:not(:empty) {
@@ -25,19 +39,20 @@
 }
 
 @media (max-width: 768px) {
-  .panel {
-    margin-top: 0;
-    padding-top: var(--space-4);
-  }
-
   .action {
-    position: static;
     width: 100%;
-    margin-bottom: var(--space-4);
   }
 
   .search {
     max-width: none;
-    margin-bottom: var(--space-4);
+  }
+}
+
+@media (max-width: 900px) {
+  /* Os cartões da tabela já têm borda; o painel externo fica sem moldura. */
+  .panel {
+    padding: 0;
+    border: 0;
+    box-shadow: none;
   }
 }

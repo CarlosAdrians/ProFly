@@ -11,7 +11,9 @@ export class InvalidCredentialsError extends Error {
 
 /**
  * Autenticação simulada: compara com o coordenador fictício.
- * Substituir por chamada à API quando o back-end existir.
+ * ATENÇÃO: apenas demonstrativa e NÃO segura para produção — a credencial fica no
+ * código do navegador e a sessão não é assinada. Substituir pela autenticação do
+ * back-end quando ela existir.
  */
 export async function authenticate(email: string, password: string): Promise<Session> {
   await simulateLatency();

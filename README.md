@@ -21,8 +21,9 @@ Qualquer outra rota redireciona para `/login` (ou para `/professores`, se houver
 
 ## Acesso de demonstração
 
-A autenticação é **simulada** (sem back-end). Use o coordenador fictício definido em
-`src/mocks/coordinator.ts`:
+A autenticação é **simulada** (sem back-end) e **não é segura para produção**: a credencial
+fica no código do navegador e a sessão não é assinada. A tela de login exibe o aviso
+“Ambiente de demonstração”. Use o coordenador fictício definido em `src/mocks/coordinator.ts`:
 
 - E-mail: `felipe.araujo@profly.test`
 - Senha: `profly123`

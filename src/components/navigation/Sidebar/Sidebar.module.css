@@ -6,7 +6,7 @@
   width: var(--sidebar-width);
   height: 100vh;
   height: 100dvh;
-  background: var(--gradient-sidebar);
+  background: var(--color-navbar);
   color: var(--color-text-inverse);
   z-index: 10;
 }
@@ -17,9 +17,19 @@
   padding: var(--space-2) var(--space-2) var(--space-6);
 }
 
+/* Fundo branco discreto: o brasão azul-escuro contrasta pouco com a navbar.
+   A largura total é mantida (box-sizing: border-box). */
 .symbol {
   width: 72px;
   height: auto;
+  /* Recorta visualmente a sombra transparente abaixo do escudo (arquivo inalterado). */
+  aspect-ratio: 1;
+  object-fit: cover;
+  object-position: top;
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
 }
 
 .menuToggle {
@@ -53,17 +63,23 @@
 }
 
 .item:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--color-navbar-hover);
+}
+
+/* Foco branco: o azul de destaque não contrasta com a navbar. */
+.sidebar :focus-visible {
+  outline-color: var(--color-focus-inverse);
 }
 
 .item:focus-visible {
-  outline-offset: -3px;
+  outline-offset: -4px;
 }
 
+/* Item selecionado: azul um pouco mais claro e barra branca à esquerda. */
 .itemActive,
 .itemActive:hover {
-  background: var(--color-surface-active);
-  color: var(--color-navy-900);
+  background: var(--color-navbar-active);
+  box-shadow: inset 4px 0 0 var(--color-text-inverse);
 }
 
 .icon {
@@ -90,6 +106,8 @@
 
   .symbol {
     width: 40px;
+    padding: 2px;
+    border-radius: var(--radius-sm);
   }
 
   .menuToggle {
@@ -98,7 +116,7 @@
     gap: var(--space-2);
     min-height: 44px;
     padding: var(--space-2) var(--space-4);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    border: 1px solid var(--color-navbar-outline);
     border-radius: var(--radius-pill);
     background: transparent;
     color: var(--color-text-inverse);
@@ -132,7 +150,7 @@
 
   .nav {
     display: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid var(--color-navbar-divider);
   }
 
   .nav[data-open='true'] {
@@ -146,6 +164,11 @@
 
   .item {
     min-height: 88px;
+  }
+
+  .itemActive,
+  .itemActive:hover {
+    box-shadow: inset 0 -4px 0 var(--color-text-inverse);
   }
 
   .icon {

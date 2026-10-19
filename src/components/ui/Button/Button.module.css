@@ -8,16 +8,18 @@
   padding: 0 var(--space-5);
   border: 0;
   border-radius: var(--control-radius);
-  box-shadow: var(--shadow-field);
+  box-shadow: var(--shadow-sm);
   color: var(--color-text-inverse);
   font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: filter 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    filter 0.15s ease;
 }
 
 .button:hover:not(:disabled) {
-  filter: brightness(1.25);
+  filter: brightness(0.92);
 }
 
 .button:disabled {
@@ -26,7 +28,12 @@
 }
 
 .primary {
-  background: var(--color-navy-900);
+  background: var(--color-primary);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  filter: none;
 }
 
 .success {

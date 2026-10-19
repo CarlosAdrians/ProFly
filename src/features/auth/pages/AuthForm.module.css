@@ -14,8 +14,8 @@
 
 .intro {
   margin: 0;
-  color: #333333;
-  font-size: 1.0625rem;
+  color: var(--color-text);
+  font-size: var(--font-size-subtitle);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -42,8 +42,8 @@
   align-items: center;
   min-height: var(--touch-target);
   color: var(--color-link);
-  font-weight: var(--font-weight-bold);
-  font-size: 1.0625rem;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-md);
   text-underline-offset: 3px;
 }
 
@@ -53,7 +53,16 @@
 
 .backLink {
   align-self: center;
-  font-size: var(--font-size-md);
+}
+
+/* Aviso discreto de que a autenticação é apenas demonstrativa. */
+.demoNotice {
+  margin: var(--space-4) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
 }
 
 @media (max-width: 480px) {

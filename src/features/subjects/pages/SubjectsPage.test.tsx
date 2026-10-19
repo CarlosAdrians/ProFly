@@ -59,6 +59,14 @@ async function createSubject(user: User, name: string) {
 }
 
 describe('Disciplinas', () => {
+  it('exibe o título visível com o botão + Nova Disciplina no cabeçalho', async () => {
+    await setup();
+    const title = screen.getByRole('heading', { level: 1, name: 'Disciplinas' });
+    expect(title).not.toHaveClass('visually-hidden');
+    const header = title.closest('header')!;
+    expect(within(header).getByRole('button', { name: '+ Nova Disciplina' })).toBeInTheDocument();
+  });
+
   describe('listagem', () => {
     it('exibe as colunas do protótipo e as disciplinas fictícias em ordem alfabética', async () => {
       await setup();

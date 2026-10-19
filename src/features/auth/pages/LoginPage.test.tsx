@@ -150,6 +150,11 @@ describe('LoginPage', () => {
     });
   });
 
+  it('exibe o aviso de ambiente de demonstração', () => {
+    setup();
+    expect(screen.getByText('Ambiente de demonstração')).toBeInTheDocument();
+  });
+
   it('navega para Esqueceu senha', async () => {
     const { user, router } = setup();
     await user.click(screen.getByRole('link', { name: 'Esqueceu senha' }));

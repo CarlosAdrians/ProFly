@@ -43,6 +43,14 @@ async function fill(
 }
 
 describe('Professores', () => {
+  it('exibe o título visível com o botão + Novo Professor no cabeçalho', async () => {
+    await setup();
+    const title = screen.getByRole('heading', { level: 1, name: 'Professores' });
+    expect(title).not.toHaveClass('visually-hidden');
+    const header = title.closest('header')!;
+    expect(within(header).getByRole('button', { name: '+ Novo Professor' })).toBeInTheDocument();
+  });
+
   describe('listagem', () => {
     it('exibe as colunas do protótipo e os professores fictícios em ordem alfabética', async () => {
       await setup();
