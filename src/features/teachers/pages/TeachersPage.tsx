@@ -8,6 +8,7 @@ import { Alert } from '../../../components/ui/Alert/Alert';
 import { matchesSearch } from '../../../utils/text';
 import { useTeachers } from '../hooks/useTeachers';
 import { TeacherFormModal } from '../components/TeacherFormModal';
+import { InviteLinkModal } from '../../invites/components/InviteLinkModal';
 import type { Teacher, TeacherInput } from '../types';
 import styles from './TeachersPage.module.css';
 
@@ -18,6 +19,7 @@ export function TeachersPage() {
   const [query, setQuery] = useState('');
   const [modal, setModal] = useState<ModalState>(null);
   const [message, setMessage] = useState<string>();
+  const [inviting, setInviting] = useState<Teacher>();
 
   const visible = useMemo(
     () =>
@@ -73,6 +75,10 @@ export function TeachersPage() {
           label={`Opções de ${teacher.name}`}
           actions={[
             { label: 'Editar', onSelect: () => setModal({ mode: 'edit', teacher }) },
+            // Convite só para professores ativos.
+            ...(teacher.status === 'active'
+              ? [{ label: 'Gerar convite', onSelect: () => setInviting(teacher) }]
+              : []),
             {
               label: teacher.status === 'active' ? 'Inativar' : 'Ativar',
               onSelect: () => void toggleStatus(teacher),
@@ -121,6 +127,7 @@ export function TeachersPage() {
         onClose={() => setModal(null)}
         onSubmit={handleSubmit}
       />
+      <InviteLinkModal teacher={inviting} onClose={() => setInviting(undefined)} />
     </>
   );
 }

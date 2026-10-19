@@ -59,17 +59,33 @@ O link `wa.me` funciona no celular (aplicativo) e no desktop (WhatsApp Web ou ap
 nova aba. O ProFly não envia nenhum dado; número e mensagem ficam em
 `src/features/auth/registrationRequest.ts`.
 
-### Fluxo futuro (não implementado)
+### Convite e criação de senha (demonstração local)
 
-Hoje o cadastro de professores (`src/features/teachers`) guarda apenas dados cadastrais (nome,
-e-mail, contato, área de atuação, carga horária e status), sem conta de acesso, e o único login é
-o do coordenador de demonstração. Quando houver back-end, o fluxo deverá:
+1. Em **Professores**, o coordenador abre o menu ⋮ de um professor **ativo** e escolhe
+   **Gerar convite**. O ProFly cria um link `/convite/<identificador>` associado ao professor e ao
+   e-mail dele (um link pendente é reaproveitado).
+2. O coordenador clica em **Copiar link** e envia o link manualmente (e-mail, WhatsApp etc.).
+3. O professor abre o link e vê a tela **Criar senha**, com o nome e o e-mail para conferência e
+   os campos **Senha** e **Confirmar senha** (com mostrar/ocultar).
+4. Política de senha proposta: 8 a 72 caracteres, com pelo menos uma letra e um número; a
+   confirmação deve ser igual.
+5. Após o envio válido, a tela confirma e oferece **Ir para o login**. O link passa a constar
+   como utilizado.
 
-1. Permitir ao coordenador criar a **conta de acesso vinculada ao professor** (a partir do
-   cadastro existente, usando o e-mail do professor).
-2. Enviar um **convite seguro** (link de uso único e com validade) para que o **próprio professor
-   defina sua senha**.
-3. Nunca gerar, exibir ou trafegar senhas pelo front-end nem pelo WhatsApp.
+O link é recusado se for malformado, desconhecido, já utilizado, ou se o professor tiver sido
+inativado, removido ou mudado de e-mail.
+
+**Limites da demonstração (sem back-end):**
+
+- O convite fica no `localStorage` (`profly:invites`) **deste navegador**; o link não funciona em
+  outro computador. O identificador é aleatório, mas **não é um token seguro**.
+- A **senha não é salva** em lugar nenhum (nem em texto, nem no link) e **nenhuma conta é
+  ativada**: o professor continua sem acesso, e o login segue apenas com o coordenador de
+  demonstração.
+
+**A integrar com o back-end:** emissão do convite pelo servidor (token seguro, com validade e uso
+único), envio do e-mail, verificação do token, gravação da senha com hash, ativação da conta
+vinculada ao professor e aplicação da política de senha no servidor.
 
 ## Professores
 

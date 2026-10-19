@@ -7,7 +7,8 @@ import { RedirectIfAuthenticated } from '../features/auth/components/RedirectIfA
 import { AccountPage } from '../features/account/pages/AccountPage';
 import { TeachersPage } from '../features/teachers/pages/TeachersPage';
 import { SubjectsPage } from '../features/subjects/pages/SubjectsPage';
-import { paths } from './paths';
+import { CreatePasswordPage } from '../features/invites/pages/CreatePasswordPage';
+import { invitePath, paths } from './paths';
 
 export const routes: RouteObject[] = [
   { path: '/', element: <Navigate to={paths.login} replace /> },
@@ -20,6 +21,8 @@ export const routes: RouteObject[] = [
     ),
   },
   { path: paths.forgotPassword, element: <ForgotPasswordPage /> },
+  // Pública: o professor ainda não tem acesso; o link do convite não cria sessão.
+  { path: invitePath, element: <CreatePasswordPage /> },
   {
     element: (
       <RequireAuth>

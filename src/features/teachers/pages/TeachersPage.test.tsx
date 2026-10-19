@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderApp } from '../../../test/renderApp';
 import { teachersSeed } from '../../../mocks/teachers';
@@ -269,6 +269,51 @@ describe('Professores', () => {
       localStorage.setItem(TEACHERS_STORAGE_KEY, '{corrompido');
       await setup();
       expect(bodyRows()).toHaveLength(teachersSeed.length);
+    });
+  });
+
+  describe('convite de acesso', () => {
+    it('gera o link do convite, permite copiar e reaproveita o link pendente', async () => {
+      const { user } = await setup();
+      await user.click(screen.getByRole('button', { name: 'Opções de Ana Beatriz Lima' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Gerar convite' }));
+      const dialog = screen.getByRole('dialog', { name: 'Convite de acesso' });
+      expect(within(dialog).getByText(/ana\.lima@profly\.test/)).toBeInTheDocument();
+      const field = within(dialog).getByLabelText('Link do convite:');
+      await waitFor(() =>
+        expect((field as HTMLInputElement).value).toMatch(/\/convite\/[a-f0-9]{32}$/),
+      );
+      const link = (field as HTMLInputElement).value;
+      expect(field).toHaveAttribute('readonly');
+      expect(within(dialog).getByText(/não é um convite seguro/)).toBeInTheDocument();
+
+      await user.click(within(dialog).getByRole('button', { name: 'Copiar link' }));
+      expect(within(dialog).getByRole('status')).toHaveTextContent('Link copiado.');
+      expect(await navigator.clipboard.readText()).toBe(link);
+
+      await user.click(within(dialog).getByRole('button', { name: 'Fechar' }));
+      await user.click(screen.getByRole('button', { name: 'Opções de Ana Beatriz Lima' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Gerar convite' }));
+      await waitFor(() => expect(screen.getByLabelText('Link do convite:')).toHaveValue(link));
+    });
+
+    it('não oferece convite para professor inativo', async () => {
+      const { user } = await setup();
+      await user.click(screen.getByRole('button', { name: 'Opções de Elisa Farias' }));
+      expect(screen.queryByRole('menuitem', { name: 'Gerar convite' })).not.toBeInTheDocument();
+    });
+
+    it('o link gerado abre a criação de senha do professor correto', async () => {
+      const { user, router } = await setup();
+      await user.click(screen.getByRole('button', { name: 'Opções de Bruno Cavalcanti' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Gerar convite' }));
+      const field = screen.getByLabelText('Link do convite:');
+      await waitFor(() => expect((field as HTMLInputElement).value).toContain('/convite/'));
+      const path = new URL((field as HTMLInputElement).value).pathname;
+      await user.click(screen.getByRole('button', { name: 'Fechar' }));
+      await router.navigate(path);
+      expect(await screen.findByText(/Olá, Bruno Cavalcanti!/)).toBeInTheDocument();
+      expect(screen.getByLabelText('E-mail:')).toHaveValue('bruno.cavalcanti@profly.test');
     });
   });
 
