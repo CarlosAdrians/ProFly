@@ -42,4 +42,11 @@ describe('rotas', () => {
     await user.click(screen.getByRole('link', { name: 'Voltar ao login' }));
     expect(router.state.location.pathname).toBe('/login');
   });
+
+  it('leva do login para /professores', async () => {
+    const user = userEvent.setup();
+    const router = renderAt('/login');
+    await user.click(screen.getByRole('link', { name: /Acessar o sistema/ }));
+    expect(router.state.location.pathname).toBe('/professores');
+  });
 });

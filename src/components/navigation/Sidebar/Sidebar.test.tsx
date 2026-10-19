@@ -10,20 +10,13 @@ function renderAt(path: string) {
 }
 
 describe('Sidebar', () => {
-  it('exibe os itens do protótipo na ordem', () => {
+  it('exibe somente Conta, Professores e Disciplinas', () => {
     renderAt('/professores');
     const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
     const labels = within(nav)
       .getAllByRole('listitem')
       .map((item) => item.textContent);
-    expect(labels).toEqual([
-      'Conta',
-      'Dashboard (indisponível nesta etapa)',
-      'Professores',
-      'Disciplinas',
-      'Calendário (indisponível nesta etapa)',
-      'Alocações (indisponível nesta etapa)',
-    ]);
+    expect(labels).toEqual(['Conta', 'Professores', 'Disciplinas']);
   });
 
   it('marca o item da rota atual', () => {
@@ -35,11 +28,11 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: 'Professores' })).not.toHaveAttribute('aria-current');
   });
 
-  it('não cria links para telas fora do escopo', () => {
+  it('não exibe itens de telas fora do escopo', () => {
     renderAt('/conta');
-    expect(screen.queryByRole('link', { name: /Dashboard/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /Calendário/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /Alocações/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Dashboard/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Calendário/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Alocações/)).not.toBeInTheDocument();
   });
 
   it('navega entre Conta, Professores e Disciplinas', async () => {

@@ -8,3 +8,6 @@ export const paths = {
 } as const;
 
 export type AppPath = (typeof paths)[keyof typeof paths];
+
+/** Destino após o login simulado. */
+export const postLoginPath: AppPath = paths.teachers;

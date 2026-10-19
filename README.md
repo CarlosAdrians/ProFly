@@ -5,8 +5,9 @@ Esta etapa contempla apenas o front-end, com dados fictícios e sem back-end.
 
 ## Escopo atual
 
-Login, Esqueceu senha, Conta, Professores e Disciplinas. Dashboard, Calendário e Alocações
-aparecem no menu (conforme o protótipo), mas estão desabilitados e não possuem rota.
+Login, Esqueceu senha, Conta, Professores e Disciplinas. O menu exibe apenas Conta, Professores
+e Disciplinas; Dashboard, Calendário e Alocações estão fora do escopo atual e não possuem rota.
+Após o login simulado, o usuário é levado para `/professores`.
 
 | Rota              | Tela           |
 | ----------------- | -------------- |
@@ -33,7 +34,7 @@ npm test             # Vitest
 ## Estrutura
 
 ```
-public/images/        logo, brasão, foto do campus e ícones do menu (extraídos dos protótipos)
+public/images/        logo, brasão, foto do campus (provisória) e ícones do menu (extraídos dos protótipos)
 src/app/              rotas, caminhos e itens do menu
 src/layouts/          AuthLayout (telas de acesso) e AppLayout (menu lateral + conteúdo)
 src/components/       componentes reutilizáveis (navigation/, ui/)

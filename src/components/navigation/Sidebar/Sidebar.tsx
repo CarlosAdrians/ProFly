@@ -43,28 +43,16 @@ export function Sidebar({ items }: SidebarProps) {
         <ul className={styles.list}>
           {items.map((item) => (
             <li key={item.label}>
-              {item.path ? (
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    isActive ? `${styles.item} ${styles.itemActive}` : styles.item
-                  }
-                  onClick={() => setOpen(false)}
-                >
-                  <span className={styles.icon} style={iconStyle(item.icon)} aria-hidden="true" />
-                  <span className={styles.label}>{item.label}</span>
-                </NavLink>
-              ) : (
-                <span
-                  className={`${styles.item} ${styles.itemDisabled}`}
-                  aria-disabled="true"
-                  title="Disponível em uma etapa futura"
-                >
-                  <span className={styles.icon} style={iconStyle(item.icon)} aria-hidden="true" />
-                  <span className={styles.label}>{item.label}</span>
-                  <span className="visually-hidden"> (indisponível nesta etapa)</span>
-                </span>
-              )}
+              <NavLink
+                to={item.path}
+                className={({ isActive }) =>
+                  isActive ? `${styles.item} ${styles.itemActive}` : styles.item
+                }
+                onClick={() => setOpen(false)}
+              >
+                <span className={styles.icon} style={iconStyle(item.icon)} aria-hidden="true" />
+                <span className={styles.label}>{item.label}</span>
+              </NavLink>
             </li>
           ))}
         </ul>

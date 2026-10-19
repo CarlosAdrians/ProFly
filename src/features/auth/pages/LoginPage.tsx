@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { AuthLayout } from '../../../layouts/AuthLayout/AuthLayout';
-import { paths } from '../../../app/paths';
+import { paths, postLoginPath } from '../../../app/paths';
 
 // Provisório (etapa 1): o formulário de login simulado entra na etapa 2.
 export function LoginPage() {
@@ -14,7 +14,7 @@ export function LoginPage() {
           <Link to={paths.forgotPassword}>Esqueceu senha</Link>
         </li>
         <li>
-          <Link to={paths.teachers}>Acessar o sistema (provisório)</Link>
+          <Link to={postLoginPath}>Acessar o sistema (provisório)</Link>
         </li>
       </ul>
     </AuthLayout>
