@@ -17,7 +17,19 @@ Após o login simulado, o usuário é levado para `/professores`.
 | `/professores`    | Professores    |
 | `/disciplinas`    | Disciplinas    |
 
-Qualquer outra rota redireciona para `/login`.
+Qualquer outra rota redireciona para `/login` (ou para `/professores`, se houver sessão).
+
+## Acesso de demonstração
+
+A autenticação é **simulada** (sem back-end). Use o coordenador fictício definido em
+`src/mocks/coordinator.ts`:
+
+- E-mail: `felipe.araujo@profly.test`
+- Senha: `profly123`
+
+A sessão fica no `sessionStorage` do navegador e termina ao fechar a aba. As rotas `/conta`,
+`/professores` e `/disciplinas` exigem sessão. A recuperação de senha apenas exibe uma mensagem;
+nenhum e-mail é enviado.
 
 ## Scripts
 

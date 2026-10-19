@@ -1,12 +1,9 @@
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createMemoryRouter, RouterProvider } from 'react-router';
-import { routes } from '../../../app/routes';
+import { renderApp } from '../../../test/renderApp';
 
 function renderAt(path: string) {
-  const router = createMemoryRouter(routes, { initialEntries: [path] });
-  render(<RouterProvider router={router} />);
-  return router;
+  return renderApp(path, { authenticated: true }).router;
 }
 
 describe('Sidebar', () => {

@@ -1,0 +1,55 @@
+/* Estilos compartilhados pelos formulários de Login e Esqueceu senha. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.intro {
+  margin: 0;
+  color: #333333;
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-semibold);
+}
+
+.status:not(:empty) {
+  margin-top: var(--space-5);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.actionsCentered {
+  justify-content: center;
+  margin-top: 0;
+}
+
+.link {
+  color: var(--color-link);
+  font-weight: var(--font-weight-bold);
+  font-size: 1.125rem;
+  text-underline-offset: 3px;
+}
+
+.link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.backLink {
+  align-self: center;
+  font-size: var(--font-size-md);
+}
+
+@media (max-width: 480px) {
+  .actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    text-align: center;
+  }
+}

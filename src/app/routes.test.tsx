@@ -1,52 +1,55 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { createMemoryRouter, RouterProvider } from 'react-router';
-import { routes } from './routes';
-
-function renderAt(path: string) {
-  const router = createMemoryRouter(routes, { initialEntries: [path] });
-  render(<RouterProvider router={router} />);
-  return router;
-}
+import { screen } from '@testing-library/react';
+import { renderApp } from '../test/renderApp';
 
 describe('rotas', () => {
   it.each([
-    ['/login', 'Login'],
-    ['/esqueceu-senha', 'Esqueceu senha'],
     ['/conta', 'Conta'],
     ['/professores', 'Professores'],
     ['/disciplinas', 'Disciplinas'],
-  ])('%s exibe a tela %s', (path, title) => {
-    renderAt(path);
+  ])('%s exibe a tela %s com sessão', (path, title) => {
+    renderApp(path, { authenticated: true });
     expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument();
   });
 
+  it.each(['/conta', '/professores', '/disciplinas'])(
+    '%s sem sessão redireciona para o login',
+    (path) => {
+      const { router } = renderApp(path);
+      expect(router.state.location.pathname).toBe('/login');
+      expect(
+        screen.getByRole('heading', { level: 1, name: 'Acesso ao ProFly' }),
+      ).toBeInTheDocument();
+    },
+  );
+
+  it('exibe Esqueceu senha sem sessão', () => {
+    renderApp('/esqueceu-senha');
+    expect(screen.getByRole('heading', { level: 1, name: 'Recuperar senha' })).toBeInTheDocument();
+  });
+
+  it('redireciona o login para /professores quando já existe sessão', () => {
+    const { router } = renderApp('/login', { authenticated: true });
+    expect(router.state.location.pathname).toBe('/professores');
+  });
+
   it('redireciona a raiz para o login', () => {
-    const router = renderAt('/');
+    const { router } = renderApp('/');
     expect(router.state.location.pathname).toBe('/login');
   });
 
   it.each(['/dashboard', '/calendario', '/alocacoes', '/rota-inexistente'])(
     'redireciona %s (fora do escopo) para o login',
     (path) => {
-      const router = renderAt(path);
+      const { router } = renderApp(path);
       expect(router.state.location.pathname).toBe('/login');
     },
   );
 
-  it('navega entre login e recuperação de senha', async () => {
-    const user = userEvent.setup();
-    const router = renderAt('/login');
-    await user.click(screen.getByRole('link', { name: 'Esqueceu senha' }));
-    expect(router.state.location.pathname).toBe('/esqueceu-senha');
-    await user.click(screen.getByRole('link', { name: 'Voltar ao login' }));
-    expect(router.state.location.pathname).toBe('/login');
-  });
-
-  it('leva do login para /professores', async () => {
-    const user = userEvent.setup();
-    const router = renderAt('/login');
-    await user.click(screen.getByRole('link', { name: /Acessar o sistema/ }));
-    expect(router.state.location.pathname).toBe('/professores');
-  });
+  it.each(['/dashboard', '/rota-inexistente'])(
+    'redireciona %s para /professores quando há sessão',
+    (path) => {
+      const { router } = renderApp(path, { authenticated: true });
+      expect(router.state.location.pathname).toBe('/professores');
+    },
+  );
 });
