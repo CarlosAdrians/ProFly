@@ -69,11 +69,26 @@
   --shadow-field: 0 4px 10px rgba(0, 0, 0, 0.15);
   --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.18);
 
+  /* Controles (campos, botões, busca) — densidade moderada.
+     Alturas >= 44px para manter alvos de toque confortáveis. */
+  --field-height: 48px;
+  --field-accent-width: 5px;
+  --control-radius: 1.25rem;
+  --control-padding-x: 0.875rem;
+  --control-font-size: 1rem; /* 16px evita zoom automático no iOS */
+  --label-font-size: 0.9375rem;
+  --search-height: 44px;
+  --touch-target: 44px;
+
+  /* Espaçamentos de formulário */
+  --field-label-gap: 0.375rem; /* rótulo → campo */
+  --field-message-gap: 0.25rem; /* campo → ajuda/erro */
+  --form-gap: 1rem; /* entre campos */
+  --form-actions-gap: 1.5rem; /* último campo → ações */
+
   /* Layout */
   --sidebar-width: 100px;
   --topbar-height: 64px;
-  --field-height: 60px;
-  --field-accent-width: 6px;
   --content-max-width: 1180px;
   --breakpoint-mobile: 768px; /* referência; media queries usam o valor literal */
 }

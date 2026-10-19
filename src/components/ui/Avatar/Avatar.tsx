@@ -1,7 +1,7 @@
 import styles from './Avatar.module.css';
 
 /** Avatar padrão do protótipo (decorativo). */
-export function Avatar({ size = 60 }: { size?: number }) {
+export function Avatar({ size = 48 }: { size?: number }) {
   return (
     <img
       className={styles.avatar}

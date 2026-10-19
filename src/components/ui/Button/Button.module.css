@@ -3,11 +3,11 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-width: 202px;
+  min-width: 168px;
   min-height: var(--field-height);
-  padding: 0 var(--space-6);
+  padding: 0 var(--space-5);
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--control-radius);
   box-shadow: var(--shadow-field);
   color: var(--color-text-inverse);
   font-size: var(--font-size-md);

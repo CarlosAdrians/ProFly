@@ -2,18 +2,18 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-7);
+  gap: var(--space-5);
 }
 
 .intro {
   margin: 0;
   color: #333333;
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   font-weight: var(--font-weight-semibold);
 }
 
 .status:not(:empty) {
-  margin-top: var(--space-5);
+  margin-top: var(--space-4);
 }
 
 .actions {
@@ -21,8 +21,8 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: var(--space-4);
-  margin-top: var(--space-4);
+  gap: var(--space-3);
+  margin-top: var(--space-2);
 }
 
 .actionsCentered {
@@ -33,8 +33,14 @@
 .link {
   color: var(--color-link);
   font-weight: var(--font-weight-bold);
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   text-underline-offset: 3px;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
 }
 
 .link:hover {

@@ -1,7 +1,7 @@
 /* Largura das colunas próxima ao protótipo (avatar, nome, e-mail, área, carga, status, opções). */
 .table th:first-child,
 .table td:first-child {
-  width: 84px;
+  width: 72px;
 }
 
 .table th:nth-child(6),

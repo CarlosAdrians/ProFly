@@ -1,11 +1,11 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--field-label-gap);
 }
 
 .label {
-  font-size: var(--font-size-md);
+  font-size: var(--label-font-size);
   font-weight: var(--font-weight-bold);
 }
 
@@ -14,7 +14,7 @@
   align-items: center;
   min-height: var(--field-height);
   border-left: var(--field-accent-width) solid var(--color-navy-900);
-  border-radius: var(--radius-lg);
+  border-radius: var(--control-radius);
   background: var(--color-surface);
   box-shadow: var(--shadow-field);
 }
@@ -46,12 +46,12 @@
   flex: 1;
   min-width: 0;
   height: var(--field-height);
-  padding: 0 var(--space-4);
+  padding: 0 var(--control-padding-x);
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--control-radius);
   background: transparent;
   color: var(--color-text);
-  font-size: var(--font-size-md);
+  font-size: var(--control-font-size);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -66,7 +66,7 @@
 
 .hint,
 .error {
-  margin: calc(var(--space-2) * -1) 0 0;
+  margin: calc(var(--field-message-gap) - var(--field-label-gap)) 0 0;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
 }

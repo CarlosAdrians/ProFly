@@ -3,10 +3,10 @@
   align-items: center;
   gap: var(--space-2);
   width: 100%;
-  max-width: 455px;
-  min-height: 45px;
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-lg);
+  max-width: 420px;
+  min-height: var(--search-height);
+  padding: 0 var(--control-padding-x);
+  border-radius: var(--control-radius);
   background: var(--color-white);
   box-shadow: var(--shadow-field);
 }
@@ -18,18 +18,18 @@
 
 .icon {
   flex: none;
-  width: 25px;
-  height: 25px;
+  width: 22px;
+  height: 22px;
   color: #6b6b6b;
 }
 
 .input {
   flex: 1;
   min-width: 0;
-  height: 45px;
+  height: var(--search-height);
   border: 0;
   background: transparent;
-  font-size: 1.125rem;
+  font-size: var(--control-font-size);
 }
 
 .input::placeholder {
