@@ -8,8 +8,13 @@ type Service<T extends StatusEntity> = ReturnType<typeof createLocalCollection<T
 /**
  * Estado de uma coleção com status (professores, disciplinas):
  * carrega, cadastra (sempre ativo), edita e ativa/inativa.
+ * `createItem` substitui o cadastro padrão quando o serviço completa o registro
+ * (ex.: código gerado automaticamente).
  */
-export function useEntityCollection<T extends StatusEntity>(service: Service<T>) {
+export function useEntityCollection<T extends StatusEntity, I = Omit<T, 'id' | 'status'>>(
+  service: Service<T>,
+  createItem?: (input: I) => Promise<T>,
+) {
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,12 +37,14 @@ export function useEntityCollection<T extends StatusEntity>(service: Service<T>)
   );
 
   const create = useCallback(
-    async (input: Omit<T, 'id' | 'status'>) => {
-      const created = await service.create({ ...input, status: 'active' } as Omit<T, 'id'>);
+    async (input: I) => {
+      const created = createItem
+        ? await createItem(input)
+        : await service.create({ ...input, status: 'active' } as unknown as Omit<T, 'id'>);
       setItems((current) => [...current, created]);
       return created;
     },
-    [service],
+    [service, createItem],
   );
 
   const update = useCallback(

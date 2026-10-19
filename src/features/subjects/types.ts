@@ -4,9 +4,10 @@ import type { EntityStatus } from '../../components/ui/StatusBadge/status';
 export interface Subject {
   id: string;
   name: string;
-  /** Código em maiúsculas, único entre todas as disciplinas. */
+  /** Gerado pelo sistema ao cadastrar (ex.: DIR502); nunca é alterado depois. */
   code: string;
   status: EntityStatus;
 }
 
-export type SubjectInput = Omit<Subject, 'id' | 'status'>;
+/** Dados informados pelo usuário: apenas o nome. */
+export type SubjectInput = Pick<Subject, 'name'>;

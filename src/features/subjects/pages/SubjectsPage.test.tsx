@@ -42,21 +42,21 @@ async function openEdit(user: User, name: string) {
   return screen.getByRole('dialog', { name: 'Editar disciplina' });
 }
 
-async function fill(user: User, dialog: HTMLElement, name?: string, code?: string) {
-  const nameInput = within(dialog).getByLabelText('Nome da disciplina:');
-  const codeInput = within(dialog).getByLabelText('Código:');
-  if (name !== undefined) {
-    await user.clear(nameInput);
-    if (name) await user.type(nameInput, name);
-  }
-  if (code !== undefined) {
-    await user.clear(codeInput);
-    if (code) await user.type(codeInput, code);
-  }
+async function fillName(user: User, dialog: HTMLElement, name: string) {
+  const input = within(dialog).getByLabelText('Nome da disciplina:');
+  await user.clear(input);
+  if (name) await user.type(input, name);
 }
 
 const submit = (user: User, dialog: HTMLElement, label = 'CADASTRAR') =>
   user.click(within(dialog).getByRole('button', { name: label }));
+
+async function createSubject(user: User, name: string) {
+  const dialog = await openCreate(user);
+  await fillName(user, dialog, name);
+  await submit(user, dialog);
+  return screen.findByText(new RegExp(`Disciplina ${name} cadastrada com o código`));
+}
 
 describe('Disciplinas', () => {
   describe('listagem', () => {
@@ -100,118 +100,175 @@ describe('Disciplinas', () => {
     });
   });
 
-  describe('validações', () => {
-    it('exige nome e código e foca o primeiro campo inválido', async () => {
+  describe('formulário', () => {
+    it('no cadastro, só o nome é editável e o código aparece somente para leitura', async () => {
+      const { user } = await setup();
+      const dialog = await openCreate(user);
+      expect(within(dialog).getByLabelText('Nome da disciplina:')).not.toHaveAttribute('readonly');
+      const code = within(dialog).getByLabelText('Código:');
+      expect(code).toHaveAttribute('readonly');
+      expect(code).toHaveAttribute('aria-readonly', 'true');
+      expect(code).toHaveValue('');
+      expect(code).toHaveAttribute('placeholder', 'Gerado automaticamente ao salvar');
+      expect(code).toHaveAccessibleDescription(
+        'O código é definido pelo sistema e não pode ser alterado.',
+      );
+      await user.type(code, 'DIR999');
+      expect(code).toHaveValue('');
+    });
+
+    it('exige o nome e foca o campo', async () => {
       const { user } = await setup();
       const dialog = await openCreate(user);
       await submit(user, dialog);
       expect(within(dialog).getByText('Informe o nome da disciplina.')).toBeInTheDocument();
-      expect(within(dialog).getByText('Informe o código.')).toBeInTheDocument();
       expect(within(dialog).getByLabelText('Nome da disciplina:')).toHaveFocus();
+      expect(within(dialog).queryByText('Informe o código.')).not.toBeInTheDocument();
     });
 
-    it('valida o formato do código e atualiza as mensagens ao digitar', async () => {
+    it('valida o tamanho mínimo e atualiza a mensagem ao digitar', async () => {
       const { user } = await setup();
       const dialog = await openCreate(user);
-      await fill(user, dialog, 'Direito Digital', 'DIR 6');
+      await fillName(user, dialog, 'Ab');
       await submit(user, dialog);
-      expect(within(dialog).getByText(/2 a 20 caracteres/)).toBeInTheDocument();
-      expect(within(dialog).getByLabelText('Código:')).toHaveFocus();
-      await fill(user, dialog, undefined, 'DIR601');
-      expect(within(dialog).queryByText(/2 a 20 caracteres/)).not.toBeInTheDocument();
+      expect(within(dialog).getByText(/pelo menos 3/)).toBeInTheDocument();
+      await user.type(within(dialog).getByLabelText('Nome da disciplina:'), 'c');
+      expect(within(dialog).queryByText(/pelo menos 3/)).not.toBeInTheDocument();
     });
+  });
 
-    it('converte o código para maiúsculas enquanto digita', async () => {
+  describe('geração automática do código', () => {
+    it('gera DIR502 (maior código existente + 1) e informa o código definitivo', async () => {
       const { user } = await setup();
       const dialog = await openCreate(user);
-      await fill(user, dialog, undefined, 'dir601');
-      expect(within(dialog).getByLabelText('Código:')).toHaveValue('DIR601');
+      await fillName(user, dialog, '  Direito   Digital ');
+      await submit(user, dialog);
+      expect(
+        await screen.findByText('Disciplina Direito Digital cadastrada com o código DIR502.'),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      const row = within(rowOf('Direito Digital'));
+      expect(row.getByText('DIR502')).toBeInTheDocument();
+      expect(row.getByText('Ativo')).toBeInTheDocument();
+      expect(stored().find((s) => s.code === 'DIR502')).toMatchObject({
+        name: 'Direito Digital',
+        status: 'active',
+      });
+    });
+
+    it('gera códigos sequenciais em cadastros seguidos', async () => {
+      const { user } = await setup();
+      await createSubject(user, 'Direito Digital');
+      await createSubject(user, 'Direito Ambiental');
+      expect(within(rowOf('Direito Digital')).getByText('DIR502')).toBeInTheDocument();
+      expect(within(rowOf('Direito Ambiental')).getByText('DIR503')).toBeInTheDocument();
+    });
+
+    it('considera disciplinas inativas e não reaproveita números vagos', async () => {
+      // Maior código pertence a uma disciplina inativa; há números vagos (DIR104, DIR204...).
+      localStorage.setItem(
+        SUBJECTS_STORAGE_KEY,
+        JSON.stringify([
+          { id: 'a', name: 'Direito Civil I', code: 'DIR201', status: 'active' },
+          { id: 'b', name: 'Direito Romano', code: 'DIR710', status: 'inactive' },
+        ]),
+      );
+      const { user } = await setup();
+      await createSubject(user, 'Direito Digital');
+      expect(within(rowOf('Direito Digital')).getByText('DIR711')).toBeInTheDocument();
+    });
+
+    it('preserva códigos fora do padrão e não os repete', async () => {
+      localStorage.setItem(
+        SUBJECTS_STORAGE_KEY,
+        JSON.stringify([
+          ...subjectsSeed,
+          { id: 'x', name: 'Direito Digital', code: 'DIR-601', status: 'active' },
+        ]),
+      );
+      const { user } = await setup();
+      await createSubject(user, 'Direito Ambiental');
+      expect(within(rowOf('Direito Ambiental')).getByText('DIR502')).toBeInTheDocument();
+      expect(within(rowOf('Direito Digital')).getByText('DIR-601')).toBeInTheDocument();
+    });
+
+    it('não altera os códigos dos 12 registros fictícios', async () => {
+      const { user } = await setup();
+      await createSubject(user, 'Direito Digital');
+      const seedCodes = Object.fromEntries(subjectsSeed.map((s) => [s.id, s.code]));
+      for (const subject of stored().filter((s) => s.id in seedCodes)) {
+        expect(subject.code).toBe(seedCodes[subject.id]);
+      }
     });
   });
 
   describe('duplicidade', () => {
-    it('recusa código já usado, inclusive por disciplina inativa', async () => {
+    it('recusa nome repetido sem diferenciar acentos, maiúsculas e espaços, inclusive de inativa', async () => {
       const { user } = await setup();
       const dialog = await openCreate(user);
-      await fill(user, dialog, 'Direito Digital', 'dir103');
+      await fillName(user, dialog, 'etica  PROFISSIONAL');
       await submit(user, dialog);
       expect(
-        within(dialog).getByText('O código DIR103 já pertence a “Filosofia do Direito”.'),
+        within(dialog).getByText('Já existe a disciplina “Ética Profissional” (código DIR501).'),
       ).toBeInTheDocument();
       expect(bodyRows()).toHaveLength(subjectsSeed.length);
     });
 
-    it('recusa nome repetido sem diferenciar acentos, maiúsculas e espaços', async () => {
-      const { user } = await setup();
-      const dialog = await openCreate(user);
-      await fill(user, dialog, 'direito  tributario', 'DIR999');
-      await submit(user, dialog);
-      expect(
-        within(dialog).getByText('Já existe a disciplina “Direito Tributário” (código DIR401).'),
-      ).toBeInTheDocument();
-    });
-
-    it('na edição, recusa o código de outra disciplina mas aceita o próprio', async () => {
+    it('na edição, recusa o nome de outra disciplina mas aceita o próprio', async () => {
       const { user } = await setup();
       const dialog = await openEdit(user, 'Direito Penal I');
-      await fill(user, dialog, undefined, 'DIR201');
+      await fillName(user, dialog, 'Direito Civil I');
       await submit(user, dialog, 'SALVAR');
-      expect(within(dialog).getByText(/já pertence a “Direito Civil I”/)).toBeInTheDocument();
-      await fill(user, dialog, undefined, 'DIR202');
+      expect(
+        within(dialog).getByText(/Já existe a disciplina “Direito Civil I”/),
+      ).toBeInTheDocument();
+      await fillName(user, dialog, 'Direito Penal I');
       await submit(user, dialog, 'SALVAR');
       expect(await screen.findByText('Dados de Direito Penal I atualizados.')).toBeInTheDocument();
     });
   });
 
-  describe('cadastro', () => {
-    it('cadastra uma disciplina ativa com código normalizado e persiste', async () => {
-      const { user } = await setup();
-      const dialog = await openCreate(user);
-      await fill(user, dialog, '  Direito   Digital ', 'dir-601');
-      await submit(user, dialog);
-      expect(await screen.findByText('Disciplina Direito Digital cadastrada.')).toBeInTheDocument();
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-      const row = within(rowOf('Direito Digital'));
-      expect(row.getByText('DIR-601')).toBeInTheDocument();
-      expect(row.getByText('Ativo')).toBeInTheDocument();
-      expect(stored().find((s) => s.code === 'DIR-601')).toMatchObject({
-        name: 'Direito Digital',
-        status: 'active',
-      });
-    });
-  });
-
   describe('edição', () => {
-    it('abre preenchido e salva nome e código', async () => {
+    it('mostra o código atual somente para leitura e o preserva ao mudar o nome', async () => {
       const { user } = await setup();
       const dialog = await openEdit(user, 'Direito Empresarial');
       expect(within(dialog).getByLabelText('Nome da disciplina:')).toHaveValue(
         'Direito Empresarial',
       );
-      expect(within(dialog).getByLabelText('Código:')).toHaveValue('DIR303');
-      await fill(user, dialog, 'Direito Empresarial I', 'DIR304');
+      const code = within(dialog).getByLabelText('Código:');
+      expect(code).toHaveValue('DIR303');
+      expect(code).toHaveAttribute('readonly');
+      await user.type(code, '9');
+      expect(code).toHaveValue('DIR303');
+
+      await fillName(user, dialog, 'Direito Empresarial I');
       await submit(user, dialog, 'SALVAR');
       expect(
         await screen.findByText('Dados de Direito Empresarial I atualizados.'),
       ).toBeInTheDocument();
-      expect(within(rowOf('Direito Empresarial I')).getByText('DIR304')).toBeInTheDocument();
+      expect(within(rowOf('Direito Empresarial I')).getByText('DIR303')).toBeInTheDocument();
       expect(screen.queryByText('Direito Empresarial')).not.toBeInTheDocument();
       expect(bodyRows()).toHaveLength(subjectsSeed.length);
-      expect(stored().find((s) => s.id === 's09')).toMatchObject({
+      expect(stored().find((s) => s.id === 's09')).toEqual({
+        id: 's09',
         name: 'Direito Empresarial I',
-        code: 'DIR304',
+        code: 'DIR303',
+        status: 'active',
       });
     });
   });
 
   describe('ativação e inativação', () => {
-    it('inativa e reativa, persistindo o status', async () => {
+    it('inativa e reativa, persistindo o status e mantendo o código', async () => {
       const { user } = await setup();
       await user.click(screen.getByRole('button', { name: 'Opções de Direito Penal I' }));
       await user.click(screen.getByRole('menuitem', { name: 'Inativar' }));
       expect(await screen.findByText('Direito Penal I inativada.')).toBeInTheDocument();
       expect(within(rowOf('Direito Penal I')).getByText('Inativo')).toBeInTheDocument();
-      expect(stored().find((s) => s.id === 's05')?.status).toBe('inactive');
+      expect(stored().find((s) => s.id === 's05')).toMatchObject({
+        status: 'inactive',
+        code: 'DIR202',
+      });
 
       await user.click(screen.getByRole('button', { name: 'Opções de Direito Penal I' }));
       await user.click(screen.getByRole('menuitem', { name: 'Ativar' }));
@@ -221,12 +278,9 @@ describe('Disciplinas', () => {
   });
 
   describe('persistência', () => {
-    it('mantém cadastros, edições e status ao recarregar a tela', async () => {
+    it('mantém cadastros, códigos gerados e status ao recarregar e continua a sequência', async () => {
       const first = await setup();
-      const dialog = await openCreate(first.user);
-      await fill(first.user, dialog, 'Direito Ambiental', 'DIR602');
-      await submit(first.user, dialog);
-      await screen.findByText('Disciplina Direito Ambiental cadastrada.');
+      await createSubject(first.user, 'Direito Ambiental');
       await first.user.click(
         screen.getByRole('button', { name: 'Opções de Teoria Geral do Estado' }),
       );
@@ -234,10 +288,13 @@ describe('Disciplinas', () => {
       await screen.findByText('Teoria Geral do Estado inativada.');
       first.unmount();
 
-      await setup();
+      const second = await setup();
       expect(bodyRows()).toHaveLength(subjectsSeed.length + 1);
-      expect(within(rowOf('Direito Ambiental')).getByText('DIR602')).toBeInTheDocument();
+      expect(within(rowOf('Direito Ambiental')).getByText('DIR502')).toBeInTheDocument();
       expect(within(rowOf('Teoria Geral do Estado')).getByText('Inativo')).toBeInTheDocument();
+
+      await createSubject(second.user, 'Direito Digital');
+      expect(within(rowOf('Direito Digital')).getByText('DIR503')).toBeInTheDocument();
     });
 
     it('recria os dados fictícios se o armazenamento estiver corrompido', async () => {

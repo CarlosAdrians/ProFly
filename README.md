@@ -48,12 +48,27 @@ ativação/inativação pelo menu **Opções (⋮)**. Dados no `localStorage` (c
 
 Regras do cadastro:
 
-- **Nome** e **Código** são obrigatórios; nome com 3 a 100 caracteres.
-- O código é salvo em maiúsculas e aceita de 2 a 20 caracteres (letras sem acento, números, ponto
-  ou hífen).
-- **Sem duplicidade:** não podem existir duas disciplinas — ativas ou inativas — com o mesmo código
-  ou com o mesmo nome. A comparação ignora maiúsculas, acentos e espaços extras. Para reutilizar
-  uma disciplina inativa, reative-a.
+- O usuário informa apenas o **Nome** (obrigatório, 3 a 100 caracteres).
+- **Sem nomes duplicados:** não podem existir duas disciplinas — ativas ou inativas — com o mesmo
+  nome. A comparação ignora maiúsculas, acentos e espaços extras. Para reutilizar uma disciplina
+  inativa, reative-a.
+
+### Código gerado automaticamente
+
+O **Código** é definido pelo sistema no momento em que a nova disciplina é salva
+(`src/features/subjects/codeGenerator.ts`):
+
+1. Formato `DIR` + número com pelo menos 3 dígitos, compatível com os códigos existentes
+   (`DIR101`, `DIR201`…). Os dígitos não têm significado institucional definido.
+2. O número é o **maior número já usado + 1**, considerando todas as disciplinas guardadas,
+   ativas e inativas. Com os dados fictícios, o primeiro código gerado é `DIR502`.
+3. Números vagos (ex.: `DIR104`) **não são reaproveitados**.
+4. Códigos fora do formato (ex.: `DIR-601`) são preservados, não entram na contagem e nunca são
+   repetidos; se o código calculado já existir, o sistema usa o número seguinte.
+5. O código aparece na listagem e no formulário sempre **somente para leitura**: no cadastro, o
+   campo mostra “Gerado automaticamente ao salvar” e, depois de salvar, a mensagem informa o
+   código definitivo. Na edição, o código existente é mantido mesmo que o nome mude.
+6. Códigos já existentes, incluindo os 12 registros fictícios, nunca são alterados.
 
 ## Scripts
 

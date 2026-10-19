@@ -3,19 +3,14 @@ import { Modal } from '../../../components/ui/Modal/Modal';
 import { TextField } from '../../../components/ui/TextField/TextField';
 import { Button } from '../../../components/ui/Button/Button';
 import type { Subject, SubjectInput } from '../types';
-import {
-  normalizeCode,
-  validateSubject,
-  type SubjectFormErrors,
-  type SubjectFormValues,
-} from '../validation';
+import { validateSubject, type SubjectFormErrors, type SubjectFormValues } from '../validation';
 import styles from './SubjectFormModal.module.css';
 
 interface SubjectFormModalProps {
   open: boolean;
   /** Disciplina em edição; ausente para cadastro. */
   subject?: Subject;
-  /** Demais disciplinas, para impedir duplicidade. */
+  /** Demais disciplinas, para impedir duplicidade de nome. */
   others: Subject[];
   onClose: () => void;
   onSubmit: (input: SubjectInput) => Promise<void>;
@@ -54,18 +49,14 @@ interface SubjectFormProps {
 }
 
 function SubjectForm({ subject, others, onSubmit, submitLabel }: SubjectFormProps) {
-  const [values, setValues] = useState<SubjectFormValues>({
-    name: subject?.name ?? '',
-    code: subject?.code ?? '',
-  });
+  const [values, setValues] = useState<SubjectFormValues>({ name: subject?.name ?? '' });
   const [errors, setErrors] = useState<SubjectFormErrors>({});
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  function change(field: keyof SubjectFormValues, value: string) {
-    const next = { ...values, [field]: value };
-    setValues(next);
-    if (submitted) setErrors(validateSubject(next, others));
+  function changeName(name: string) {
+    setValues({ name });
+    if (submitted) setErrors(validateSubject({ name }, others));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -73,17 +64,13 @@ function SubjectForm({ subject, others, onSubmit, submitLabel }: SubjectFormProp
     setSubmitted(true);
     const nextErrors = validateSubject(values, others);
     setErrors(nextErrors);
-    const firstInvalid = (['name', 'code'] as const).find((field) => nextErrors[field]);
-    if (firstInvalid) {
-      const input = event.currentTarget.elements.namedItem(firstInvalid);
+    if (nextErrors.name) {
+      const input = event.currentTarget.elements.namedItem('name');
       if (input instanceof HTMLInputElement) input.focus();
       return;
     }
     setSaving(true);
-    await onSubmit({
-      name: values.name.trim().replace(/\s+/g, ' '),
-      code: normalizeCode(values.code),
-    });
+    await onSubmit({ name: values.name.trim().replace(/\s+/g, ' ') });
   }
 
   return (
@@ -95,19 +82,16 @@ function SubjectForm({ subject, others, onSubmit, submitLabel }: SubjectFormProp
         maxLength={100}
         value={values.name}
         error={errors.name}
-        onChange={(event) => change('name', event.target.value)}
+        onChange={(event) => changeName(event.target.value)}
       />
+      {/* Código definido pelo sistema: nunca editável e não enviado pelo formulário. */}
       <TextField
         label="Código:"
-        name="code"
-        required
-        maxLength={20}
-        autoCapitalize="characters"
-        spellCheck={false}
-        placeholder="Ex.: DIR101"
-        value={values.code}
-        error={errors.code}
-        onChange={(event) => change('code', event.target.value.toUpperCase())}
+        readOnly
+        aria-readonly="true"
+        value={subject?.code ?? ''}
+        placeholder="Gerado automaticamente ao salvar"
+        hint="O código é definido pelo sistema e não pode ser alterado."
       />
       <Button type="submit" className={styles.submit} loading={saving} loadingText="Salvando…">
         {submitLabel}

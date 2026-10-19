@@ -31,11 +31,12 @@ export function SubjectsPage() {
 
   async function handleSubmit(input: SubjectInput) {
     if (editing) {
-      await update(editing.id, input);
+      // Apenas o nome é atualizado; o código existente é preservado.
+      await update(editing.id, { name: input.name });
       setMessage(`Dados de ${input.name} atualizados.`);
     } else {
-      await create(input);
-      setMessage(`Disciplina ${input.name} cadastrada.`);
+      const created = await create(input);
+      setMessage(`Disciplina ${created.name} cadastrada com o código ${created.code}.`);
     }
     setModal(null);
   }
