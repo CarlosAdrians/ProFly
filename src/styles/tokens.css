@@ -49,6 +49,7 @@
   --font-size-subtitle: 1.125rem;
   --font-size-md: 1rem; /* texto e botões */
   --font-size-sm: 0.875rem; /* ajuda, erros, selos */
+  --font-size-xs: 0.8125rem; /* rótulos da navbar */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -91,8 +92,8 @@
   --form-actions-gap: 1.5rem; /* último campo → ações */
 
   /* Layout */
-  --sidebar-width: 100px;
-  --topbar-height: 64px;
+  --sidebar-width: 88px;
+  --topbar-height: 56px;
   --content-max-width: 1180px;
   --breakpoint-mobile: 768px; /* referência; media queries usam o valor literal */
 }

@@ -14,13 +14,13 @@
 .brand {
   display: flex;
   justify-content: center;
-  padding: var(--space-2) var(--space-2) var(--space-6);
+  padding: var(--space-3) var(--space-2) var(--space-4);
 }
 
 /* Fundo branco discreto: o brasão azul-escuro contrasta pouco com a navbar.
    A largura total é mantida (box-sizing: border-box). */
 .symbol {
-  width: 72px;
+  width: 56px;
   height: auto;
   /* Recorta visualmente a sombra transparente abaixo do escudo (arquivo inalterado). */
   aspect-ratio: 1;
@@ -52,12 +52,12 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-1);
-  padding: var(--space-3) var(--space-1);
-  min-height: 100px;
+  padding: var(--space-2) var(--space-1);
+  min-height: 76px;
   justify-content: center;
   color: var(--color-text-inverse);
   text-decoration: none;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
   text-align: center;
 }
@@ -83,8 +83,8 @@
 }
 
 .icon {
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   background-color: currentColor;
   mask: var(--icon-url) center / contain no-repeat;
   -webkit-mask: var(--icon-url) center / contain no-repeat;
@@ -100,12 +100,12 @@
   .brand {
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-1) var(--space-4);
     min-height: var(--topbar-height);
   }
 
   .symbol {
-    width: 40px;
+    width: 36px;
     padding: 2px;
     border-radius: var(--radius-sm);
   }
@@ -114,12 +114,13 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    min-height: 44px;
-    padding: var(--space-2) var(--space-4);
+    min-height: var(--touch-target);
+    padding: 0 var(--space-3);
     border: 1px solid var(--color-navbar-outline);
     border-radius: var(--radius-pill);
     background: transparent;
     color: var(--color-text-inverse);
+    font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
     cursor: pointer;
   }
@@ -163,7 +164,7 @@
   }
 
   .item {
-    min-height: 88px;
+    min-height: 64px;
   }
 
   .itemActive,
@@ -172,7 +173,7 @@
   }
 
   .icon {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
   }
 }
