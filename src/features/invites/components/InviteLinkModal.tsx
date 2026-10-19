@@ -70,10 +70,7 @@ function InviteLink({ teacher }: { teacher: Teacher }) {
         {copyStatus === 'failed' &&
           'Não foi possível copiar automaticamente. Selecione o link e copie manualmente.'}
       </div>
-      <p className={styles.note}>
-        Demonstração local: o link só funciona neste navegador e não é um convite seguro. A emissão,
-        a validade e o uso único do convite dependerão do back-end.
-      </p>
+      <p className={styles.note}>Envie o link somente ao professor indicado.</p>
     </div>
   );
 }

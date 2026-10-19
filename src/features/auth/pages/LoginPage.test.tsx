@@ -150,9 +150,9 @@ describe('LoginPage', () => {
     });
   });
 
-  it('exibe o aviso de ambiente de demonstração', () => {
+  it('não exibe avisos de demonstração', () => {
     setup();
-    expect(screen.getByText('Ambiente de demonstração')).toBeInTheDocument();
+    expect(screen.queryByText(/demonstração|simula/i)).not.toBeInTheDocument();
   });
 
   it('navega para Esqueceu senha', async () => {

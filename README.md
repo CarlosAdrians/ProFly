@@ -59,7 +59,7 @@ O link `wa.me` funciona no celular (aplicativo) e no desktop (WhatsApp Web ou ap
 nova aba. O ProFly não envia nenhum dado; número e mensagem ficam em
 `src/features/auth/registrationRequest.ts`.
 
-### Convite e criação de senha (demonstração local)
+### Convite e criação de senha
 
 1. Em **Professores**, o coordenador abre o menu ⋮ de um professor **ativo** e escolhe
    **Gerar convite**. O ProFly cria um link `/convite/<identificador>` associado ao professor e ao
@@ -69,23 +69,40 @@ nova aba. O ProFly não envia nenhum dado; número e mensagem ficam em
    os campos **Senha** e **Confirmar senha** (com mostrar/ocultar).
 4. Política de senha proposta: 8 a 72 caracteres, com pelo menos uma letra e um número; a
    confirmação deve ser igual.
-5. Após o envio válido, a tela confirma e oferece **Ir para o login**. O link passa a constar
-   como utilizado.
+5. Ao enviar, o convite é conferido de novo e a criação da senha é delegada à porta de ativação
+   (`src/features/invites/services/accountActivationGateway.ts`). **Somente se ela concluir** a
+   tela mostra “Senha criada com sucesso!” e o convite é marcado como utilizado. Se falhar, a
+   tela informa o erro e o convite continua pendente.
 
 O link é recusado se for malformado, desconhecido, já utilizado, ou se o professor tiver sido
 inativado, removido ou mudado de e-mail.
 
-**Limites da demonstração (sem back-end):**
+**Estado atual (sem back-end integrado):**
 
-- O convite fica no `localStorage` (`profly:invites`) **deste navegador**; o link não funciona em
-  outro computador. O identificador é aleatório, mas **não é um token seguro**.
-- A **senha não é salva** em lugar nenhum (nem em texto, nem no link) e **nenhuma conta é
-  ativada**: o professor continua sem acesso, e o login segue apenas com o coordenador de
-  demonstração.
+- A porta de ativação **sempre falha** (`AccountActivationUnavailableError`): o navegador não tem
+  como guardar senhas nem autenticar com segurança. Portanto **a criação de senha não é
+  concluída**, nenhuma conta é ativada e o convite não é consumido. A senha digitada não é
+  gravada em lugar nenhum (nem em texto, nem no link).
+- O **login do professor não está habilitado**: o login continua aceitando apenas o coordenador.
+- O convite fica no `localStorage` (`profly:invites`) **deste navegador**. O identificador é
+  aleatório, mas **não é um token seguro**.
 
-**A integrar com o back-end:** emissão do convite pelo servidor (token seguro, com validade e uso
-único), envio do e-mail, verificação do token, gravação da senha com hash, ativação da conta
-vinculada ao professor e aplicação da política de senha no servidor.
+**Perfis:** a sessão guarda o perfil (`coordinator` ou `teacher`). As telas internas atuais
+(Professores, Disciplinas, Conta) exigem o perfil `coordinator`; sessões sem perfil ou com perfil
+desconhecido são descartadas.
+
+**Contrato esperado do back-end** (sem endpoints definidos aqui):
+
+- _Ativação por convite_ — substituir `accountActivationGateway.activateTeacherAccount({ token,
+teacherId, email, password })` por uma implementação que, de forma atômica no servidor, valide o
+  token (existente, pendente, dentro da validade), confirme professor ativo com o mesmo e-mail,
+  aplique a política de senha, grave a senha apenas como hash, ative a conta com perfil
+  `teacher` e marque o convite como utilizado. Em erro, nada pode ficar parcialmente aplicado.
+- _Emissão e consulta do convite_ — gerar o token seguro no servidor (com validade e uso único),
+  enviar o e-mail e responder à consulta do link devolvendo só nome e e-mail do professor
+  (hoje: `getOrCreateInvite` e `lookupInvite` em `inviteService.ts`).
+- _Autenticação_ — substituir `authenticate` em `authService.ts` por um login que valide e-mail
+  e senha no servidor e devolva a sessão com `name`, `email` e `role`.
 
 ## Professores
 

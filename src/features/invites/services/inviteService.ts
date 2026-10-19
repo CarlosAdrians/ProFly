@@ -1,8 +1,8 @@
 import { createLocalCollection } from '../../../services/localCollection';
-import { simulateLatency } from '../../../services/storage';
 import { teacherService } from '../../teachers/services/teacherService';
 import type { Teacher } from '../../teachers/types';
 import type { Invite, InviteLookup } from '../types';
+import { accountActivationGateway } from './accountActivationGateway';
 
 export const INVITES_STORAGE_KEY = 'profly:invites';
 
@@ -63,15 +63,33 @@ export async function lookupInvite(token: string): Promise<InviteLookup> {
   return { status: 'valid', token, teacherName: teacher.name, email: teacher.email };
 }
 
+/** O convite deixou de valer (inválido, já utilizado ou professor indisponível). */
+export class InviteUnavailableError extends Error {
+  constructor() {
+    super('Convite indisponível.');
+    this.name = 'InviteUnavailableError';
+  }
+}
+
 /**
- * Conclusão simulada: apenas marca o convite como utilizado.
- * A senha NÃO é enviada, salva nem transformada aqui; sem back-end, nenhuma conta é
- * ativada e o professor não ganha acesso ao sistema.
+ * Conclui o convite em duas etapas, nesta ordem:
+ * 1. ativa a conta (cria a senha) pela porta de ativação — se falhar, o erro é
+ *    propagado e o convite continua pendente;
+ * 2. somente depois do sucesso, marca o convite como utilizado.
+ * A senha é repassada apenas à porta de ativação; nunca é gravada no navegador.
+ * Sem back-end integrado, a etapa 1 sempre falha (ver accountActivationGateway).
  */
-export async function completeInvite(token: string): Promise<void> {
+export async function completeInvite(token: string, password: string): Promise<void> {
   const lookup = await lookupInvite(token);
-  if (lookup.status !== 'valid') throw new Error('Convite indisponível.');
-  await simulateLatency(300);
+  if (lookup.status !== 'valid') throw new InviteUnavailableError();
   const invite = (await invites.list()).find((item) => item.token === token)!;
+
+  await accountActivationGateway.activateTeacherAccount({
+    token,
+    teacherId: invite.teacherId,
+    email: invite.email,
+    password,
+  });
+
   await invites.update(invite.id, { status: 'used', usedAt: new Date().toISOString() });
 }

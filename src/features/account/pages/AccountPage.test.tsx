@@ -75,7 +75,10 @@ describe('Conta', () => {
       expect(await screen.findByText('Dados atualizados com sucesso.')).toBeInTheDocument();
       expect(screen.getByRole('status')).toHaveTextContent('Dados atualizados com sucesso.');
       expect(valueOf('Nome completo')).toBe('Felipe Araujo Lima');
-      expect(screen.getByRole('button', { name: 'Editar dados' })).toHaveFocus();
+      // O foco é devolvido num efeito, executado logo após a renderização.
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Editar dados' })).toHaveFocus(),
+      );
     });
 
     it('cancelar descarta as alterações não salvas', async () => {

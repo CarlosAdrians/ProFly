@@ -53,7 +53,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
         readOnly
         aria-readonly="true"
         value={account.email}
-        hint="Usado no login. A alteração depende da integração com o back-end."
+        hint="Usado no login e não pode ser alterado nesta tela."
       />
       <TextField
         label="Perfil:"

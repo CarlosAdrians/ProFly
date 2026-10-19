@@ -31,12 +31,15 @@ describe('ForgotPasswordPage', () => {
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
   });
 
-  it('mostra o retorno simulado após o envio', async () => {
+  it('mostra o retorno após o envio', async () => {
     const { user, submit, email } = setup();
     await user.type(email(), 'professor@profly.test');
     await submit();
     expect(screen.getByRole('button', { name: 'Enviando…' })).toBeDisabled();
-    expect(await screen.findByText(/nenhum e-mail foi enviado/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/receberá as instruções para redefinir a senha\./),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/simula/i)).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('professor@profly.test');
     expect(screen.getByRole('button', { name: 'Enviar' })).toBeEnabled();
   });

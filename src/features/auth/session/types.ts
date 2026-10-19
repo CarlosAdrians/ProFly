@@ -1,6 +1,10 @@
+/** Perfis de acesso. Somente o coordenador acessa as telas internas atuais. */
+export type UserRole = 'coordinator' | 'teacher';
+
 export interface Session {
   name: string;
   email: string;
+  role: UserRole;
   startedAt: string;
 }
 

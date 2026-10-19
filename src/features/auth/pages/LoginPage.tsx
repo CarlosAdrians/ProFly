@@ -112,7 +112,6 @@ export function LoginPage() {
           </Button>
         </div>
       </form>
-      <p className={styles.demoNotice}>Ambiente de demonstração</p>
     </AuthLayout>
   );
 }

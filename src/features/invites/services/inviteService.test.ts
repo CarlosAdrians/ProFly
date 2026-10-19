@@ -4,8 +4,13 @@ import {
   completeInvite,
   getOrCreateInvite,
   INVITES_STORAGE_KEY,
+  InviteUnavailableError,
   lookupInvite,
 } from './inviteService';
+import {
+  accountActivationGateway,
+  AccountActivationUnavailableError,
+} from './accountActivationGateway';
 
 const ana = teachersSeed.find((teacher) => teacher.id === 't01')!; // ativa
 const elisa = teachersSeed.find((teacher) => teacher.id === 't05')!; // inativa
@@ -61,17 +66,87 @@ describe('inviteService (demonstração local)', () => {
     expect(await lookupInvite(invite.token)).toEqual({ status: 'unavailable' });
   });
 
-  it('marca o convite como utilizado e impede reutilização', async () => {
-    const invite = await getOrCreateInvite(ana);
-    await completeInvite(invite.token);
-    expect(await lookupInvite(invite.token)).toEqual({ status: 'used' });
-    await expect(completeInvite(invite.token)).rejects.toThrow();
-    const stored = JSON.parse(localStorage.getItem(INVITES_STORAGE_KEY)!);
-    expect(stored[0]).toMatchObject({ status: 'used' });
-    expect(Object.keys(stored[0]).sort()).toEqual(
-      ['createdAt', 'email', 'id', 'status', 'teacherId', 'token', 'usedAt'].sort(),
-    );
-    // Um novo convite pode ser gerado depois do uso.
-    expect((await getOrCreateInvite(ana)).token).not.toBe(invite.token);
+  describe('conclusão (completeInvite)', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it('sem serviço de autenticação integrado, falha e mantém o convite pendente', async () => {
+      const invite = await getOrCreateInvite(ana);
+      await expect(completeInvite(invite.token, 'Direito2026')).rejects.toBeInstanceOf(
+        AccountActivationUnavailableError,
+      );
+      expect(await lookupInvite(invite.token)).toMatchObject({ status: 'valid' });
+      expect(JSON.parse(localStorage.getItem(INVITES_STORAGE_KEY)!)[0].status).toBe('pending');
+    });
+
+    it('não consome o convite se a ativação falhar por qualquer motivo', async () => {
+      vi.spyOn(accountActivationGateway, 'activateTeacherAccount').mockRejectedValue(
+        new Error('falha de rede'),
+      );
+      const invite = await getOrCreateInvite(ana);
+      await expect(completeInvite(invite.token, 'Direito2026')).rejects.toThrow('falha de rede');
+      expect(await lookupInvite(invite.token)).toMatchObject({ status: 'valid' });
+    });
+
+    it('ativa a conta do professor do convite e só então consome o convite', async () => {
+      const order: string[] = [];
+      const activate = vi
+        .spyOn(accountActivationGateway, 'activateTeacherAccount')
+        .mockImplementation(async () => {
+          order.push(`ativação (convite ${(await lookupInvite(invite.token)).status})`);
+        });
+      const invite = await getOrCreateInvite(ana);
+      await completeInvite(invite.token, 'Direito2026');
+
+      expect(activate).toHaveBeenCalledWith({
+        token: invite.token,
+        teacherId: 't01',
+        email: ana.email,
+        password: 'Direito2026',
+      });
+      expect(order).toEqual(['ativação (convite valid)']);
+      expect(await lookupInvite(invite.token)).toEqual({ status: 'used' });
+      const stored = JSON.parse(localStorage.getItem(INVITES_STORAGE_KEY)!);
+      expect(stored[0]).toMatchObject({ status: 'used' });
+      expect(JSON.stringify(stored)).not.toContain('Direito2026');
+    });
+
+    it('impede a reutilização de um convite já utilizado', async () => {
+      const activate = vi
+        .spyOn(accountActivationGateway, 'activateTeacherAccount')
+        .mockResolvedValue();
+      const invite = await getOrCreateInvite(ana);
+      await completeInvite(invite.token, 'Direito2026');
+      await expect(completeInvite(invite.token, 'OutraSenha1')).rejects.toBeInstanceOf(
+        InviteUnavailableError,
+      );
+      expect(activate).toHaveBeenCalledTimes(1);
+      // Um novo convite pode ser gerado depois do uso.
+      expect((await getOrCreateInvite(ana)).token).not.toBe(invite.token);
+    });
+
+    it.each([
+      ['inválido', 'abc'],
+      ['inexistente', '0'.repeat(32)],
+    ])('recusa convite %s sem chamar a ativação', async (_, token) => {
+      const activate = vi.spyOn(accountActivationGateway, 'activateTeacherAccount');
+      await expect(completeInvite(token, 'Direito2026')).rejects.toBeInstanceOf(
+        InviteUnavailableError,
+      );
+      expect(activate).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['inativo', { status: 'inactive' as const }],
+      ['com e-mail divergente', { email: 'outro@profly.test' }],
+    ])('recusa convite de professor %s sem chamar a ativação', async (_, changes) => {
+      const activate = vi.spyOn(accountActivationGateway, 'activateTeacherAccount');
+      const invite = await getOrCreateInvite(ana);
+      await teacherService.update('t01', changes);
+      await expect(completeInvite(invite.token, 'Direito2026')).rejects.toBeInstanceOf(
+        InviteUnavailableError,
+      );
+      expect(activate).not.toHaveBeenCalled();
+      expect(JSON.parse(localStorage.getItem(INVITES_STORAGE_KEY)!)[0].status).toBe('pending');
+    });
   });
 });

@@ -57,7 +57,7 @@ export function ForgotPasswordPage() {
             {sentTo && (
               <Alert variant="success">
                 Se o e-mail {sentTo} estiver cadastrado, você receberá as instruções para redefinir
-                a senha. (Simulação: nenhum e-mail foi enviado.)
+                a senha.
               </Alert>
             )}
           </div>

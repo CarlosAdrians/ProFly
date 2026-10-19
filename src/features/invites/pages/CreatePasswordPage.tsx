@@ -6,7 +6,7 @@ import { PasswordField } from '../../../components/ui/PasswordField/PasswordFiel
 import { Button } from '../../../components/ui/Button/Button';
 import { Alert } from '../../../components/ui/Alert/Alert';
 import { paths } from '../../../app/paths';
-import { completeInvite, lookupInvite } from '../services/inviteService';
+import { completeInvite, InviteUnavailableError, lookupInvite } from '../services/inviteService';
 import { passwordPolicyHint, validateNewPassword, type NewPasswordErrors } from '../passwordPolicy';
 import type { InviteLookup } from '../types';
 import authStyles from '../../auth/pages/AuthForm.module.css';
@@ -20,8 +20,9 @@ const unavailableMessages: Record<Exclude<InviteLookup['status'], 'valid'>, stri
 
 /**
  * Criação de senha pelo professor a partir do link de convite.
- * DEMONSTRAÇÃO LOCAL: a conferência do convite e a "criação" da senha acontecem no
- * navegador. A senha não é salva e nenhuma conta é ativada; isso dependerá do back-end.
+ * A conferência do convite é local; a criação da senha depende da porta de ativação
+ * (accountActivationGateway). O sucesso só é exibido se a ativação for concluída — sem
+ * back-end integrado, ela falha e o convite continua pendente.
  */
 export function CreatePasswordPage() {
   const { token = '' } = useParams();
@@ -33,6 +34,7 @@ export function CreatePasswordPage() {
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const [submitError, setSubmitError] = useState<string>();
   const loginButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -65,16 +67,24 @@ export function CreatePasswordPage() {
       return;
     }
     setSaving(true);
+    setSubmitError(undefined);
     try {
-      await completeInvite(token);
-      setDone(true);
-    } catch {
-      // O convite deixou de valer (ex.: professor inativado) durante o preenchimento.
-      setLookup(await lookupInvite(token));
-    } finally {
-      // A senha nunca é guardada: os campos são limpos após o envio.
+      await completeInvite(token, password);
+      // Só chega aqui se a conta foi ativada e o convite consumido.
       setPassword('');
       setConfirmation('');
+      setDone(true);
+    } catch (error) {
+      if (error instanceof InviteUnavailableError) {
+        // O convite deixou de valer (ex.: professor inativado) durante o preenchimento.
+        setLookup(await lookupInvite(token));
+      } else {
+        // Ativação não concluída: nada foi gravado e o convite continua pendente.
+        setSubmitError(
+          'Não foi possível criar a senha no momento. O convite continua válido; tente novamente mais tarde.',
+        );
+      }
+    } finally {
       setSaving(false);
     }
   }
@@ -110,6 +120,7 @@ export function CreatePasswordPage() {
 
     return (
       <form className={authStyles.form} noValidate onSubmit={handleSubmit}>
+        {submitError && <Alert variant="error">{submitError}</Alert>}
         <p className={authStyles.intro}>
           Olá, {lookup.teacherName}! Crie sua senha de acesso ao ProFly.
         </p>
@@ -160,14 +171,11 @@ export function CreatePasswordPage() {
       <div role="status" className={styles.status}>
         {done && lookup?.status === 'valid' && (
           <Alert variant="success">
-            <strong>Senha criada nesta demonstração.</strong> Sem o back-end, a senha não foi salva
-            e o acesso de {lookup.email} ainda não foi ativado. A ativação real da conta dependerá
-            da integração com o servidor.
+            <strong>Senha criada com sucesso!</strong>
           </Alert>
         )}
       </div>
       {renderContent()}
-      <p className={authStyles.demoNotice}>Ambiente de demonstração</p>
     </AuthLayout>
   );
 }

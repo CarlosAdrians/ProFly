@@ -4,7 +4,8 @@ import { renderApp } from '../../../test/renderApp';
 import { teachersSeed } from '../../../mocks/teachers';
 import { SESSION_KEY } from '../../auth/session/authContext';
 import { teacherService } from '../../teachers/services/teacherService';
-import { getOrCreateInvite, INVITES_STORAGE_KEY, lookupInvite } from '../services/inviteService';
+import { completeInvite, getOrCreateInvite, lookupInvite } from '../services/inviteService';
+import { accountActivationGateway } from '../services/accountActivationGateway';
 
 const ana = teachersSeed.find((teacher) => teacher.id === 't01')!;
 const SECRET = 'Direito2026';
@@ -36,7 +37,7 @@ describe('Criar senha (convite)', () => {
       expect(email).toHaveAttribute('readonly');
       expect(screen.getByLabelText('Senha:')).toHaveAttribute('type', 'password');
       expect(screen.getByLabelText('Confirmar senha:')).toHaveAttribute('type', 'password');
-      expect(screen.getByText('Ambiente de demonstração')).toBeInTheDocument();
+      expect(screen.queryByText(/demonstração/i)).not.toBeInTheDocument();
     });
 
     it('não expõe dados de outros professores nem cria sessão', async () => {
@@ -103,20 +104,89 @@ describe('Criar senha (convite)', () => {
     });
   });
 
-  describe('sucesso', () => {
-    it('confirma sem afirmar ativação real, não guarda a senha e leva ao login', async () => {
+  describe('criação de senha sem serviço de autenticação integrado', () => {
+    it('não mostra sucesso, informa a falha e mantém o convite pendente', async () => {
+      const { user, submit, password, confirmation, token } = await openInvite();
+      await user.type(password(), SECRET);
+      await user.type(confirmation(), SECRET);
+      await submit();
+
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent('Não foi possível criar a senha no momento.');
+      expect(alert).toHaveTextContent('O convite continua válido');
+      expect(screen.queryByText('Senha criada com sucesso!')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Ir para o login' })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Criar senha' })).toBeEnabled();
+      expect(await lookupInvite(token)).toMatchObject({ status: 'valid' });
+      expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
+    });
+
+    it('após recarregar, o convite continua disponível para nova tentativa', async () => {
+      const first = await openInvite();
+      await first.user.type(first.password(), SECRET);
+      await first.user.type(first.confirmation(), SECRET);
+      await first.submit();
+      await screen.findByRole('alert');
+      first.unmount();
+
+      renderApp(`/convite/${first.token}`);
+      expect(await screen.findByText(/Crie sua senha de acesso/)).toBeInTheDocument();
+      expect(screen.getByLabelText('Senha:')).toBeInTheDocument();
+    });
+  });
+
+  describe('falha ao persistir a senha', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it('erro do serviço de ativação não é tratado como sucesso nem consome o convite', async () => {
+      vi.spyOn(accountActivationGateway, 'activateTeacherAccount').mockRejectedValue(
+        new Error('falha ao gravar'),
+      );
+      const { user, submit, password, confirmation, token } = await openInvite();
+      await user.type(password(), SECRET);
+      await user.type(confirmation(), SECRET);
+      await submit();
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Não foi possível criar a senha no momento.',
+      );
+      expect(screen.queryByText('Senha criada com sucesso!')).not.toBeInTheDocument();
+      expect(await lookupInvite(token)).toMatchObject({ status: 'valid' });
+    });
+  });
+
+  describe('sucesso (serviço de ativação concluído)', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    function activationSucceeds() {
+      return vi.spyOn(accountActivationGateway, 'activateTeacherAccount').mockResolvedValue();
+    }
+
+    it('só confirma depois da ativação, consome o convite e leva ao login', async () => {
+      let finishActivation: () => void = () => {};
+      const activate = vi
+        .spyOn(accountActivationGateway, 'activateTeacherAccount')
+        .mockImplementation(() => new Promise<void>((resolve) => (finishActivation = resolve)));
       const { user, submit, password, confirmation, token, router } = await openInvite();
       await user.type(password(), SECRET);
       await user.type(confirmation(), SECRET);
       await submit();
 
+      // Enquanto a ativação não termina: nada de sucesso e convite ainda pendente.
+      expect(screen.getByRole('button', { name: 'Criando…' })).toBeDisabled();
+      expect(screen.queryByText('Senha criada com sucesso!')).not.toBeInTheDocument();
+      expect(await lookupInvite(token)).toMatchObject({ status: 'valid' });
+      expect(activate).toHaveBeenCalledWith(
+        expect.objectContaining({ token, teacherId: 't01', email: ana.email, password: SECRET }),
+      );
+
+      finishActivation();
       const status = await screen.findByRole('status');
-      await waitFor(() => expect(status).toHaveTextContent('Senha criada nesta demonstração.'));
-      expect(status).toHaveTextContent(/a senha não foi salva/);
-      expect(status).toHaveTextContent(/ainda não foi ativado/);
+      await waitFor(() => expect(status).toHaveTextContent('Senha criada com sucesso!'));
       expect(screen.queryByLabelText('Senha:')).not.toBeInTheDocument();
       const goToLogin = screen.getByRole('button', { name: 'Ir para o login' });
-      expect(goToLogin).toHaveFocus();
+      await waitFor(() => expect(goToLogin).toHaveFocus());
+      expect(await lookupInvite(token)).toEqual({ status: 'used' });
 
       // A senha não aparece em nenhum armazenamento nem na URL.
       for (const storage of [localStorage, sessionStorage]) {
@@ -125,14 +195,13 @@ describe('Criar senha (convite)', () => {
         }
       }
       expect(router.state.location.pathname).not.toContain(SECRET);
-      expect(await lookupInvite(token)).toEqual({ status: 'used' });
-      expect(JSON.parse(localStorage.getItem(INVITES_STORAGE_KEY)!)[0].status).toBe('used');
 
       await user.click(goToLogin);
       expect(router.state.location.pathname).toBe('/login');
     });
 
-    it('não concede acesso: sem sessão, as telas internas continuam bloqueadas', async () => {
+    it('não cria sessão: as telas internas continuam bloqueadas', async () => {
+      activationSucceeds();
       const { user, submit, password, confirmation, router } = await openInvite();
       await user.type(password(), SECRET);
       await user.type(confirmation(), SECRET);
@@ -143,7 +212,8 @@ describe('Criar senha (convite)', () => {
       await waitFor(() => expect(router.state.location.pathname).toBe('/login'));
     });
 
-    it('o mesmo link não pode ser usado de novo', async () => {
+    it('o mesmo link não pode ser usado de novo, inclusive após recarregar', async () => {
+      activationSucceeds();
       const first = await openInvite();
       await first.user.type(first.password(), SECRET);
       await first.user.type(first.confirmation(), SECRET);
@@ -154,6 +224,18 @@ describe('Criar senha (convite)', () => {
       renderApp(`/convite/${first.token}`);
       expect(await screen.findByText(/Este convite já foi utilizado\./)).toBeInTheDocument();
       expect(screen.queryByLabelText('Senha:')).not.toBeInTheDocument();
+    });
+
+    it('se o professor for inativado durante o preenchimento, não conclui', async () => {
+      const activate = activationSucceeds();
+      const { user, submit, password, confirmation } = await openInvite();
+      await user.type(password(), SECRET);
+      await user.type(confirmation(), SECRET);
+      await teacherService.update('t01', { status: 'inactive' });
+      await submit();
+      expect(await screen.findByText(/não está mais disponível/)).toBeInTheDocument();
+      expect(activate).not.toHaveBeenCalled();
+      expect(screen.queryByText('Senha criada com sucesso!')).not.toBeInTheDocument();
     });
   });
 
@@ -170,6 +252,37 @@ describe('Criar senha (convite)', () => {
       expect(screen.queryByRole('button', { name: 'Criar senha' })).not.toBeInTheDocument();
       await userEvent.setup().click(screen.getByRole('link', { name: 'Ir para o login' }));
       expect(router.state.location.pathname).toBe('/login');
+    });
+
+    it.each([
+      ['com e-mail divergente', { email: 'outro@profly.test' }],
+      ['inativo', { status: 'inactive' as const }],
+    ])('convite de professor %s mostra que não está disponível', async (_, changes) => {
+      const invite = await getOrCreateInvite(ana);
+      await teacherService.update('t01', changes);
+      renderApp(`/convite/${invite.token}`);
+      expect(await screen.findByRole('alert')).toHaveTextContent(/não está mais disponível/);
+      expect(screen.queryByRole('button', { name: 'Criar senha' })).not.toBeInTheDocument();
+    });
+
+    it('convite de professor inexistente mostra que não está disponível', async () => {
+      await teacherService.list(); // grava os professores fictícios
+      const invite = await getOrCreateInvite(ana);
+      const remaining = JSON.parse(localStorage.getItem('profly:teachers')!).filter(
+        (teacher: { id: string }) => teacher.id !== 't01',
+      );
+      localStorage.setItem('profly:teachers', JSON.stringify(remaining));
+      renderApp(`/convite/${invite.token}`);
+      expect(await screen.findByRole('alert')).toHaveTextContent(/não está mais disponível/);
+    });
+
+    it('convite já utilizado mostra a mensagem própria', async () => {
+      vi.spyOn(accountActivationGateway, 'activateTeacherAccount').mockResolvedValueOnce();
+      const invite = await getOrCreateInvite(ana);
+      await completeInvite(invite.token, SECRET);
+      renderApp(`/convite/${invite.token}`);
+      expect(await screen.findByRole('alert')).toHaveTextContent('Este convite já foi utilizado.');
+      vi.restoreAllMocks();
     });
 
     it('convite de professor inativado deixa de valer', async () => {

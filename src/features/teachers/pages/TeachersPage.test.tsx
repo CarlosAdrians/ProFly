@@ -285,7 +285,10 @@ describe('Professores', () => {
       );
       const link = (field as HTMLInputElement).value;
       expect(field).toHaveAttribute('readonly');
-      expect(within(dialog).getByText(/não é um convite seguro/)).toBeInTheDocument();
+      expect(
+        within(dialog).getByText('Envie o link somente ao professor indicado.'),
+      ).toBeInTheDocument();
+      expect(within(dialog).queryByText(/demonstração/i)).not.toBeInTheDocument();
 
       await user.click(within(dialog).getByRole('button', { name: 'Copiar link' }));
       expect(within(dialog).getByRole('status')).toHaveTextContent('Link copiado.');

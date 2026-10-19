@@ -27,6 +27,7 @@ export async function authenticate(email: string, password: string): Promise<Ses
   return {
     name: account.name,
     email: account.email,
+    role: 'coordinator',
     startedAt: new Date().toISOString(),
   };
 }
