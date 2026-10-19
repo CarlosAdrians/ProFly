@@ -90,6 +90,66 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: 'Entrando…' })).toBeDisabled();
   });
 
+  describe('link Cadastrar?', () => {
+    const expectedMessage =
+      'Olá! Sou professor e gostaria de solicitar meu cadastro no ProFly para ter acesso ao sistema. Como posso prosseguir?';
+
+    function registerLink() {
+      return screen.getByRole('link', { name: /^Cadastrar\?/ });
+    }
+
+    it('aparece logo abaixo do logo, antes do formulário', () => {
+      setup();
+      const logo = screen.getByRole('img', { name: 'UNIFACISA Centro Universitário' });
+      const link = registerLink();
+      const email = screen.getByLabelText('E-mail:');
+      expect(logo.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(link.compareDocumentPosition(email) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(link).toHaveTextContent(/^Cadastrar\?/);
+    });
+
+    it('tem nome acessível que explica o destino', () => {
+      setup();
+      expect(registerLink()).toHaveAccessibleName(
+        'Cadastrar? (solicitar acesso ao coordenador pelo WhatsApp; abre em nova aba)',
+      );
+    });
+
+    it('abre o WhatsApp do coordenador com a mensagem pré-preenchida', () => {
+      setup();
+      const url = new URL(registerLink().getAttribute('href')!);
+      expect(url.origin).toBe('https://wa.me');
+      expect(url.pathname).toBe('/5583986693221');
+      expect(url.searchParams.get('text')).toBe(expectedMessage);
+      expect(registerLink().getAttribute('href')).toBe(
+        `https://wa.me/5583986693221?text=${encodeURIComponent(expectedMessage)}`,
+      );
+    });
+
+    it('abre em nova aba com segurança', () => {
+      setup();
+      expect(registerLink()).toHaveAttribute('target', '_blank');
+      expect(registerLink()).toHaveAttribute('rel', 'noopener noreferrer');
+    });
+
+    it('é alcançável pelo teclado antes dos campos de login', async () => {
+      const { user } = setup();
+      await user.tab();
+      expect(registerLink()).toHaveFocus();
+      await user.tab();
+      expect(screen.getByLabelText('E-mail:')).toHaveFocus();
+    });
+
+    it('não altera o login nem o link de recuperação de senha', () => {
+      setup();
+      expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Esqueceu senha' })).toHaveAttribute(
+        'href',
+        '/esqueceu-senha',
+      );
+    });
+  });
+
   it('navega para Esqueceu senha', async () => {
     const { user, router } = setup();
     await user.click(screen.getByRole('link', { name: 'Esqueceu senha' }));

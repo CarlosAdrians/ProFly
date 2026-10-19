@@ -31,6 +31,30 @@ A sessão fica no `sessionStorage` do navegador e termina ao fechar a aba. As ro
 `/professores` e `/disciplinas` exigem sessão. A recuperação de senha apenas exibe uma mensagem;
 nenhum e-mail é enviado.
 
+## Solicitação de cadastro (WhatsApp)
+
+Na tela de login, o link **“Cadastrar?”** (logo abaixo do logo da UNIFACISA) abre uma conversa no
+WhatsApp com o coordenador (`https://wa.me/5583986693221`), já com a mensagem:
+
+> Olá! Sou professor e gostaria de solicitar meu cadastro no ProFly para ter acesso ao sistema.
+> Como posso prosseguir?
+
+O link `wa.me` funciona no celular (aplicativo) e no desktop (WhatsApp Web ou aplicativo) e abre em
+nova aba. O ProFly não envia nenhum dado; número e mensagem ficam em
+`src/features/auth/registrationRequest.ts`.
+
+### Fluxo futuro (não implementado)
+
+Hoje o cadastro de professores (`src/features/teachers`) guarda apenas dados cadastrais (nome,
+e-mail, contato, área de atuação, carga horária e status), sem conta de acesso, e o único login é
+o do coordenador de demonstração. Quando houver back-end, o fluxo deverá:
+
+1. Permitir ao coordenador criar a **conta de acesso vinculada ao professor** (a partir do
+   cadastro existente, usando o e-mail do professor).
+2. Enviar um **convite seguro** (link de uso único e com validade) para que o **próprio professor
+   defina sua senha**.
+3. Nunca gerar, exibir ou trafegar senhas pelo front-end nem pelo WhatsApp.
+
 ## Professores
 
 Listagem com dados fictícios (`src/mocks/teachers.ts`), pesquisa por nome (sem diferenciar acentos

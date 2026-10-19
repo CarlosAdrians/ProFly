@@ -9,6 +9,7 @@ import { paths, postLoginPath } from '../../../app/paths';
 import { useAuth } from '../session/useAuth';
 import { InvalidCredentialsError } from '../services/authService';
 import { validateEmail, validatePassword } from '../validation';
+import { registrationRequestUrl } from '../registrationRequest';
 import styles from './AuthForm.module.css';
 
 interface LoginErrors {
@@ -61,6 +62,17 @@ export function LoginPage() {
     <AuthLayout variant="split">
       <title>Login | ProFly</title>
       <h1 className="visually-hidden">Acesso ao ProFly</h1>
+      <p className={styles.register}>
+        <a
+          className={styles.link}
+          href={registrationRequestUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Cadastrar? (solicitar acesso ao coordenador pelo WhatsApp; abre em nova aba)"
+        >
+          Cadastrar?
+        </a>
+      </p>
       <form className={styles.form} noValidate onSubmit={handleSubmit}>
         {formError && <Alert variant="error">{formError}</Alert>}
         <TextField

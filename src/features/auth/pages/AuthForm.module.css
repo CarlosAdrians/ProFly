@@ -5,6 +5,13 @@
   gap: var(--space-5);
 }
 
+/* "Cadastrar?" logo abaixo do logo, sem competir com o formulário. */
+.register {
+  display: flex;
+  justify-content: center;
+  margin: calc(var(--space-4) * -1) 0 var(--space-2);
+}
+
 .intro {
   margin: 0;
   color: #333333;
@@ -31,16 +38,13 @@
 }
 
 .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
   color: var(--color-link);
   font-weight: var(--font-weight-bold);
   font-size: 1.0625rem;
   text-underline-offset: 3px;
-}
-
-.link {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--touch-target);
 }
 
 .link:hover {
