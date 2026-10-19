@@ -41,6 +41,20 @@ Validações do cadastro: todos os campos são obrigatórios; e-mail em formato 
 contato com DDD (10 ou 11 dígitos); carga horária inteira entre 1 e 168 horas semanais (limite
 físico, já que o limite institucional ainda não foi definido).
 
+## Disciplinas
+
+Listagem com dados fictícios (`src/mocks/subjects.ts`), pesquisa por nome, cadastro, edição e
+ativação/inativação pelo menu **Opções (⋮)**. Dados no `localStorage` (chave `profly:subjects`).
+
+Regras do cadastro:
+
+- **Nome** e **Código** são obrigatórios; nome com 3 a 100 caracteres.
+- O código é salvo em maiúsculas e aceita de 2 a 20 caracteres (letras sem acento, números, ponto
+  ou hífen).
+- **Sem duplicidade:** não podem existir duas disciplinas — ativas ou inativas — com o mesmo código
+  ou com o mesmo nome. A comparação ignora maiúsculas, acentos e espaços extras. Para reutilizar
+  uma disciplina inativa, reative-a.
+
 ## Scripts
 
 ```bash
