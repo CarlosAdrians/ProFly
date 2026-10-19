@@ -1,5 +1,6 @@
 import { demoCoordinator } from '../../../mocks/coordinator';
 import { simulateLatency } from '../../../services/storage';
+import { getAccount } from '../../account/services/accountService';
 import type { Session } from '../session/types';
 
 export class InvalidCredentialsError extends Error {
@@ -21,9 +22,11 @@ export async function authenticate(email: string, password: string): Promise<Ses
   if (!sameEmail || password !== demoCoordinator.password) {
     throw new InvalidCredentialsError();
   }
+  // Como um back-end faria, a sessão traz o nome atual do perfil (alterado na tela Conta).
+  const account = await getAccount({ email: demoCoordinator.email, name: demoCoordinator.name });
   return {
-    name: demoCoordinator.name,
-    email: demoCoordinator.email,
+    name: account.name,
+    email: account.email,
     startedAt: new Date().toISOString(),
   };
 }

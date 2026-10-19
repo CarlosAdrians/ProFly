@@ -20,7 +20,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   }, []);
 
-  const value = useMemo(() => ({ session, login, logout }), [session, login, logout]);
+  const updateSession = useCallback(
+    (changes: Pick<Session, 'name'>) => {
+      if (!session) return;
+      const next = { ...session, ...changes };
+      writeJson(sessionStorage, SESSION_KEY, next);
+      setSession(next);
+    },
+    [session],
+  );
+
+  const value = useMemo(
+    () => ({ session, login, logout, updateSession }),
+    [session, login, logout, updateSession],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

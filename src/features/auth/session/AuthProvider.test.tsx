@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { demoCoordinator } from '../../../mocks/coordinator';
+import { ACCOUNT_STORAGE_KEY } from '../../account/services/accountService';
 import { AuthProvider } from './AuthProvider';
 import { SESSION_KEY } from './authContext';
 import { useAuth } from './useAuth';
@@ -41,6 +42,31 @@ describe('sessão simulada', () => {
       'E-mail ou senha inválidos.',
     );
     expect(result.current.session).toBeNull();
+  });
+
+  it('atualiza o nome da sessão atual e o persiste no sessionStorage', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await act(() => result.current.login(demoCoordinator.email, demoCoordinator.password));
+    act(() => result.current.updateSession({ name: 'Felipe Araujo Lima' }));
+    expect(result.current.session?.name).toBe('Felipe Araujo Lima');
+    expect(JSON.parse(sessionStorage.getItem(SESSION_KEY)!).name).toBe('Felipe Araujo Lima');
+  });
+
+  it('não cria sessão ao atualizar sem estar autenticado', () => {
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    act(() => result.current.updateSession({ name: 'Ninguém' }));
+    expect(result.current.session).toBeNull();
+    expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
+  });
+
+  it('o login traz o nome salvo no perfil da conta', async () => {
+    localStorage.setItem(
+      ACCOUNT_STORAGE_KEY,
+      JSON.stringify({ email: demoCoordinator.email, name: 'Felipe Araujo Lima' }),
+    );
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await act(() => result.current.login(demoCoordinator.email, demoCoordinator.password));
+    expect(result.current.session?.name).toBe('Felipe Araujo Lima');
   });
 
   it('ignora sessão corrompida no armazenamento', () => {

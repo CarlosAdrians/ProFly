@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { Button } from '../Button/Button';
+import { Card } from '../Card/Card';
+import { PageHeader } from '../PageHeader/PageHeader';
 import { SearchField } from '../SearchField/SearchField';
 import styles from './ListPanel.module.css';
 
@@ -29,15 +31,12 @@ export function ListPanel({
 }: ListPanelProps) {
   return (
     <section className={styles.page} aria-labelledby="list-panel-title">
-      <header className={styles.header}>
-        <h1 id="list-panel-title" className={styles.title}>
-          {title}
-        </h1>
-        <Button className={styles.action} onClick={onAction}>
-          {actionLabel}
-        </Button>
-      </header>
-      <div className={styles.panel}>
+      <PageHeader
+        title={title}
+        titleId="list-panel-title"
+        actions={<Button onClick={onAction}>{actionLabel}</Button>}
+      />
+      <Card className={styles.panel}>
         <SearchField
           label={searchLabel}
           placeholder="Nome"
@@ -49,7 +48,7 @@ export function ListPanel({
           {status}
         </div>
         {children}
-      </div>
+      </Card>
     </section>
   );
 }

@@ -1,11 +1,12 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, Ref } from 'react';
 import styles from './Button.module.css';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'success' | 'danger';
+  variant?: 'primary' | 'secondary' | 'success' | 'danger';
   /** Mostra estado de carregamento e bloqueia novos cliques. */
   loading?: boolean;
   loadingText?: string;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 export function Button({

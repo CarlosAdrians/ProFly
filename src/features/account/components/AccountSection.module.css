@@ -1,0 +1,68 @@
+/* Seção "Dados cadastrais": visualização (lista) e edição (formulário). */
+.view {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.details {
+  flex: 1;
+  margin: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row dt {
+  color: var(--color-text-muted);
+  font-size: var(--label-font-size);
+}
+
+.row dd {
+  margin: 0;
+  font-weight: var(--font-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--form-gap);
+  max-width: 560px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: calc(var(--form-actions-gap) - var(--form-gap));
+}
+
+@media (max-width: 600px) {
+  .view {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .details {
+    width: 100%;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  .actions > * {
+    flex: 1;
+  }
+}

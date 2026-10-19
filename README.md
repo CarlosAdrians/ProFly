@@ -32,6 +32,21 @@ A sessão fica no `sessionStorage` do navegador e termina ao fechar a aba. As ro
 `/professores` e `/disciplinas` exigem sessão. A recuperação de senha apenas exibe uma mensagem;
 nenhum e-mail é enviado.
 
+## Conta
+
+Mostra os dados cadastrais disponíveis do usuário autenticado: **Nome completo** (editável),
+**E-mail de acesso** e **Perfil** (somente leitura). As ações **Editar dados**, **Salvar
+alterações** e **Cancelar** alternam entre visualização e edição; o nome é validado
+(obrigatório, 3 a 100 caracteres) antes de salvar. O salvamento é simulado e grava apenas o nome
+no `localStorage` (chave `profly:account`). Senha não é exibida nem editada.
+
+**Sair da conta** encerra a sessão demonstrativa (remove `profly:session` do `sessionStorage`) e
+volta ao login, sem apagar professores, disciplinas ou dados da conta no `localStorage`.
+
+Ainda sem definição (não implementados): contato, área de atuação, carga horária, “sobre mim” e
+foto do usuário (presentes no protótipo), troca de e-mail de acesso e troca de senha — esses dois
+últimos dependem do back-end.
+
 ## Solicitação de cadastro (WhatsApp)
 
 Na tela de login, o link **“Cadastrar?”** (logo abaixo do logo da UNIFACISA) abre uma conversa no
