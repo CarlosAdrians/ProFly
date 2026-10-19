@@ -1,0 +1,62 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.photo {
+  flex: 0 0 50%;
+  background: url('/images/campus.jpg') center / cover no-repeat;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+}
+
+.split .content {
+  background: var(--color-blue-700);
+}
+
+.backdrop {
+  position: relative;
+  background: url('/images/campus.jpg') center / cover no-repeat;
+}
+
+.backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.backdrop .content {
+  position: relative;
+}
+
+.card {
+  width: 100%;
+  max-width: 512px;
+  padding: var(--space-6) var(--space-7) var(--space-7);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  box-shadow: var(--shadow-card);
+}
+
+.logo {
+  width: min(346px, 100%);
+  margin: 0 auto var(--space-6);
+}
+
+@media (max-width: 768px) {
+  .photo {
+    display: none;
+  }
+
+  .card {
+    padding: var(--space-5) var(--space-4) var(--space-6);
+  }
+}

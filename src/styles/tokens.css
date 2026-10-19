@@ -1,0 +1,79 @@
+/*
+ * Tokens visuais extraídos do protótipo (Figma / PDFs em docs/prototipos).
+ * Alterações de identidade visual devem ser feitas aqui.
+ */
+:root {
+  /* Cores — marca */
+  --color-navy-900: #00026e; /* botão primário, faixa dos campos */
+  --color-navy-800: #040072; /* topo do gradiente das telas internas */
+  --color-blue-700: #0003a6; /* fundo do login */
+  --color-blue-600: #0700d4; /* base do gradiente */
+  --color-sidebar-top: #000291;
+
+  /* Cores — superfícies */
+  --color-white: #ffffff;
+  --color-surface: #f1f1f1; /* painel de conteúdo e fundo dos campos */
+  --color-surface-active: #e8e8e8; /* item ativo do menu */
+  --color-border: #242424;
+  --color-text: #000000;
+  --color-text-muted: #4a4a4a;
+  --color-text-inverse: #ffffff;
+
+  /* Cores — feedback */
+  --color-success: #15880a; /* "+ Novo" e status Ativo */
+  --color-danger: #b30303; /* Sair */
+  --color-avatar: #24b5d0;
+  --color-link: #0000ee;
+  --color-focus: #ffbf00;
+
+  /* Gradientes */
+  --gradient-app: linear-gradient(
+    180deg,
+    var(--color-navy-800) 0%,
+    var(--color-navy-800) 45%,
+    var(--color-blue-600) 100%
+  );
+  --gradient-sidebar: linear-gradient(
+    180deg,
+    var(--color-sidebar-top) 0%,
+    var(--color-blue-600) 100%
+  );
+
+  /* Tipografia */
+  --font-family:
+    'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem; /* rótulos e botões (Inter Bold 16) */
+  --font-size-lg: 1.3125rem; /* cabeçalhos e linhas de tabela (21px) */
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2.625rem; /* nome no perfil (42px) */
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Espaçamento */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.5rem;
+  --space-8: 3rem;
+
+  /* Bordas e sombras */
+  --radius-sm: 0.5rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem; /* cards e campos */
+  --radius-pill: 999px;
+  --shadow-field: 0 4px 10px rgba(0, 0, 0, 0.15);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.18);
+
+  /* Layout */
+  --sidebar-width: 100px;
+  --topbar-height: 64px;
+  --field-height: 60px;
+  --field-accent-width: 6px;
+  --content-max-width: 1180px;
+  --breakpoint-mobile: 768px; /* referência; media queries usam o valor literal */
+}
