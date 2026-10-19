@@ -1,0 +1,16 @@
+/* Largura das colunas próxima ao protótipo (avatar, nome, e-mail, área, carga, status, opções). */
+.table th:first-child,
+.table td:first-child {
+  width: 84px;
+}
+
+.table th:nth-child(6),
+.table th:nth-child(7) {
+  width: 96px;
+}
+
+@media (max-width: 900px) {
+  .table td:first-child {
+    justify-content: flex-start;
+  }
+}

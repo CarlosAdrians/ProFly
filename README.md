@@ -31,6 +31,16 @@ A sessão fica no `sessionStorage` do navegador e termina ao fechar a aba. As ro
 `/professores` e `/disciplinas` exigem sessão. A recuperação de senha apenas exibe uma mensagem;
 nenhum e-mail é enviado.
 
+## Professores
+
+Listagem com dados fictícios (`src/mocks/teachers.ts`), pesquisa por nome (sem diferenciar acentos
+e maiúsculas), cadastro, edição e ativação/inativação pelo menu **Opções (⋮)**. Os dados ficam no
+`localStorage` (chave `profly:teachers`); para voltar aos dados iniciais, apague essa chave.
+
+Validações do cadastro: todos os campos são obrigatórios; e-mail em formato válido e sem repetição;
+contato com DDD (10 ou 11 dígitos); carga horária inteira entre 1 e 168 horas semanais (limite
+físico, já que o limite institucional ainda não foi definido).
+
 ## Scripts
 
 ```bash

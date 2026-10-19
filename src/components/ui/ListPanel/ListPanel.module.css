@@ -1,0 +1,44 @@
+.panel {
+  position: relative;
+  max-width: var(--content-max-width);
+  margin: var(--space-8) auto 0;
+  padding: var(--space-8) var(--space-4) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+/* "+ Novo …" sobreposto à borda superior do painel, como no protótipo. */
+.action {
+  position: absolute;
+  top: -28px;
+  right: 0;
+  min-width: 205px;
+  min-height: 55px;
+  font-size: 1.125rem;
+}
+
+.search {
+  margin-bottom: var(--space-6);
+}
+
+.status:not(:empty) {
+  margin-bottom: var(--space-4);
+}
+
+@media (max-width: 768px) {
+  .panel {
+    margin-top: 0;
+    padding-top: var(--space-4);
+  }
+
+  .action {
+    position: static;
+    width: 100%;
+    margin-bottom: var(--space-4);
+  }
+
+  .search {
+    max-width: none;
+    margin-bottom: var(--space-4);
+  }
+}
