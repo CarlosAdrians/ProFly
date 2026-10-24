@@ -18,7 +18,8 @@
     "test": "pnpm test:unit",
     "test:unit": "node --import tsx --test test/unit.test.ts",
     "test:integration": "node --import tsx --test --test-concurrency=1 test/integration.test.ts",
-    "openapi": "tsx scripts/export-openapi.ts"
+    "openapi": "tsx scripts/export-openapi.ts",
+    "create-admin": "node --env-file-if-exists=.env --import tsx scripts/create-admin.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.0",

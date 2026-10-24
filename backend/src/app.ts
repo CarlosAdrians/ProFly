@@ -9,8 +9,15 @@ import { randomUUID } from 'node:crypto';
 import type { Config } from './config.js';
 import type { Database } from './database.js';
 import { AppError, errorResponse } from './shared/errors.js';
+import { IdentityService } from './identity/service.js';
+import { identityRoutes } from './identity/routes.js';
+import type { Notifications } from './identity/models.js';
 
-export async function buildApp(config: Config, database: Database) {
+export async function buildApp(
+  config: Config,
+  database: Database,
+  options: { notifications?: Notifications } = {},
+) {
   const app = Fastify({
     logger: false,
     bodyLimit: 64 * 1024,
@@ -46,5 +53,6 @@ export async function buildApp(config: Config, database: Database) {
     return { status: 'ready' };
   });
   app.get('/openapi.json', { schema: { hide: true } }, async () => app.swagger());
+  identityRoutes(app, new IdentityService(database, config, options.notifications));
   return app;
 }

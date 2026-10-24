@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { z } from 'zod';
 import { loadConfig } from '../src/config.js';
 import { AppError, errorResponse, parse } from '../src/shared/errors.js';
+import { hashPassword, token, tokenHash, verifyPassword } from '../src/shared/crypto.js';
 
 const env = {
   NODE_ENV: 'test',
@@ -47,4 +48,16 @@ test('CASE-051/052: erros estruturados nao expoem segredos nem anunciam sucesso'
   } catch (error) {
     assert.ok(errorResponse(error, 'r').body.error.fieldErrors?.name);
   }
+});
+
+test('CASE-001: senha usa derivacao com sal aleatorio e verificacao real', async () => {
+  const encoded = await hashPassword('ExampleTest2026');
+  assert.ok(!encoded.includes('ExampleTest2026'));
+  assert.equal(await verifyPassword('ExampleTest2026', encoded), true);
+  assert.equal(await verifyPassword('OtherTest2026', encoded), false);
+  assert.equal(await verifyPassword('ExampleTest2026'), false);
+  const raw = token();
+  assert.match(raw, /^[a-f0-9]{64}$/);
+  assert.notEqual(tokenHash(raw), raw);
+  assert.notEqual(raw, token());
 });
