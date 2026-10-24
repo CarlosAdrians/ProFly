@@ -1,6 +1,8 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderApp } from '../../../test/renderApp';
+import * as authService from '../services/authService';
+import { vi } from 'vitest';
 
 function setup() {
   const user = userEvent.setup();
@@ -16,7 +18,8 @@ function setup() {
 describe('ForgotPasswordPage', () => {
   it('exibe os elementos do protótipo', () => {
     setup();
-    expect(screen.getByText('Não entre em pânico, estamos aqui para ajudar.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Recuperar senha', level: 1 })).toBeInTheDocument();
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
     expect(screen.getByLabelText('E-mail:')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Enviar' })).toBeInTheDocument();
   });
@@ -36,11 +39,9 @@ describe('ForgotPasswordPage', () => {
     await user.type(email(), 'professor@profly.test');
     await submit();
     expect(screen.getByRole('button', { name: 'Enviando…' })).toBeDisabled();
-    expect(
-      await screen.findByText(/receberá as instruções para redefinir a senha\./),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/simula/i)).not.toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('professor@profly.test');
+    expect(await screen.findByText(/Nenhuma mensagem foi enviada/)).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(/ainda não está disponível/);
+    expect(screen.getByLabelText('E-mail:')).toHaveValue('professor@profly.test');
     expect(screen.getByRole('button', { name: 'Enviar' })).toBeEnabled();
   });
 
@@ -48,5 +49,17 @@ describe('ForgotPasswordPage', () => {
     const { user, router } = setup();
     await user.click(screen.getByRole('link', { name: 'Voltar ao login' }));
     expect(router.state.location.pathname).toBe('/login');
+  });
+  it('trata falha do servico, preserva o e-mail e permite tentar novamente', async () => {
+    const failure = vi
+      .spyOn(authService, 'requestPasswordReset')
+      .mockRejectedValueOnce(new Error('offline'));
+    const { user, email, submit } = setup();
+    await user.type(email(), 'professor@profly.test');
+    await submit();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível solicitar');
+    expect(email()).toHaveValue('professor@profly.test');
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeEnabled();
+    failure.mockRestore();
   });
 });

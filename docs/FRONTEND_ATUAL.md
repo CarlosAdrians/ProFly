@@ -6,11 +6,12 @@ Atualizado em 24/10/2026. A interface React amplia a base institucional azul e p
 
 | Rota | Acesso e comportamento |
 | --- | --- |
-| `/login` | Login simulado e link interno Cadastrar. |
+| `/login` | Login demonstrativo, marca institucional e link interno Cadastrar, sem seletor de tema. |
+| `/esqueceu-senha` | Validação de e-mail e retorno explícito de envio indisponível, sem simular mensagem enviada. |
 | `/cadastro` | Cadastro do próprio professor em quatro etapas. |
 | `/termos-de-uso`, `/privacidade` | Minutas públicas, também disponíveis no cadastro sem perder os campos. |
-| `/inicio` | Professor: resumo acadêmico, disponibilidade por dia, próximos passos e solicitações por curso. |
-| `/disponibilidade` | Professor: edição de intervalos semanais e dedicação pretendida. |
+| `/inicio` | Professor: agenda, histórico ainda sem ocorrências, horários pretendidos e formação declarada. Solicitações recolhidas, salvo quando há ajustes solicitados. |
+| `/disponibilidade` | Professor: consulta semanal, edição explícita dos períodos pretendidos e ligação com o calendário. |
 | `/configuracoes` | Ambos: tema, visualização/turno inicial e exibição de feriados. |
 | `/conta` | Ambos: nome, e-mail, telefone e foto; papel permanece protegido na interface. |
 | `/professores` | Coordenador: vínculos, visualização do perfil e análise de solicitações por curso. |
@@ -41,6 +42,8 @@ São recusados conflitos de professor entre cursos e de turma no mesmo curso, da
 
 O professor abre o mês e consulta feriados. Sua escala não exibe rascunhos da coordenação. Sem publicação implementada, há um estado explícito de aulas ainda não publicadas; nenhum histórico ou encontro é inventado.
 
+Horários pretendidos podem aparecer no mês, semana e dia, com identificação própria e aparência diferente de aula atribuída. A ligação da página de horários abre a semana com essa opção ativa. Preferências que atravessam turnos são recortadas visualmente no limite de cada turno, sem alterar o registro. São declarações semanais atuais, sem comprovar disponibilidade histórica ou cancelar feriados. O aviso de feriados fica depois da grade.
+
 ## Feriados e aparência
 
 A [BrasilAPI](https://brasilapi.com.br/docs#tag/Feriados-Nacionais) é consultada por ano, sem credenciais ou dados de perfil. A resposta é validada e guardada por até 24 horas. Se a consulta falhar, a tela informa que está indisponível e distingue cache antigo de lista ainda não carregada. Carnaval, Corpus Christi e outras datas fora da lista civil fixa recebem Confirmar localmente. A API não define o calendário letivo da faculdade.
@@ -55,15 +58,21 @@ O aviso de feriados reúne cartões com dia, nome e abrangência. Fontes, atuali
 
 Configurações permite escolher tema claro, escuro ou do sistema, visualização e turno iniciais do calendário, além de mostrar/ocultar feriados. As preferências do calendário são salvas por conta neste navegador; a aparência é compartilhada pelo dispositivo. Ocultar feriados também evita consultar o provedor enquanto a opção estiver desligada. Nada disso muda a disponibilidade acadêmica do professor.
 
-Minha disponibilidade mostra a semana completa e permite adicionar/remover intervalos e alterar as horas pretendidas. Alterações ficam em edição até Salvar disponibilidade. Sobreposição, ausência de intervalos, dedicação inválida, versão obsoleta e falha de armazenamento são recusadas. Os vínculos e decisões por curso são preservados; editar disponibilidade não publica nem redistribui aulas. Edições abertas são preservadas quando o perfil muda em outra tela, com aviso para conferir os dados salvos.
+Horários pretendidos abre na consulta da semana. Atualizar horários pretendidos inicia uma edição para incluir/remover períodos e alterar as horas pretendidas. Alterações ficam em edição até Salvar disponibilidade; Cancelar edição restaura os dados salvos. Sobreposição, ausência de intervalos, dedicação inválida, versão obsoleta e falha de armazenamento são recusadas. Os vínculos e decisões por curso são preservados; editar disponibilidade não publica nem redistribui aulas. Edições abertas são preservadas quando o perfil muda em outra tela, com aviso para conferir os dados salvos.
 
 Disciplinas mantém o catálogo demonstrativo de Direito, com pesquisa por nome/código e filtros Todas/Ativas/Inativas. Códigos são imutáveis. A gravação agora falha explicitamente quando o armazenamento não está disponível e não substitui catálogo corrompido por exemplos.
 
 Os modais têm nome acessível, foco inicial quando indicado, retorno do foco ao acionador e controles bloqueados durante o salvamento. Clicar no conteúdo não fecha o diálogo. Erros de cadastro preservam os campos e permitem tentar novamente. As ações usam nomes de operação e cancelamento claros; em telas estreitas, os diálogos e ações se reorganizam.
 
+## Entrada e início docente
+
+Login e recuperação usam uma composição institucional, sem seletor de tema. A foto existente tem dimensões explícitas e exibição limitada à resolução de origem (399 × 501), sem ampliá-la para metade de telas grandes. O escudo da UNIFACISA também identifica a guia. O início docente foi revisto sem bloco de apresentação nem contadores de perfil: agenda, histórico, formação e preferências têm prioridade. Formação declarada não significa certificado anexado; documentos ainda não estão disponíveis na interface.
+
 ## Persistência e limites
 
 Chaves locais: `profly:demo:registrations:v1`, `profly:demo:photos:v1`, `profly:demo:planning:v1`, `profly:account`, `profly:theme`, `profly:preferences:v1:<email>`, `profly:holidays:v1:<ano>` e sessão `profly:session`. Os catálogos originais utilizam `profly:teachers` e `profly:subjects`. Limpar os dados do site remove esses registros.
+
+A demonstração só abre em hosts locais exatos. Os limites e controles verificados estão em [SEGURANCA.md](SEGURANCA.md).
 
 **A interface não está integrada à API/MongoDB.** O servidor possui autenticação, autorização por curso, perfis e catálogo reais, descritos em [backend/README.md](../backend/README.md). O envio de e-mail, motor de elegibilidade/score, publicação, atestados e histórico ainda não estão implementados. Minutas de termos e privacidade precisam de revisão e identificação do controlador institucional antes de uso real.
 

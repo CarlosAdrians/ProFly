@@ -60,3 +60,17 @@ textarea {
     transition-duration: 0.01ms !important;
   }
 }
+.environmentNotice {
+  max-width: 520px;
+  margin: 15vh auto;
+  padding: 28px;
+  color: var(--color-text);
+}
+.environmentNotice h1 {
+  font-size: 1.3rem;
+}
+.environmentNotice p {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.8;
+}

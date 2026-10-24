@@ -16,7 +16,7 @@ export class InvalidCredentialsError extends Error {
  * Autenticação simulada: compara com o coordenador fictício.
  * ATENÇÃO: apenas demonstrativa e NÃO segura para produção — a credencial fica no
  * código do navegador e a sessão não é assinada. Substituir pela autenticação do
- * back-end quando ela existir.
+ * back-end existente antes de disponibilizar acesso institucional.
  */
 export async function authenticate(email: string, password: string): Promise<Session> {
   await simulateLatency();
@@ -46,7 +46,8 @@ export async function authenticate(email: string, password: string): Promise<Ses
 }
 
 /** Recuperação de senha simulada: nenhum e-mail é enviado. */
-export async function requestPasswordReset(email: string): Promise<void> {
+export async function requestPasswordReset(email: string): Promise<{ status: 'unavailable' }> {
   void email;
   await simulateLatency();
+  return { status: 'unavailable' };
 }

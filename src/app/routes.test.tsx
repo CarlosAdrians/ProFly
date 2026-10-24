@@ -19,7 +19,7 @@ describe('rotas', () => {
       const { router } = renderApp(path);
       expect(router.state.location.pathname).toBe('/login');
       expect(
-        screen.getByRole('heading', { level: 1, name: 'Acesso ao ProFly' }),
+        screen.getByRole('heading', { level: 1, name: 'Entrar na minha conta' }),
       ).toBeInTheDocument();
     },
   );

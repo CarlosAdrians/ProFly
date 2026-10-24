@@ -17,3 +17,9 @@
   background: var(--color-success-bg);
   color: var(--color-success-text);
 }
+.info {
+  border-color: var(--color-primary);
+  background: var(--color-accent-bg);
+  color: var(--color-link);
+  line-height: 1.6;
+}

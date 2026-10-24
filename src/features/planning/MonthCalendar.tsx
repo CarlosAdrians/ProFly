@@ -3,6 +3,9 @@ import { type Plan } from './service';
 import { useInstitutionToday } from './institutionDate';
 import type { Holiday } from './holidays';
 import styles from './MonthCalendar.module.css';
+import type { Availability } from '../registration/model';
+import type { Shift } from './service';
+import { intendedWindows } from './availabilityCalendar';
 
 export function MonthCalendar({
   date,
@@ -10,12 +13,16 @@ export function MonthCalendar({
   holidays,
   onDay,
   onPlan,
+  availability = [],
+  shift = 'night',
 }: {
   date: string;
   plans: Plan[];
   holidays: Holiday[];
   onDay: (date: string) => void;
   onPlan: (plan: Plan) => void;
+  availability?: Availability[];
+  shift?: Shift;
 }) {
   const days = monthDays(date);
   const today = useInstitutionToday();
@@ -47,11 +54,13 @@ export function MonthCalendar({
                   key={day}
                   data-outside={day.slice(0, 7) !== date.slice(0, 7)}
                   data-selected={day === date}
+                  data-weekend={[0, 6].includes(new Date(`${day}T12:00:00`).getDay())}
                 >
                   <button
                     type="button"
                     className={styles.dayNumber}
                     data-today={day === today}
+                    aria-current={day === today ? 'date' : undefined}
                     onClick={() => onDay(day)}
                     aria-label={`Ver dia ${new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${day}T12:00:00`))}`}
                   >
@@ -86,6 +95,14 @@ export function MonthCalendar({
                       <strong>{plan.subject}</strong>
                       <small>{plan.teacherName}</small>
                     </button>
+                  ))}
+                  {intendedWindows(availability, day, shift).map((item) => (
+                    <div className={styles.intended} key={item.id}>
+                      <span>Pretendido</span>
+                      <strong>
+                        {item.start}–{item.end}
+                      </strong>
+                    </div>
                   ))}
                 </div>
               );

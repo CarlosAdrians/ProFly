@@ -1,7 +1,9 @@
 import { HolidayNotice } from './HolidayNotice';
 import { usePreferences } from '../settings/preferences';
 import { useState, type DragEvent } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
+import { useDemoProfiles } from '../registration/demoService';
+import { TeacherSchedule } from './TeacherSchedule';
 import { PageHeader } from '../../components/ui/PageHeader/PageHeader';
 import { Button } from '../../components/ui/Button/Button';
 import { Alert } from '../../components/ui/Alert/Alert';
@@ -62,10 +64,18 @@ export function CalendarPage() {
   const today = useInstitutionToday();
   const { session } = useAuth();
   const coordinator = session?.role === 'coordinator';
+  const [searchParams] = useSearchParams();
+  const { profiles } = useDemoProfiles();
+  const availability = profiles.find((item) => item.email === session?.email)?.availability ?? [];
+  const [showIntended, setShowIntended] = useState(
+    !coordinator && searchParams.get('horarios') === 'pretendidos',
+  );
   const preferences = usePreferences(session?.email ?? '', !coordinator);
   const { plans, error: readError } = usePlans();
   const [date, setDate] = useState(() => today);
-  const [view, setView] = useState<'month' | 'week' | 'day'>(preferences.view);
+  const [view, setView] = useState<'month' | 'week' | 'day'>(
+    showIntended ? 'week' : preferences.view,
+  );
   const holidays = useHolidays(Number(date.slice(0, 4)), preferences.showHolidays);
   const [shift, setShift] = useState<Shift>(preferences.shift);
   const [courseId, setCourseId] = useState('direito');
@@ -224,6 +234,19 @@ export function CalendarPage() {
           </button>
         </div>
       </div>
+      {!coordinator && (
+        <div className={styles.teacherLegend}>
+          <label>
+            <input
+              type="checkbox"
+              checked={showIntended}
+              onChange={(event) => setShowIntended(event.target.checked)}
+            />{' '}
+            Mostrar horários pretendidos
+          </label>
+          <span>Preferências declaradas · aulas publicadas aparecem separadamente</span>
+        </div>
+      )}
       {view === 'month' && (
         <MonthCalendar
           date={date}
@@ -234,29 +257,27 @@ export function CalendarPage() {
             setView('day');
           }}
           onPlan={(plan) => open({ plan })}
+          availability={!coordinator && showIntended ? availability : []}
+          shift={shift}
         />
       )}
-      {preferences.showHolidays && (
-        <HolidayNotice
-          items={holidays.items.filter((item) =>
-            view === 'month'
-              ? item.date.slice(0, 7) === date.slice(0, 7)
-              : dates.includes(item.date),
-          )}
-          status={holidays.status}
-          onRefresh={holidays.refresh}
-        />
-      )}
+
       {!coordinator ? (
-        <div className={styles.empty}>
-          <img src="/images/icons/calendario.png" alt="" />
-          <h2>Sua escala ainda não foi publicada</h2>
-          <p>
-            As aulas aparecerão aqui depois da publicação pela coordenação. Você pode acompanhar
-            suas solicitações no início.
+        view !== 'month' ? (
+          <TeacherSchedule
+            dates={dates}
+            availability={availability}
+            shift={shift}
+            showIntended={showIntended}
+          />
+        ) : (
+          <p className={styles.gradeNote}>
+            Sua escala ainda não foi publicada.{' '}
+            {showIntended
+              ? 'Os períodos marcados como pretendidos são preferências semanais, sem atribuição de disciplina.'
+              : 'Ative os horários pretendidos para consultar suas preferências no mês.'}
           </p>
-          <Link to="/inicio">Ver minhas solicitações</Link>
-        </div>
+        )
       ) : view !== 'month' ? (
         <>
           <div className={styles.calendarLayout}>
@@ -387,6 +408,17 @@ export function CalendarPage() {
           Cartões do turno selecionado · rascunhos deste curso. Clique no dia para abrir a grade e
           alocar; clique no cartão para editar.
         </p>
+      )}
+      {preferences.showHolidays && (
+        <HolidayNotice
+          items={holidays.items.filter((item) =>
+            view === 'month'
+              ? item.date.slice(0, 7) === date.slice(0, 7)
+              : dates.includes(item.date),
+          )}
+          status={holidays.status}
+          onRefresh={holidays.refresh}
+        />
       )}
       <PlanModal
         editor={editor}

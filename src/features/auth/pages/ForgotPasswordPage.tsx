@@ -15,29 +15,40 @@ export function ForgotPasswordPage() {
   const [error, setError] = useState<string>();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [sentTo, setSentTo] = useState<string>();
+  const [result, setResult] = useState('');
+  const [formError, setFormError] = useState('');
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) return;
     setSubmitted(true);
-    setSentTo(undefined);
+    setResult('');
+    setFormError('');
 
     const nextError = validateEmail(email);
     setError(nextError);
     if (nextError) return emailRef.current?.focus();
 
     setLoading(true);
-    await requestPasswordReset(email);
-    setLoading(false);
-    setSentTo(email.trim());
+    try {
+      await requestPasswordReset(email);
+      setResult(
+        'A recuperação por e-mail ainda não está disponível nesta demonstração. Nenhuma mensagem foi enviada e sua senha permanece igual.',
+      );
+    } catch {
+      setFormError('Não foi possível solicitar a recuperação. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <AuthLayout variant="backdrop">
       <title>Esqueceu senha | ProFly</title>
-      <h1 className="visually-hidden">Recuperar senha</h1>
+      <h1 className={styles.title}>Recuperar senha</h1>
       <form className={styles.form} noValidate onSubmit={handleSubmit}>
-        <p className={styles.intro}>Não entre em pânico, estamos aqui para ajudar.</p>
+        {formError && <Alert variant="error">{formError}</Alert>}
+        <p className={styles.intro}>Informe o e-mail usado na sua conta.</p>
         <div>
           <TextField
             ref={emailRef}
@@ -54,12 +65,7 @@ export function ForgotPasswordPage() {
             }}
           />
           <div role="status" className={styles.status}>
-            {sentTo && (
-              <Alert variant="success">
-                Se o e-mail {sentTo} estiver cadastrado, você receberá as instruções para redefinir
-                a senha.
-              </Alert>
-            )}
+            {result && <Alert variant="info">{result}</Alert>}
           </div>
         </div>
         <div className={`${styles.actions} ${styles.actionsCentered}`}>

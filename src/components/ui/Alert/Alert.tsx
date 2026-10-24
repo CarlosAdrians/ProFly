@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import styles from './Alert.module.css';
 
 interface AlertProps {
-  variant: 'error' | 'success';
+  variant: 'error' | 'success' | 'info';
   children: ReactNode;
 }
 

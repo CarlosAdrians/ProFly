@@ -191,6 +191,8 @@ node scripts/check-docs.mjs
 
 Esse comando confere estrutura dos documentos, links locais e referências da matriz. Ele não executa o back-end nem valida os comportamentos descritos. A configuração e os comandos do servidor estão em [backend/README.md](backend/README.md).
 
+A revisão de segurança, a separação entre demonstração e acesso institucional e os controles verificados estão em [Segurança do ambiente](docs/SEGURANCA.md).
+
 ## Organização do repositório
 
 ```text
