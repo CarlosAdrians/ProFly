@@ -36,9 +36,18 @@ export async function buildApp(
   });
   await app.register(swagger, { openapi: { info: { title: 'ProFly API', version: '0.1.0' } } });
 
-  app.addHook('onRequest', async (request) => {
+  app.addHook('onRequest', async (request, reply) => {
+    // Session tokens and private academic data must not be cached, including error responses.
+    if (request.url.startsWith('/api/')) reply.header('Cache-Control', 'no-store');
+    reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     const origin = request.headers.origin;
     if (origin && !config.origins.includes(origin))
+      throw new AppError(403, 'ORIGIN_NOT_ALLOWED', 'Origem nao permitida.');
+    if (
+      !['GET', 'HEAD', 'OPTIONS'].includes(request.method) &&
+      request.headers['sec-fetch-site'] === 'cross-site' &&
+      !origin
+    )
       throw new AppError(403, 'ORIGIN_NOT_ALLOWED', 'Origem nao permitida.');
   });
   app.setErrorHandler((error, request, reply) => {

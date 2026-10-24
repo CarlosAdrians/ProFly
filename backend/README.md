@@ -142,3 +142,7 @@ As operacoes consistentes entre documentos usam a fronteira de transacao do [dri
 Scripts de dependencias sao permitidos individualmente em pnpm-workspace.yaml: esbuild para a ferramenta TypeScript; o download automatico do MongoDB no postinstall fica desabilitado, sendo feito somente na integracao explicita. A politica segue o [controle de builds do pnpm](https://github.com/pnpm/pnpm.io/blob/main/docs/settings/build.md).
 
 O estado do projeto e dos testes esta em [STATUS.md](../docs/validation/STATUS.md). As regras de produto permanecem na [spec](../docs/specs/BACKEND_V1.md).
+
+## Proteção das respostas privadas
+
+Respostas de /api/ recebem Cache-Control: no-store, incluindo erros. Origem fora de ALLOWED_ORIGINS é recusada; comandos com sec-fetch-site cross-site sem Origin também são rejeitados. A proteção CSRF continua obrigatória nas alterações autenticadas. Permissions-Policy desabilita câmera, microfone e geolocalização nesta API. Esses controles complementam cookie, validação e autorização existentes. Evidências e limites de implantação: [Segurança do ambiente](../docs/SEGURANCA.md).

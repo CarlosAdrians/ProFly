@@ -158,3 +158,54 @@ test('CASE-019/020: configuracao academica nao presume pesos, pertinencia ou gra
     AppError,
   );
 });
+
+// CASE-006/049/051: HTTP boundary checks without opening a database connection.
+test('respostas privadas nao sao armazenaveis e origens hostis sao recusadas antes do banco', async () => {
+  const { buildApp } = await import('../src/app.js');
+  const { Database } = await import('../src/database.js');
+  const config = loadConfig(env);
+  const database = new Database(config);
+  const app = await buildApp(config, database);
+  try {
+    const privateResponse = await app.inject('/api/v1/auth/session');
+    assert.equal(privateResponse.statusCode, 401);
+    assert.equal(privateResponse.headers['cache-control'], 'no-store');
+    assert.equal(privateResponse.headers['x-content-type-options'], 'nosniff');
+    assert.equal(
+      privateResponse.headers['permissions-policy'],
+      'camera=(), microphone=(), geolocation=()',
+    );
+    const hostile = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      headers: { origin: 'https://hostile.test' },
+      payload: {},
+    });
+    assert.equal(hostile.statusCode, 403);
+    assert.equal(hostile.headers['cache-control'], 'no-store');
+    const crossSite = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      headers: { 'sec-fetch-site': 'cross-site' },
+      payload: {},
+    });
+    assert.equal(crossSite.statusCode, 403);
+    const allowed = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      headers: { origin: 'http://localhost:5173', 'sec-fetch-site': 'cross-site' },
+      payload: {},
+    });
+    assert.equal(allowed.statusCode, 422);
+    assert.equal(allowed.headers['access-control-allow-origin'], 'http://localhost:5173');
+    const serverClient = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: {},
+    });
+    assert.equal(serverClient.statusCode, 422);
+  } finally {
+    await app.close();
+    await database.close();
+  }
+});
