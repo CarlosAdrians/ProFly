@@ -88,7 +88,7 @@ As referências incluem os [protótipos originais](docs/prototipos/README.md), a
 | Camada | Tecnologia / direção |
 | --- | --- |
 | Front-end existente | React, TypeScript, Vite, React Router, CSS Modules e variáveis CSS. |
-| Back-end definido | Node.js. TypeScript e API REST são a proposta de organização técnica. |
+| Back-end implementado | Node.js, TypeScript, Fastify, validação Zod e API REST. |
 | Banco definido | MongoDB, com configuração coordenada por outro integrante do grupo. |
 | Qualidade do front-end | Vitest, Testing Library, ESLint e Prettier já configurados. |
 | Qualidade do back-end | Spec, matriz, checagem de tipos/lint/build e primeiros testes unitários e de integração implementados; cobertura dos módulos ainda em andamento. |
@@ -151,7 +151,8 @@ Atualizado em **24/10/2026**. Repositório: [CarlosAdrians/ProFly](https://githu
 | Administrador e acesso por curso | API de cursos, convites de coordenadores, sessões e revogação implementada; telas administrativas pendentes. |
 | Perfil docente e aprovação de entrada | API de rascunho, versões, solicitação e análise independente por curso implementada; telas pendentes. |
 | Dashboard de professor | Ainda não implementado. |
-| Servidor Node.js e MongoDB | Base HTTP, identidade e cadastro/aprovação implementados. Adaptador de e-mail, catálogo acadêmico e demais módulos pendentes. Veja [backend/README.md](backend/README.md). |
+| Servidor Node.js e MongoDB | Base HTTP, identidade e cadastro/aprovação implementados. Adaptador de e-mail e demais módulos pendentes. Veja [backend/README.md](backend/README.md). |
+| Catálogo acadêmico | API de competências, disciplinas, períodos, turmas e ofertas, com referências, versões e grade configurável. Revisão de planejamento publicado ainda pendente. |
 | Motor de elegibilidade e score | Especificado; implementação e validação institucional pendentes. |
 | Calendário, alocações e publicação | Planejados; ainda não implementados. |
 | Histórico de aulas e atestados | Planejados; ainda não implementados. |

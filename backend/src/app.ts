@@ -13,6 +13,7 @@ import { IdentityService } from './identity/service.js';
 import { identityRoutes } from './identity/routes.js';
 import type { Notifications } from './identity/models.js';
 import { teacherRoutes } from './teachers/routes.js';
+import { academicRoutes } from './academics/routes.js';
 
 export async function buildApp(
   config: Config,
@@ -57,5 +58,6 @@ export async function buildApp(
   const identity = new IdentityService(database, config, options.notifications);
   identityRoutes(app, identity);
   teacherRoutes(app, identity);
+  academicRoutes(app, identity);
   return app;
 }

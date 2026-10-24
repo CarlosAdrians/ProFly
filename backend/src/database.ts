@@ -24,6 +24,14 @@ export class Database {
   }
 
   async ensureIndexes() {
+    await this.db
+      .collection<{ _id: string; version: number }>('guards')
+      .updateOne({ _id: 'academics' }, { $setOnInsert: { version: 0 } }, { upsert: true });
+    await this.db.collection('competencies').createIndex({ code: 1 }, { unique: true });
+    await this.db.collection('periods').createIndex({ code: 1 }, { unique: true });
+    await this.db
+      .collection('offerings')
+      .createIndex({ courseId: 1, periodId: 1, code: 1 }, { unique: true });
     await this.db.collection('users').createIndex({ email: 1 }, { unique: true });
     await this.db.collection('sessions').createIndex({ tokenHash: 1 }, { unique: true });
     await this.db.collection('sessions').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });

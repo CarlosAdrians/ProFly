@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import { id, name } from '../shared/http.js';
+import { date, time } from '../shared/temporal.js';
 
-export const date = z.iso.date();
-export const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const text = z.string().trim().min(2).max(500);
 const ids = z
   .array(id)

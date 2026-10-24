@@ -12,14 +12,15 @@ Atualizado em 24/10/2026. Branch da etapa: feat/backend-institucional.
 | Espacos e conflitos no diff | PASS | git diff --check executado sem erro; repetir no staged antes do commit. |
 | Estrutura do servidor | PASS | TypeScript, Fastify, configuracao validada, driver MongoDB, indices, health checks e contrato OpenAPI implementados. Modulos de negocio pendentes. |
 | Tipos, lint e build da base | PASS | tsc -p tsconfig.check.json, eslint src test scripts e tsc -p tsconfig.json executados no backend. |
-| Testes unitarios da base, identidade e perfil | PASS | 7 testes, 0 falhas, 0 pulados. Configuracao, entradas, erros, credenciais, estados desconhecido/nenhum e limites de disponibilidade. |
-| Integracao MongoDB da base, identidade e perfil | PASS | 20 testes, 0 falhas, 0 pulados; replica set local real MongoDB 7.0.24. HTTP por app.inject, persistencia, tokens/edicoes/decisoes concorrentes, permissoes e solicitacoes por curso. Nao representa navegador integrado. |
+| Testes unitarios da base, identidade, perfil e catalogo | PASS | 8 testes, 0 falhas, 0 pulados. Configuracao, entradas, erros, credenciais, estados desconhecido/nenhum, disponibilidade e configuracao academica. |
+| Integracao MongoDB da base, identidade, perfil e catalogo | PASS | 22 testes, 0 falhas, 0 pulados; replica set local real MongoDB 7.0.24. HTTP por app.inject, persistencia, concorrencia, permissoes, solicitacoes e referencias academicas. Nao representa navegador integrado. |
 | Perfil e aprovacao por curso | PASS | REQ-03/04 e partes de REQ-02/06/12/13/14: CASE-009/010/011/012/013/014/016 e validacao inicial de janelas do CASE-020. Experiencia desconhecida/ausente distinguida no contrato (CASE-015 parcial); motor/score ainda pendentes. |
+| Catalogo academico e integridade inicial | PASS | REQ-05 e partes de REQ-02/06/13/14: CASE-017/018/019/020. Codigos concorrentes, referencias entre cursos/periodos, grade e copias versionadas. Revisao de planejamento publicado ainda pendente. |
 | Autenticacao e autorizacao por curso | PASS | Rotas reais de identidade, cursos e coordenadores verificadas. CASE-001/002/003/004/005/006/008 e partes de 009/013/049/051/053/054/055 exercitados; aprovacao docente e demais partes desses cenarios ainda pendentes. |
 | Envio real de e-mail | NOT_IMPLEMENTED | Porta Notifications testada com mensagens sinteticas; sem adaptador no servidor principal. Fluxos dependentes retornam 503, sem simular envio. |
 | Concorrencia e cenarios adversariais dos modulos | NOT_IMPLEMENTED | Ainda exigem os modulos de negocio; os testes iniciais nao representam a matriz completa. |
 | Build, tipos, lint e testes do front-end | PASS | Vite build, tsc -b --noEmit, eslint . e 174 testes em 20 arquivos passaram. Descoberta Vitest limitada a src para nao coletar suites Node/MongoDB. |
-| Navegacao visual da demonstracao | PASS | Login ficticio, lista de professores, abertura/fechamento do modal conferidos no Chrome local; 3 prints em outputs/prints (fora do repositorio). Sem integracao desta interface com a API. |
+| Navegacao visual da demonstracao | PASS | Login ficticio, listas de professores/disciplinas, abertura/fechamento do modal conferidos no Chrome local; 4 prints em outputs/prints (fora do repositorio). Sem integracao desta interface com a API. |
 
 ## Como registrar as proximas entregas
 
@@ -52,3 +53,13 @@ A integracao inicial encontrou codigo academico ausente nas fixtures de discipli
 Comandos: tsc -p tsconfig.check.json, eslint src test scripts, tsc -p tsconfig.json, node --import tsx scripts/export-openapi.ts, node --import tsx --test test/unit.test.ts e a suite de integracao explicitamente habilitada. O catalogo academico ainda nao tem rotas; referencias sinteticas nos testes nao representam cadastro institucional. Nao ha motor de elegibilidade/score nem interface conectada ao modulo.
 
 Na verificacao da interface, o primeiro Vitest coletou tambem os testes Node do backend e falhou em 2 suites, apesar de os 174 testes da interface passarem. Corrigido em vite.config.ts limitando include a src/**/*.test.{ts,tsx}; repeticao: 20 arquivos e 174 testes aprovados. O back-end continua com comandos proprios e integracao explicitamente habilitada. A instalacao local para visualizar as telas preservou package-lock.json.
+
+## Etapa 4: catalogo academico
+
+Implementados cadastro, listagem paginada e substituicao versionada de competencias, periodos, disciplinas, turmas e ofertas. Criterios e grade podem permanecer incompletos/em rascunho. A aplicacao nao presume pesos oficiais, grade noturna universal nem intervalo padrao. A guarda compartilhada serializa escritas do catalogo com validacoes de referencia do perfil; copias de alteracoes ficam em academicVersions. Dependencias ativas bloqueiam inativacoes/alteracoes que exigem revisao do planejamento.
+
+Verificacoes: 8 unitarios e 22 testes de integracao aprovados, sem falhas/pulos; tipos, lint, build, formatacao e exportacao OpenAPI aprovados. O cadastro de referencias usado pelos testes de perfil passou a acontecer pelas rotas HTTP reais. A concorrencia de codigo preserva exatamente um registro; ofertas com disciplina/turma de outro curso, vigencia fora do periodo ou horario fora de bloco sao recusadas sem persistir oferta invalida.
+
+A primeira execucao expandida chegou ao limite real de tentativas porque todas as pessoas sinteticas compartilhavam o mesmo IP. Os clientes dos testes funcionais foram separados por pessoa; o teste dedicado de abuso continua usando um unico IP e confirma o 429. A protecao da aplicacao nao foi alterada. Nova execucao: 22/22 aprovados.
+
+Limites atuais: motor de elegibilidade/score, carga institucional, alocacao/publicacao, atestados, ocorrencias/historico e integracao das novas telas continuam pendentes. Configuracoes sinteticas REVIEWED validam os mecanismos, sem representar homologacao da faculdade.

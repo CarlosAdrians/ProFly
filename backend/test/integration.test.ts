@@ -30,12 +30,16 @@ const notifications: Notifications = {
     messages.push(message);
   },
 };
+const clientAddresses = new Map<string, string>();
 
 async function loginClient(email: string, password = 'ExampleTest2026') {
+  // Separate synthetic people have separate clients. Dedicated abuse tests keep one IP.
+  if (!clientAddresses.has(email)) clientAddresses.set(email, `10.0.0.${clientAddresses.size + 1}`);
   const response = await app.inject({
     method: 'POST',
     url: '/api/v1/auth/login',
     payload: { email, password },
+    remoteAddress: clientAddresses.get(email),
   });
   assert.equal(response.statusCode, 200, response.body);
   const raw = response.headers['set-cookie'];
@@ -609,19 +613,27 @@ test('administrador inicial nao e sobrescrito nem o ultimo administrador desativ
 
 async function teacherFixture(label: string) {
   const teacher = await registerTeacher(`${label}@profly.test`);
-  const competencyId = randomUUID();
-  const subjectA = randomUUID();
-  const subjectB = randomUUID();
-  // Academic routes belong to the following delivery. These are explicit synthetic references.
-  await database.db
-    .collection<{ _id: string; active: boolean }>('competencies')
-    .insertOne({ _id: competencyId, active: true });
-  await database.db
-    .collection<{ _id: string; code: string; courseId: string; active: boolean }>('subjects')
-    .insertMany([
-      { _id: subjectA, code: `${label}-A`, courseId: courseA, active: true },
-      { _id: subjectB, code: `${label}-B`, courseId: courseB, active: true },
-    ]);
+  const competency = await app.inject({
+    method: 'POST',
+    url: '/api/v1/admin/competencies',
+    headers: adminHeaders,
+    payload: { code: label, name: 'Competencia de teste', active: true },
+  });
+  assert.equal(competency.statusCode, 201, competency.body);
+  const competencyId = competency.json().id as string;
+  const createSubject = (courseId: string) =>
+    app.inject({
+      method: 'POST',
+      url: `/api/v1/courses/${courseId}/subjects`,
+      headers: adminHeaders,
+      payload: { code: label, name: 'Disciplina de teste', active: true, criteria: null },
+    });
+  const firstSubject = await createSubject(courseA);
+  const secondSubject = await createSubject(courseB);
+  assert.equal(firstSubject.statusCode, 201, firstSubject.body);
+  assert.equal(secondSubject.statusCode, 201, secondSubject.body);
+  const subjectA = firstSubject.json().id as string;
+  const subjectB = secondSubject.json().id as string;
   const data: ProfileData = {
     contact: { phone: '+55 83 99999-0000' },
     education: [
@@ -935,4 +947,169 @@ test('CASE-004/005/006: convite docente e analise respeitam escopo e nao aprovam
     },
   });
   assert.equal(decision.statusCode, 404);
+});
+
+test('CASE-017/019: codigo unico, versao e historico academico persistem sob concorrencia', async () => {
+  const url = '/api/v1/admin/competencies';
+  const data = { code: ' concurrent-code ', name: 'Competencia concorrente', active: true };
+  const create = () => app.inject({ method: 'POST', url, headers: adminHeaders, payload: data });
+  const responses = await Promise.all([create(), create()]);
+  assert.deepEqual(responses.map((r) => r.statusCode).sort(), [201, 409]);
+  const record = responses.find((r) => r.statusCode === 201)!.json();
+  assert.equal(record.code, 'CONCURRENT-CODE');
+  const update = await app.inject({
+    method: 'PUT',
+    url: `${url}/${record.id}`,
+    headers: adminHeaders,
+    payload: { expectedVersion: 1, data: { ...data, name: 'Competencia revisada' } },
+  });
+  assert.equal(update.statusCode, 200, update.body);
+  assert.equal(update.json().version, 2);
+  const stale = await app.inject({
+    method: 'PUT',
+    url: `${url}/${record.id}`,
+    headers: adminHeaders,
+    payload: { expectedVersion: 1, data },
+  });
+  assert.equal(stale.statusCode, 409);
+  assert.equal(
+    await database.db.collection('academicVersions').countDocuments({ resourceId: record.id }),
+    2,
+  );
+  const catalog = await app.inject('/api/v1/catalog/competencies?limit=100&offset=0');
+  assert.equal(catalog.statusCode, 200);
+  assert.ok(catalog.json().items.some((i: { id: string }) => i.id === record.id));
+  assert.ok(!catalog.body.includes('changedBy'));
+  assert.equal((await app.inject('/api/v1/catalog/competencies?limit=1000')).statusCode, 422);
+});
+
+test('CASE-018/019/020: ofertas exigem curso, periodo e blocos compativeis e preservam dependencias', async () => {
+  const create = async (url: string, payload: object) => {
+    const result = await app.inject({ method: 'POST', url, headers: adminHeaders, payload });
+    assert.equal(result.statusCode, 201, result.body);
+    return result.json();
+  };
+  const block = { weekday: 1, startsAt: '18:30', endsAt: '19:20', shift: 'NIGHT' };
+  const periodData = {
+    code: '2026-ACADEMIC',
+    name: 'Periodo sintetico',
+    active: true,
+    startsOn: '2026-08-01',
+    endsOn: '2026-12-31',
+    timeZone: 'America/Fortaleza',
+    calendarStatus: 'REVIEWED',
+    blocks: [block, { ...block, startsAt: '19:35', endsAt: '20:25' }],
+  };
+  const period = await create('/api/v1/admin/periods', periodData);
+  const groupData = {
+    code: 'TURMA-TEST',
+    name: 'Turma sintetica',
+    active: true,
+    periodId: period.id,
+  };
+  const groupA = await create(`/api/v1/courses/${courseA}/groups`, groupData);
+  const groupB = await create(`/api/v1/courses/${courseB}/groups`, groupData);
+  const subjectData = {
+    code: 'ACADEMIC-SUBJECT',
+    name: 'Disciplina sintetica',
+    active: true,
+    criteria: null,
+  };
+  const subjectA = await create(`/api/v1/courses/${courseA}/subjects`, subjectData);
+  const subjectB = await create(`/api/v1/courses/${courseB}/subjects`, subjectData);
+  const meeting = {
+    id: randomUUID(),
+    weekday: 1,
+    startsAt: '18:30',
+    endsAt: '19:20',
+    validFrom: '2026-08-01',
+    validUntil: '2026-12-31',
+  };
+  const offering = {
+    code: 'OFFER-TEST',
+    name: 'Oferta sintetica',
+    active: true,
+    periodId: period.id,
+    groupId: groupA.id,
+    subjectId: subjectA.id,
+    meetings: [meeting],
+  };
+  const url = `/api/v1/courses/${courseA}/offerings`;
+  for (const payload of [
+    { ...offering, subjectId: subjectB.id },
+    { ...offering, groupId: groupB.id },
+    { ...offering, meetings: [{ ...meeting, validFrom: '2026-01-01' }] },
+    { ...offering, meetings: [{ ...meeting, startsAt: '18:40' }] },
+    { ...offering, meetings: [{ ...meeting, validFrom: '2026-08-04', validUntil: '2026-08-04' }] },
+  ])
+    assert.equal(
+      (await app.inject({ method: 'POST', url, headers: adminHeaders, payload })).statusCode,
+      422,
+    );
+  assert.equal(await database.db.collection('offerings').countDocuments({ code: 'OFFER-TEST' }), 0);
+  const saved = await create(url, offering);
+  assert.equal(saved.courseId, courseA);
+  assert.equal(
+    (
+      await app.inject({
+        method: 'PUT',
+        url: `/api/v1/admin/periods/${period.id}`,
+        headers: adminHeaders,
+        payload: { expectedVersion: 1, data: periodData },
+      })
+    ).statusCode,
+    409,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        method: 'PUT',
+        url: `/api/v1/courses/${courseA}/subjects/${subjectA.id}`,
+        headers: adminHeaders,
+        payload: { expectedVersion: 1, data: { ...subjectData, active: false } },
+      })
+    ).statusCode,
+    409,
+  );
+  const catalog = await app.inject(`/api/v1/catalog/courses/${courseA}/subjects`);
+  assert.equal(catalog.statusCode, 200);
+  assert.ok(!catalog.body.includes(subjectB.id));
+  const coordinatorInvite = await create('/api/v1/admin/coordinators', {
+    name: 'Coordenador Academico',
+    email: 'academic-coordinator@profly.test',
+    courseIds: [courseA],
+  });
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/invites/accept',
+        payload: { token: coordinatorInvite.inviteToken, password: 'ExampleTest2026' },
+      })
+    ).statusCode,
+    200,
+  );
+  const coordinator = await loginClient('academic-coordinator@profly.test');
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: `/api/v1/courses/${courseB}/subjects`,
+        headers: coordinator,
+        payload: { ...subjectData, code: 'DENIED' },
+      })
+    ).statusCode,
+    404,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/admin/competencies',
+        headers: coordinator,
+        payload: { code: 'DENIED', name: 'Sem permissao', active: true },
+      })
+    ).statusCode,
+    403,
+  );
 });

@@ -12,6 +12,7 @@ src/server.ts          Inicializacao e encerramento
 src/shared/            Erros e validacao de contratos
 src/identity/          Contas, sessoes, convites, cursos e responsabilidades
 src/teachers/          Perfil versionado, solicitacoes e analise por curso
+src/academics/         Competencias, disciplinas, periodos, turmas e ofertas
 test/                  Testes unitarios e integracao explicitamente habilitada
 scripts/               Exportacao do contrato OpenAPI e administrador inicial
 docs/openapi.json      Contrato gerado das rotas implementadas
@@ -100,13 +101,33 @@ Os prefixos /api/v1 se aplicam aos caminhos abreviados na tabela. Contratos comp
 
 PUT /me/profile substitui os dados editaveis do proprio perfil; exige expectedVersion (0 na criacao), sem aceitar campos de aprovacao. Campos validos podem ser omitidos no rascunho. A resposta lista missingFields para a submissao. Cada salvamento cria uma copia imutavel em profileVersions; analises anteriores continuam associadas a sua versao, sem confirmar alteracoes futuras automaticamente.
 
-O perfil recebe contato, formacao, conhecimentos por competencia/nível 1 a 5, experiencias docente e profissional, disponibilidade e dedicacao pretendida. Cada item tem UUID estavel. Experiencia usa UNKNOWN, NONE ou PROVIDED; completedUnits representa **semestres completos** na experiencia docente e **meses completos** na profissional, sempre declarados, sujeitos a analise. Nao e carga contratual. Janelas de disponibilidade incluem fuso IANA, dia ISO 1 a 7, horario HH:MM e vigencia. Sobreposicao, horario invertido, meia-noite e datas invalidas sao recusados; adjacencia e permitida.
+O perfil recebe contato, formacao, conhecimentos por competencia/nivel 1 a 5, experiencias docente e profissional, disponibilidade e dedicacao pretendida. Cada item tem UUID estavel. Experiencia usa UNKNOWN, NONE ou PROVIDED; completedUnits representa **semestres completos** na experiencia docente e **meses completos** na profissional, sempre declarados, sujeitos a analise. Nao e carga contratual. Janelas de disponibilidade incluem fuso IANA, dia ISO 1 a 7, horario HH:MM e vigencia. Sobreposicao, horario invertido, meia-noite e datas invalidas sao recusados; adjacencia e permitida.
 
-A submissao exige contato, formacao, conhecimentos, situacao conhecida de experiencia/disponibilidade e dedicacao pretendida positiva. Esses campos sao o contrato do formulario; exigencias de habilitacao de cada disciplina ainda dependem de configuracao institucional. Referencias de competencia e disciplina precisam existir e estar ativas; disciplinas devem pertencer ao curso. O catalogo academico sera entregue na proxima etapa; os testes deste modulo usam referencias sinteticas identificadas explicitamente.
+A submissao exige contato, formacao, conhecimentos, situacao conhecida de experiencia/disponibilidade e dedicacao pretendida positiva. Esses campos sao o contrato do formulario; exigencias de habilitacao de cada disciplina ainda dependem de configuracao institucional. Referencias de competencia e disciplina precisam existir e estar ativas; disciplinas devem pertencer ao curso. Os testes criam suas referencias sinteticas pelas rotas reais do catalogo academico.
 
 A coordenacao analisa somente seus cursos, recebe a copia submetida e confirma/rejeita itens de formacao, conhecimento ou experiencia individualmente. Itens omitidos continuam sem confirmacao. Declaracoes de ausencia de experiencia ficam registradas na revisao aprovada. Aprovacao cria vinculo docente apenas naquele curso, sem criar aulas. Alterar o perfil exige nova submissao antes de uma nova analise; revisao obsoleta retorna 409. O vinculo de participacao existente e preservado, mas a confirmacao academica antiga nao se aplica a outra versao do perfil.
 
 O motivo e obrigatorio nas tres decisoes. Versoes esperadas e guardas transacionais impedem duas decisoes simultaneas ou sobrescrita silenciosa. Convites docentes ativam identidade para completar o cadastro, mantendo obrigatoria a analise academica por curso.
+
+## Catalogo academico
+
+Cada recurso abaixo possui POST para criar, GET para listar com limit/offset e PUT /:recordId para substituir os campos editaveis. O PUT recebe `{ expectedVersion, data }`, com os mesmos campos completos do cadastro dentro de data. Campos de autoria/versao e curso sao definidos pelo servidor. Codigos sao normalizados para maiusculas e protegidos por indices unicos.
+
+| Caminho | Responsabilidade |
+| --- | --- |
+| /api/v1/admin/competencies | Administrador mantem o catalogo comum de conhecimentos. |
+| /api/v1/admin/periods | Administrador configura vigencia, fuso e blocos da grade. |
+| /api/v1/courses/:courseId/subjects | Coordenacao do curso mantem disciplinas e criterios. |
+| /api/v1/courses/:courseId/groups | Coordenacao mantem turmas vinculadas ao periodo. |
+| /api/v1/courses/:courseId/offerings | Coordenacao liga disciplina, turma, periodo e encontros. |
+
+Os catalogos publicos GET /api/v1/catalog/competencies e GET /api/v1/catalog/courses/:courseId/subjects retornam somente id, codigo e nome de itens ativos, com paginacao. Permitem selecionar conhecimentos e disciplinas antes de receber um vinculo academico; nao expoem perfis docentes.
+
+Periodo possui blocos por dia ISO, inicio/fim e turno MORNING/AFTERNOON/NIGHT. Espacos entre blocos representam intervalos configurados; nenhum horario ou intervalo de 15 minutos e presumido como regra oficial. Oferta valida cada encontro contra um bloco exato da grade e dentro da vigencia, sem sobreposicao ou intervalo vazio de datas para o dia escolhido. Encontros vazios podem ser salvos para planejamento incompleto; nao comprovam disponibilidade nem elegibilidade.
+
+Criterios da disciplina podem ficar null ou DRAFT. A estrutura permite conhecimentos obrigatorios/desejaveis, formacao minima, pertinencia de experiencia, minimos e politica de score. Pesos precisam somar 100 e ter criterios correspondentes. REVIEWED registra uma configuracao explicitamente marcada pelo responsavel autenticado, sem aplicar pesos oficiais automaticamente. O **motor de avaliacao ainda nao executa esses criterios**.
+
+Cada alteracao preserva copia em academicVersions e autoria na auditoria. Escritas do catalogo e validacoes de referencia do perfil usam a mesma guarda transacional. A API recusa inativar recursos com dependencias ativas e bloqueia alteracoes de periodo/turma com ofertas ativas ou de oferta com alocacoes em rascunho/publicadas. Esse bloqueio conservador preserva o planejamento existente; fluxo de revisao/publicacao e reconciliacao de dependencias ainda sera implementado.
 
 ## Decisoes tecnicas
 

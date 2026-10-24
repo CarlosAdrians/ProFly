@@ -130,7 +130,7 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
     async (request, _reply, body) => {
       const actor = identity.actor(request);
       return db.transaction(async (session) => {
-        await lock(db, session, `user:${actor.user._id}`);
+        await lock(db, session, 'academics', `user:${actor.user._id}`);
         await active(actor, session);
         await references(body.data, session);
         const previous = await profiles.findOne({ _id: actor.user._id }, { session });
@@ -189,7 +189,7 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
       const result = await db.transaction(async (session) => {
         const course = await identity.courses.findOne({ _id: courseId, active: true }, { session });
         if (!course) missing();
-        await lock(db, session, `course:${courseId}`, `user:${actor.user._id}`);
+        await lock(db, session, 'academics', `course:${courseId}`, `user:${actor.user._id}`);
         await active(actor, session);
         const profile = await profiles.findOne({ _id: actor.user._id }, { session });
         if (!profile || profile.version !== body.profileVersion) conflict('STALE_PROFILE');
@@ -311,6 +311,7 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
         await lock(
           db,
           session,
+          'academics',
           `course:${courseId}`,
           `user:${actor.user._id}`,
           `user:${application.teacherId}`,

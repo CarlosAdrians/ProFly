@@ -6,6 +6,7 @@ import { AppError, errorResponse, parse } from '../src/shared/errors.js';
 import { hashPassword, token, tokenHash, verifyPassword } from '../src/shared/crypto.js';
 import { randomUUID } from 'node:crypto';
 import { profileData, missingFields } from '../src/teachers/contracts.js';
+import { criteriaInput, periodInput } from '../src/academics/contracts.js';
 
 const env = {
   NODE_ENV: 'test',
@@ -113,6 +114,47 @@ test('CASE-020: disponibilidade aceita adjacencia e rejeita sobreposicao, meia-n
   assert.throws(
     () =>
       parse(profileData, { availability: { status: 'NONE', timeZone: 'invalid', windows: [] } }),
+    AppError,
+  );
+});
+
+test('CASE-019/020: configuracao academica nao presume pesos, pertinencia ou grade valida', () => {
+  const competencyId = randomUUID();
+  const criteria = {
+    status: 'DRAFT',
+    mandatoryKnowledge: [],
+    desiredKnowledge: [{ competencyId, weight: 1 }],
+    minimumEducation: null,
+    relevantCompetencyIds: [competencyId],
+    minimumTeachingSemesters: 0,
+    minimumProfessionalMonths: 0,
+    score: {
+      knowledgeWeight: 60,
+      teachingWeight: 25,
+      professionalWeight: 15,
+      teachingCapSemesters: 4,
+      professionalCapMonths: 24,
+    },
+  };
+  assert.equal(parse(criteriaInput, criteria).status, 'DRAFT');
+  for (const invalid of [
+    { ...criteria, desiredKnowledge: [] },
+    { ...criteria, relevantCompetencyIds: [] },
+    { ...criteria, score: { ...criteria.score, knowledgeWeight: 61 } },
+  ])
+    assert.throws(() => parse(criteriaInput, invalid), AppError);
+  assert.throws(
+    () =>
+      parse(periodInput, {
+        code: '2026-2',
+        name: 'Periodo de teste',
+        active: true,
+        startsOn: '2026-08-01',
+        endsOn: '2026-12-31',
+        timeZone: 'America/Fortaleza',
+        calendarStatus: 'REVIEWED',
+        blocks: [],
+      }),
     AppError,
   );
 });
