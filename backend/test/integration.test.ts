@@ -681,6 +681,21 @@ async function teacherFixture(label: string) {
   return { ...teacher, data, save, submit, subjectA, subjectB };
 }
 
+test('CASE-013/014: dedicacao opcional permite submissao pendente sem gerar aprovacao', async () => {
+  const teacher = await teacherFixture('optional-dedication');
+  const { desiredWeeklyMinutes: omitted, ...data } = teacher.data;
+  assert.equal(omitted, 1200);
+  assert.equal((await teacher.save(0, data)).statusCode, 200);
+  const submission = await teacher.submit(courseA, teacher.subjectA);
+  assert.equal(submission.statusCode, 201, submission.body);
+  const current = await app.inject({ url: '/api/v1/me/profile', headers: teacher.headers });
+  assert.equal(current.json().data.desiredWeeklyMinutes, undefined);
+  const saved = await database.db
+    .collection('applications')
+    .findOne({ teacherId: teacher.id, courseId: courseA });
+  assert.equal(saved?.status, 'SUBMITTED');
+});
+
 test('CASE-012/013/014/016: rascunho, submissao incompleta e edicoes concorrentes preservam versao', async () => {
   const teacher = await teacherFixture('profile-draft');
   const empty = await app.inject({ url: '/api/v1/me/profile', headers: teacher.headers });

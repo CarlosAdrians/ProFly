@@ -153,7 +153,6 @@ export function missingFields(data: ProfileData): Record<string, string[]> {
   for (const key of ['teaching', 'professional', 'availability'] as const)
     if (!data[key] || data[key].status === 'UNKNOWN')
       fields[key] = ['Declare os dados ou sua ausencia.'];
-  if (!data.desiredWeeklyMinutes) fields.desiredWeeklyMinutes = ['Informe a dedicacao pretendida.'];
   return fields;
 }
 

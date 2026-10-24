@@ -63,6 +63,8 @@ Interseccao de intervalos: inicioA < fimB e inicioB < fimA, com datas e dias de 
 
 Conferir todos os encontros da oferta, compromissos em outros cursos, indisponibilidades aplicaveis e carga nas semanas afetadas. O limite institucional/contratual vem de fonte autorizada; nao e substituido pela dedicacao pretendida declarada pelo professor. Grade, intervalo e conversao entre minutos/hora-aula precisam de configuracao institucional.
 
+Decisao confirmada em 24/10/2026: a dedicacao semanal pretendida e opcional, inclusive na submissao do perfil (REQ-04, CASE-013/014). Ausencia da meta nao e zero e nao impede solicitar entrada em um curso. O acompanhamento de horas realizadas depende de ocorrencias confirmadas no historico (REQ-11); datas passadas ou horarios pretendidos nao contam como aulas realizadas. A criacao da conta nao aprova vinculo: somente a coordenacao responsavel pelo curso pode decidir a solicitacao, sem aprovar automaticamente outros cursos (REQ-02/03).
+
 ## 6. Contrato da arvore e do score
 
 A avaliacao recebe um contexto valido de oferta e professor e monta no servidor os dados necessarios de perfil, vinculos, requisitos e compromissos. Nos binarios verificam aplicabilidade, presenca de informacao confirmada, requisitos minimos e condicoes temporais. A quantidade de nos acompanha os requisitos de cada disciplina.
