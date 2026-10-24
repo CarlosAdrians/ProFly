@@ -69,3 +69,9 @@ Limites atuais: motor de elegibilidade/score, carga institucional, alocacao/publ
 Cadastro acessivel pelo login, em quatro etapas, com formacao, conhecimentos, experiencia, cursos, disciplinas, disponibilidade, foto opcional e aceite separado dos termos/aviso. Coordenacao analisa cada solicitacao por curso; nao cadastra a identidade do professor. Calendario semanal/diario com cartoes arrastaveis e alternativa por formulario, lista de alocacoes com conflito de professor entre cursos e turma no curso, edicao versionada e cancelamento demonstrativos.
 
 Validacao: 173 testes em 23 arquivos passaram; build Vite, TypeScript e ESLint aprovados. Testes React legados ainda emitem avisos act sem falhas. No Chrome foram conferidos cadastro completo, preservacao ao voltar/abrir termos, login docente, foto, aprovacao somente em um curso e arrastar um cartao para o horario. Prints 06 a 13 em outputs/prints, fora do repositorio. Todas essas operacoes da interface usam armazenamento local do navegador. Nao ha integracao com a API, publicacao de escala nem controle de acesso institucional nesta demonstracao. Termos e aviso sao minutas do projeto, pendentes de homologacao pela faculdade.
+
+## Conexao local ao MongoDB fornecida pelo usuario
+
+Em 24/10/2026, backend/.env foi preparado e preenchido diretamente pelo usuario no editor. Arquivo conferido como ignorado pelo Git; valores da URI/senha nao foram exibidos nem adicionados ao repositorio. Ping autenticado e verificacao de topologia passaram. API iniciada na porta local 3333, criando os indices previstos pela inicializacao; GET /health/ready respondeu status ready. Nao foram criados usuarios sinteticos nem executados testes de integracao nesse banco.
+
+Esta evidencia confirma API -> MongoDB. Os formularios React continuam no adaptador de demonstracao local; envio de e-mail e integracao navegador -> API seguem pendentes. Nenhuma credencial deve ser colocada em variavel VITE_*.

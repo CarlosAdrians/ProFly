@@ -36,6 +36,10 @@ pnpm dev
 
 O servidor recusa configuracao incompleta e MongoDB standalone sem suporte a transacoes. Nao troca uma falha do banco por persistencia simulada.
 
+A URI deve ficar somente em `backend/.env`, arquivo ignorado pelo Git. Nao coloque a conexao em variaveis `VITE_*` nem no codigo da interface. O arquivo local pode ser preenchido no editor sem compartilhar senha em mensagens. `ALLOWED_ORIGINS` precisa conter a origem exata informada pelo Vite; o exemplo inclui localhost:5173 e 127.0.0.1:5174.
+
+Com o servidor iniciado, `GET http://127.0.0.1:3333/health/ready` deve responder `{"status":"ready"}`. Isso confirma acesso da API ao MongoDB, mas nao confirma que os formularios da interface estejam integrados: o adaptador demonstrativo continua independente. Nao execute suites de integracao contra esse banco; elas criam seu proprio replica set efemero.
+
 ## Verificacoes
 
 ```bash
