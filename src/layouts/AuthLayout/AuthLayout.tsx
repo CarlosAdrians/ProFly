@@ -3,7 +3,7 @@ import styles from './AuthLayout.module.css';
 
 interface AuthLayoutProps {
   /**
-   * `split`: foto do campus na resolução de origem e formulário de acesso.
+   * `split`: composição original, com foto à esquerda e cartão sobre fundo azul.
    * `backdrop`: formulário de recuperação centralizado, sem foto.
    */
   variant: 'split' | 'backdrop';
@@ -15,7 +15,8 @@ export function AuthLayout({ variant, children }: AuthLayoutProps) {
   return (
     <div className={`${styles.layout} ${styles[variant]}`}>
       {variant === 'split' && (
-        <figure className={styles.photo}>
+        <picture className={styles.photo}>
+          <source type="image/webp" srcSet="/images/campus.webp" />
           <img
             src="/images/campus.jpg"
             alt="Entrada do campus da UNIFACISA"
@@ -24,8 +25,7 @@ export function AuthLayout({ variant, children }: AuthLayoutProps) {
             decoding="async"
             fetchPriority="high"
           />
-          <figcaption>UNIFACISA · Centro Universitário</figcaption>
-        </figure>
+        </picture>
       )}
       <main className={styles.content}>
         <div className={styles.card}>
@@ -36,8 +36,10 @@ export function AuthLayout({ variant, children }: AuthLayoutProps) {
               alt="UNIFACISA Centro Universitário"
             />
             <div>
-              <strong>UNIFACISA</strong>
-              <span>ProFly · Gestão docente</span>
+              <strong>{variant === 'split' ? 'ProFly' : 'UNIFACISA'}</strong>
+              <span>
+                {variant === 'split' ? 'UNIFACISA · Gestão docente' : 'ProFly · Gestão docente'}
+              </span>
             </div>
           </div>
           {children}

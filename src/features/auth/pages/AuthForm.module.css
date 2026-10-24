@@ -8,17 +8,17 @@
 /* "Cadastrar?" logo abaixo do logo, sem competir com o formulário. */
 .register {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  color: var(--color-text-muted);
-  font-size: 0.83rem;
-  margin: 0 0 var(--space-5);
+  justify-content: center;
+  margin: 0 0 var(--space-4);
 }
 .title {
   text-align: left;
   font-size: 1.35rem;
   margin: 0 0 10px;
+}
+.loginTitle {
+  text-align: center;
+  margin-bottom: 4px;
 }
 .legalLinks {
   display: flex;

@@ -66,7 +66,7 @@ Os modais têm nome acessível, foco inicial quando indicado, retorno do foco ao
 
 ## Entrada e início docente
 
-Login e recuperação usam uma composição institucional, sem seletor de tema. A foto existente tem dimensões explícitas e exibição limitada à resolução de origem (399 × 501), sem ampliá-la para metade de telas grandes. O escudo da UNIFACISA também identifica a guia. O início docente foi revisto sem bloco de apresentação nem contadores de perfil: agenda, histórico, formação e preferências têm prioridade. Formação declarada não significa certificado anexado; documentos ainda não estão disponíveis na interface.
+O login preserva a composição anterior: foto à esquerda ocupando metade da tela, cartão sobre fundo azul, marca ProFly e link Cadastrar centralizados. O seletor de tema continua ausente. A mesma foto (399 × 501) é servida em WebP de 36.138 bytes (22% menor que o JPEG de 46.256 bytes), com JPEG como alternativa, dimensões explícitas, prioridade de carregamento e recorte cover central preservado. A recuperação mantém seu fluxo e sua apresentação atuais. O escudo da UNIFACISA também identifica a guia. O início docente foi revisto sem bloco de apresentação nem contadores de perfil: agenda, histórico, formação e preferências têm prioridade. Formação declarada não significa certificado anexado; documentos ainda não estão disponíveis na interface.
 
 ## Persistência e limites
 

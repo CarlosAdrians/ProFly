@@ -192,7 +192,7 @@ describe('Conta', () => {
 
       expect(router.state.location.pathname).toBe('/login');
       expect(
-        screen.getByRole('heading', { level: 1, name: 'Entrar na minha conta' }),
+        screen.getByRole('heading', { level: 1, name: 'Acesso ao ProFly' }),
       ).toBeInTheDocument();
       expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
       expect(localStorage.getItem(TEACHERS_STORAGE_KEY)).toBe(teachers);

@@ -8,21 +8,24 @@
   padding: 32px;
   background: var(--color-bg-subtle);
 }
+.split {
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+}
 .photo {
-  width: min(34vw, 399px);
-  flex-shrink: 0;
-  margin: 0;
+  display: block;
+  position: relative;
+  flex: 0 0 50%;
+  overflow: hidden;
 }
 .photo img {
-  display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
-  border-radius: 18px;
-}
-.photo figcaption {
-  color: var(--color-text-muted);
-  font-size: 0.74rem;
-  margin-top: 16px;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 .content {
   width: 100%;
@@ -60,12 +63,55 @@
   font-size: 0.8rem;
   margin-top: 5px;
 }
-@media (max-width: 760px) {
-  .photo {
+.split .content {
+  flex: 1;
+  max-width: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  background: var(--color-navbar);
+}
+.split .card {
+  width: 100%;
+  max-width: 480px;
+  padding: var(--space-6) var(--space-7);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+.split .brand {
+  justify-content: center;
+  gap: 16px;
+  border: 0;
+  padding: 0;
+  margin-bottom: 28px;
+}
+.split .logo {
+  width: 55px;
+  height: 62px;
+}
+.split .brand strong {
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+}
+.split .brand span {
+  font-size: 0.76rem;
+  margin-top: 2px;
+}
+@media (max-width: 768px) {
+  .split .photo {
     display: none;
   }
+  .split .card {
+    padding: var(--space-5) var(--space-4);
+  }
+}
+@media (max-width: 760px) {
   .layout {
     padding: 28px 16px;
+  }
+  .split {
+    padding: 0;
   }
 }
 @media (max-width: 420px) {

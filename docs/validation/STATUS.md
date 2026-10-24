@@ -127,3 +127,11 @@ Ambiente demonstrativo restrito a loopback, com aviso em hosts públicos. Prévi
 REQ-02/13/14, complemento aos cenarios de origem, CSRF e erros dos CASE-006/049/051. Respostas de /api/ recebem Cache-Control: no-store, inclusive quando a sessao esta ausente ou a origem e recusada. Permissions-Policy desabilita camera, microfone e geolocalizacao. Comandos cross-site sem Origin sao recusados antes de consultar dados; a origem explicitamente permitida e clientes de servidor sem Fetch Metadata continuam aceitos pela fronteira HTTP, sujeitos a autenticacao, CSRF e validacao existentes.
 
 Verificacoes: 9 unitarios e 22 testes de integracao aprovados, sem falhas/pulos; tipos (tsc -p tsconfig.check.json), lint e build aprovados. Teste adicional em unit.test.ts monta a aplicacao sem abrir conexao de banco e confere headers de erro/privacidade, origem hostil, Fetch Metadata e cliente permitido. A integracao usou somente MongoDB efemero local, notificacoes sinteticas e contas ficticias; nao carregou .env nem gravou no banco institucional. pnpm audit --prod retornou zero avisos para 79 dependencias de producao no momento da consulta. Nao equivale a auditoria completa nem conclusao dos modulos pendentes.
+
+## Restauracao do layout de login por orientacao do usuario
+
+Composicao anterior restaurada: foto na metade esquerda, fundo azul e cartao centralizado na metade direita, com marca ProFly e Cadastrar centralizados. Seletor de tema continua removido conforme pedido anterior. Recuperacao preserva a apresentacao atual e o tratamento de envio indisponivel. Sem alteracoes no dashboard, calendario, seguranca ou banco.
+
+Otimizacao tecnica da mesma imagem: WebP com 36.138 bytes em vez de JPEG com 46.256 bytes (21,9% menor), mesma resolucao 399 x 501, JPEG original preservado como alternativa, recorte central cover e prioridade de carregamento. Nao houve aumento artificial de resolucao ou substituicao da fotografia.
+
+Verificacoes desta correcao: 49 testes existentes de login, recuperacao, rotas e conta aprovados em 4 arquivos; tipos, lint dos arquivos alterados e build aprovados. Chrome confirmou a composicao restaurada e currentSrc carregando campus.webp com dimensoes naturais corretas. Print 33 em outputs/prints, fora do repositorio. Nao foi repetida a suite inteira nem os testes do back-end por se tratar desta correcao visual localizada.

@@ -61,9 +61,8 @@ export function LoginPage() {
   return (
     <AuthLayout variant="split">
       <title>Login | ProFly</title>
-      <h1 className={styles.title}>Entrar na minha conta</h1>
+      <h1 className={`${styles.title} ${styles.loginTitle}`}>Acesso ao ProFly</h1>
       <p className={styles.register}>
-        Primeiro acesso?{' '}
         <Link className={styles.link} to={paths.register}>
           Cadastrar
         </Link>
