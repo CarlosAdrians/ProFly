@@ -86,3 +86,9 @@ Modo claro/escuro com preferencia do sistema, seletor acessivel e persistencia l
 Verificacao final: 180 testes em 25 arquivos, 0 falhas/pulos; tsc -b --noEmit, eslint ., Vite build, Prettier dos arquivos alterados, check-docs e diff --check aprovados. A contagem anterior de 182 incluia dois testes do helper WhatsApp removido por obsolescencia; o cadastro interno continua coberto. Permanecem avisos act em testes React assincronos legados, sem falhas. No Chrome: mensal com cartoes/feriado nacional, navegacao ate agosto e marcador estadual, alternancia claro/escuro, conta editavel, modal de alocacao escuro e cancelamento somente do cartao sintetico criado para testar arrastar. Os rascunhos do usuario foram preservados. Capturas 14 a 17 em outputs/prints (fora do repositorio). Conferencia visual em desktop; nao houve ensaio em dispositivo iOS real.
 
 Limites: interface continua local; API -> MongoDB foi verificada separadamente. Publicacao, historico, atestados e motor de elegibilidade/score ainda pendentes. Arquivo .env continua ignorado e nao integra os commits. Houve trava vazia antiga do indice Git sem processo Git ativo; removida apos conferencia para concluir os commits locais.
+
+## Ajuste de datas de alocacao
+
+Regra solicitada: criar ou mover um rascunho para uma data anterior a hoje e recusado. Datas antigas continuam consultaveis e os registros existentes nao sao removidos. O dia e calculado no fuso America/Fortaleza; hoje continua permitido. O adaptador confere novamente a data depois das consultas assincronas e antes de salvar, protegendo tambem o arrastar.
+
+Verificacao: 7 testes do servico de planejamento passaram com data controlada, incluindo dias/meses/anos passados, preservacao do rascunho e virada de dia as 03:00 UTC. Esta regra esta no adaptador demonstrativo; a API de alocacao ainda precisa ser implementada e validar a mesma politica no servidor.

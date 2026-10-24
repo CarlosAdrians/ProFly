@@ -3,6 +3,7 @@ import { teacherService } from '../teachers/services/teacherService';
 import { subjectService } from '../subjects/services/subjectService';
 import { listDemoProfiles } from '../registration/demoService';
 import { courses } from '../registration/catalog';
+import { institutionToday, isPastDate } from './institutionDate';
 export type Shift = 'morning' | 'afternoon' | 'night';
 export const shiftLabels = { morning: 'Manhã', afternoon: 'Tarde', night: 'Noite' };
 export const exampleSlots: Record<Shift, { start: string; end: string }[]> = {
@@ -99,9 +100,11 @@ function validate(input: PlanInput) {
     throw new Error(
       'Informe uma data válida e um horário de término posterior ao início, no mesmo dia.',
     );
+  if (isPastDate(input.date))
+    throw new Error('Não é possível agendar em uma data passada. Escolha hoje ou uma data futura.');
 }
 function initialPlans(): Plan[] {
-  const week = monday(isoDate(new Date()));
+  const week = monday(institutionToday());
   const item = (
     id: string,
     subject: string,
@@ -260,6 +263,8 @@ export async function savePlan(input: PlanInput, id?: string, expectedVersion?: 
     state: 'DRAFT',
     updatedAt: new Date().toISOString(),
   };
+  // Recheck after asynchronous catalog reads, including a possible change of day.
+  validate(input);
   store([...plans.filter((item) => item.id !== record.id), record]);
   return record;
 }

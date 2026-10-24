@@ -1,4 +1,6 @@
 import { cancelPlan, getPlans, movePlan, PLANS_KEY, savePlan, type PlanInput } from './service';
+import { vi } from 'vitest';
+import { institutionToday } from './institutionDate';
 const input = (changes: Partial<PlanInput> = {}): PlanInput => ({
   courseId: 'direito',
   subject: 'Direito Civil I',
@@ -10,8 +12,27 @@ const input = (changes: Partial<PlanInput> = {}): PlanInput => ({
   note: '',
   ...changes,
 });
-beforeEach(() => localStorage.setItem(PLANS_KEY, '[]'));
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-10-24T15:00:00Z'));
+  localStorage.setItem(PLANS_KEY, '[]');
+});
+afterEach(() => vi.useRealTimers());
 describe('rascunhos compartilhados entre calendario e lista', () => {
+  it('recusa dias, meses e anos passados inclusive no arrastar, sem alterar os rascunhos', async () => {
+    const pin = await savePlan(input({ date: '', start: '', end: '' }));
+    const before = localStorage.getItem(PLANS_KEY);
+    for (const date of ['2026-10-23', '2026-09-30', '2025-12-31']) {
+      await expect(savePlan(input({ date }))).rejects.toThrow(/data passada/);
+      await expect(movePlan(pin, date, '18:30', '19:20')).rejects.toThrow(/data passada/);
+      expect(localStorage.getItem(PLANS_KEY)).toBe(before);
+    }
+    expect((await movePlan(pin, '2026-10-24', '18:30', '19:20')).date).toBe('2026-10-24');
+  });
+  it('considera a virada de dia no fuso da Paraiba', () => {
+    expect(institutionToday(new Date('2026-10-25T02:59:59Z'))).toBe('2026-10-24');
+    expect(institutionToday(new Date('2026-10-25T03:00:00Z'))).toBe('2026-10-25');
+  });
   it('recusa conflito de professor entre cursos e permite adjacencia', async () => {
     await savePlan(input({ teacherId: 't02' }));
     await expect(
