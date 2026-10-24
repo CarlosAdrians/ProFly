@@ -1,4 +1,4 @@
-export const LEGAL_VERSION = '2026-10-24.1';
+export const LEGAL_VERSION = '2026-10-24.2';
 export interface LegalSection {
   title: string;
   text: string;
@@ -61,7 +61,7 @@ export const legalContent: Record<
       },
       {
         title: '3. Acesso e compartilhamento',
-        text: 'O fluxo demonstra o professor acompanhando seus dados e a coordenação analisando os cursos solicitados. Dados locais podem ser acessados por outras pessoas que utilizem o mesmo perfil do navegador: evite informações reais em computadores compartilhados. Não enviamos os cadastros a serviços de publicidade ou a modelos de linguagem. As referências legais externas só são abertas quando você escolhe visitá-las.',
+        text: 'O fluxo demonstra o professor acompanhando seus dados e a coordenação analisando os cursos solicitados. Dados locais podem ser acessados por outras pessoas que utilizem o mesmo perfil do navegador: evite informações reais em computadores compartilhados. Não enviamos os cadastros a serviços de publicidade ou a modelos de linguagem. O calendário consulta a BrasilAPI por ano, sem enviar dados do perfil; o provedor recebe dados técnicos da conexão, como o IP. A lista pública de datas é guardada por até 24 horas no navegador. As referências externas são abertas quando você escolhe visitá-las.',
       },
       {
         title: '4. Foto e informações de saúde',

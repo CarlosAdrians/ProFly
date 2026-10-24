@@ -20,6 +20,9 @@ import {
   type Shift,
 } from './service';
 import styles from './Planning.module.css';
+import { MonthCalendar } from './MonthCalendar';
+import { shiftMonth } from './calendarDates';
+import { PB_SOURCE, useHolidays } from './holidays';
 const dragType = 'text/x-profly-allocation';
 function PlanCard({
   plan,
@@ -58,7 +61,8 @@ export function CalendarPage() {
   const coordinator = session?.role === 'coordinator';
   const { plans, error: readError } = usePlans();
   const [date, setDate] = useState(() => isoDate(new Date()));
-  const [view, setView] = useState<'week' | 'day'>('week');
+  const [view, setView] = useState<'month' | 'week' | 'day'>(coordinator ? 'week' : 'month');
+  const holidays = useHolidays(Number(date.slice(0, 4)));
   const [shift, setShift] = useState<Shift>('night');
   const [courseId, setCourseId] = useState('direito');
   const [editor, setEditor] = useState<PlanEditor | null>(null);
@@ -133,8 +137,18 @@ export function CalendarPage() {
         <div className={styles.dateControls}>
           <button
             type="button"
-            aria-label={view === 'week' ? 'Semana anterior' : 'Dia anterior'}
-            onClick={() => setDate(addDays(date, view === 'week' ? -7 : -1))}
+            aria-label={
+              view === 'month'
+                ? 'Mês anterior'
+                : view === 'week'
+                  ? 'Semana anterior'
+                  : 'Dia anterior'
+            }
+            onClick={() =>
+              setDate(
+                view === 'month' ? shiftMonth(date, -1) : addDays(date, view === 'week' ? -7 : -1),
+              )
+            }
           >
             ‹
           </button>
@@ -143,8 +157,14 @@ export function CalendarPage() {
           </Button>
           <button
             type="button"
-            aria-label={view === 'week' ? 'Próxima semana' : 'Próximo dia'}
-            onClick={() => setDate(addDays(date, view === 'week' ? 7 : 1))}
+            aria-label={
+              view === 'month' ? 'Próximo mês' : view === 'week' ? 'Próxima semana' : 'Próximo dia'
+            }
+            onClick={() =>
+              setDate(
+                view === 'month' ? shiftMonth(date, 1) : addDays(date, view === 'week' ? 7 : 1),
+              )
+            }
           >
             ›
           </button>
@@ -189,6 +209,9 @@ export function CalendarPage() {
           ))}
         </div>
         <div className={styles.segmented} role="group" aria-label="Visualização">
+          <button type="button" aria-pressed={view === 'month'} onClick={() => setView('month')}>
+            Mês
+          </button>
           <button type="button" aria-pressed={view === 'week'} onClick={() => setView('week')}>
             Semana
           </button>
@@ -197,6 +220,50 @@ export function CalendarPage() {
           </button>
         </div>
       </div>
+      {view === 'month' && (
+        <MonthCalendar
+          date={date}
+          plans={visible.filter((plan) => plan.date && shiftOf(plan.start) === shift)}
+          holidays={holidays.items}
+          onDay={(day) => {
+            setDate(day);
+            setView('day');
+          }}
+          onPlan={(plan) => open({ plan })}
+        />
+      )}
+      <div className={styles.holidayInfo}>
+        <p role="status">{holidays.status}</p>
+        <button type="button" onClick={holidays.refresh}>
+          Atualizar feriados
+        </button>
+        <span>
+          <a
+            href="https://brasilapi.com.br/docs#tag/Feriados-Nacionais"
+            target="_blank"
+            rel="noreferrer"
+          >
+            BrasilAPI
+          </a>{' '}
+          +{' '}
+          <a href={PB_SOURCE} target="_blank" rel="noreferrer">
+            Paraíba · 5 de agosto
+          </a>
+        </span>
+        <small>
+          Datas religiosas e pontos facultativos exigem confirmação local. Feriados municipais e
+          recessos da faculdade ainda não estão cadastrados. As datas não cancelam aulas
+          automaticamente.
+        </small>
+      </div>
+      {view !== 'month' &&
+        holidays.items
+          .filter((item) => dates.includes(item.date))
+          .map((item) => (
+            <div className={styles.holidayBanner} key={`${item.date}-${item.name}`}>
+              {Number(item.date.slice(8))}/{item.date.slice(5, 7)} · {item.name} · {item.scope}
+            </div>
+          ))}
       {!coordinator ? (
         <div className={styles.empty}>
           <img src="/images/icons/calendario.png" alt="" />
@@ -207,7 +274,7 @@ export function CalendarPage() {
           </p>
           <Link to="/inicio">Ver minhas solicitações</Link>
         </div>
-      ) : (
+      ) : view !== 'month' ? (
         <>
           <div className={styles.calendarLayout}>
             <div className={styles.calendarScroll}>
@@ -321,6 +388,11 @@ export function CalendarPage() {
             também ficam visíveis. O intervalo não representa uma regra oficial da instituição.
           </p>
         </>
+      ) : (
+        <p className={styles.gradeNote}>
+          Cartões do turno selecionado · rascunhos deste curso. Clique no dia para abrir a grade e
+          alocar; clique no cartão para editar.
+        </p>
       )}
       <PlanModal
         editor={editor}

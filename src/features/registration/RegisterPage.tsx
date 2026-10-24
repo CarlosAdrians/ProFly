@@ -1,3 +1,4 @@
+import { ThemeToggle } from '../../components/ui/ThemeToggle/ThemeToggle';
 import { useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { TextField } from '../../components/ui/TextField/TextField';
@@ -187,6 +188,7 @@ export function RegisterPage() {
       <main className={styles.main}>
         <title>Cadastro de professor | ProFly</title>
         <div className={styles.top}>
+          <ThemeToggle />
           <Link to="/login">Voltar ao login</Link>
           <span>
             Já tem conta? <Link to="/login">Entrar</Link>

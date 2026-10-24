@@ -2,7 +2,7 @@
   display: flex;
   min-height: 100vh;
   min-height: 100dvh;
-  background: var(--color-bg);
+  background: var(--color-canvas);
 }
 
 .main {
@@ -47,5 +47,32 @@
 
   .main {
     padding: var(--space-4);
+  }
+}
+
+.topbar {
+  max-width: var(--content-max-width);
+  margin: 0 auto 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.topbar > span {
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.topbar > span > span {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+@media (max-width: 480px) {
+  .topbar > span > span {
+    display: none;
+  }
+  .topbar {
+    margin-bottom: 20px;
   }
 }

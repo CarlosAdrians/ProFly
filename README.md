@@ -147,14 +147,14 @@ Atualizado em **24/10/2026**. Repositório: [CarlosAdrians/ProFly](https://githu
 | Parte | Estado atual |
 | --- | --- |
 | Visão institucional, requisitos e matriz | Documentados para orientar a implementação. |
-| Front-end de coordenador | Demonstração com login simulado, conta, professores, disciplinas e convite parcial. |
+| Front-end de coordenador | Demonstração com login, conta editável e foto, análise por curso, disciplinas, calendário mensal/semanal/diário e alocações locais. |
 | Administrador e acesso por curso | API de cursos, convites de coordenadores, sessões e revogação implementada; telas administrativas pendentes. |
-| Perfil docente e aprovação de entrada | API de rascunho, versões, solicitação e análise independente por curso implementada; telas pendentes. |
-| Dashboard de professor | Ainda não implementado. |
+| Perfil docente e aprovação de entrada | API de rascunho, versões, solicitação e análise independente por curso implementada; cadastro detalhado e análise disponíveis em demonstração local, ainda sem integração com a API. |
+| Dashboard de professor | Início com perfil, solicitações e calendário mensal. Aulas publicadas e histórico ainda pendentes. |
 | Servidor Node.js e MongoDB | Base HTTP, identidade e cadastro/aprovação implementados. Adaptador de e-mail e demais módulos pendentes. Veja [backend/README.md](backend/README.md). |
 | Catálogo acadêmico | API de competências, disciplinas, períodos, turmas e ofertas, com referências, versões e grade configurável. Revisão de planejamento publicado ainda pendente. |
 | Motor de elegibilidade e score | Especificado; implementação e validação institucional pendentes. |
-| Calendário, alocações e publicação | Planejados; ainda não implementados. |
+| Calendário, alocações e publicação | Calendário e rascunhos no navegador, com conflitos e edição; publicação e persistência pela API pendentes. Feriados por BrasilAPI e referência estadual da Paraíba. |
 | Histórico de aulas e atestados | Planejados; ainda não implementados. |
 | Testes de execução do back-end | Primeiros testes unitários e de integração MongoDB implementados; cobertura completa da matriz ainda pendente. |
 
@@ -171,7 +171,7 @@ npm run dev
 
 Abra o endereço informado pelo Vite. O acesso demonstrativo é `felipe.araujo@profly.test`, senha `profly123`. São credenciais fictícias presentes no código, sem autenticação segura de produção.
 
-A demonstração guarda cadastros no `localStorage` e sessão no `sessionStorage`. Não compartilha dados entre navegadores nem possui banco integrado. A criação de senha por convite não conclui a ativação enquanto o serviço real não existir. Os detalhes estão em [FRONTEND_ATUAL.md](docs/FRONTEND_ATUAL.md).
+A demonstração guarda cadastros, fotos e rascunhos no `localStorage`, com sessão no `sessionStorage`. No login, **Cadastrar** abre o cadastro do próprio professor; não utiliza WhatsApp. As solicitações são analisadas por curso. A interface ainda usa o adaptador demonstrativo: conectar o servidor ao MongoDB não migra os dados do navegador. Termos e aviso de privacidade são minutas para revisão institucional. Detalhes e limitações em [FRONTEND_ATUAL.md](docs/FRONTEND_ATUAL.md).
 
 Comandos existentes do front-end:
 

@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
+// Unit/UI tests never contact public holiday providers or other live services.
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network disabled in tests')));
+});
 // Layout/scroll behavior is verified in the real browser; jsdom has no layout engine.
 if (!HTMLElement.prototype.scrollIntoView) HTMLElement.prototype.scrollIntoView = function () {};
 
@@ -19,4 +23,6 @@ afterEach(() => {
   cleanup();
   localStorage.clear();
   sessionStorage.clear();
+  vi.unstubAllGlobals();
+  delete document.documentElement.dataset.theme;
 });

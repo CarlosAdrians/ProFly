@@ -19,7 +19,7 @@ Atualizado em 24/10/2026. Branch da etapa: feat/backend-institucional.
 | Autenticacao e autorizacao por curso | PASS | Rotas reais de identidade, cursos e coordenadores verificadas. CASE-001/002/003/004/005/006/008 e partes de 009/013/049/051/053/054/055 exercitados; aprovacao docente e demais partes desses cenarios ainda pendentes. |
 | Envio real de e-mail | NOT_IMPLEMENTED | Porta Notifications testada com mensagens sinteticas; sem adaptador no servidor principal. Fluxos dependentes retornam 503, sem simular envio. |
 | Concorrencia e cenarios adversariais dos modulos | NOT_IMPLEMENTED | Ainda exigem os modulos de negocio; os testes iniciais nao representam a matriz completa. |
-| Build, tipos, lint e testes do front-end | PASS | Vite build, tsc -b --noEmit, eslint . e 174 testes em 20 arquivos passaram. Descoberta Vitest limitada a src para nao coletar suites Node/MongoDB. |
+| Build, tipos, lint e testes do front-end | PASS | Vite build, tsc -b --noEmit, eslint . e 180 testes em 25 arquivos passaram na interface atualizada. Descoberta Vitest limitada a src; consultas de rede bloqueadas por padrao nos testes. |
 | Navegacao visual da demonstracao | PASS | Login ficticio, listas de professores/disciplinas, abertura/fechamento do modal conferidos no Chrome local; 4 prints em outputs/prints (fora do repositorio). Sem integracao desta interface com a API. |
 
 ## Como registrar as proximas entregas
@@ -75,3 +75,14 @@ Validacao: 173 testes em 23 arquivos passaram; build Vite, TypeScript e ESLint a
 Em 24/10/2026, backend/.env foi preparado e preenchido diretamente pelo usuario no editor. Arquivo conferido como ignorado pelo Git; valores da URI/senha nao foram exibidos nem adicionados ao repositorio. Ping autenticado e verificacao de topologia passaram. API iniciada na porta local 3333, criando os indices previstos pela inicializacao; GET /health/ready respondeu status ready. Nao foram criados usuarios sinteticos nem executados testes de integracao nesse banco.
 
 Esta evidencia confirma API -> MongoDB. Os formularios React continuam no adaptador de demonstracao local; envio de e-mail e integracao navegador -> API seguem pendentes. Nenhuma credencial deve ser colocada em variavel VITE_*.
+
+
+## Interface: calendario mensal, aparencia e contatos
+
+Visao mensal com dias em grade, cartoes por turno e acesso ao dia, mantendo semana/dia e arrastar da coordenacao. Professor abre o mes e feriados, sem exibir rascunhos nao publicados. BrasilAPI consultada por ano com validacao, cache de 24 horas, prazo de 8 segundos e erro explicito; datas como Carnaval e Corpus Christi exigem confirmacao local. Referencia estadual da Paraiba em 5 de agosto; feriados municipais/recessos institucionais ainda pendentes.
+
+Modo claro/escuro com preferencia do sistema, seletor acessivel e persistencia local. Cores de campos, textos, tabelas, modais e cartoes adaptadas; fundo branco do simbolo removido. Conta permite nome/e-mail/telefone e foto opcional, sem liberar edicao do papel. Mudanca do e-mail preserva identidade/solicitacoes/foto e atualiza o proximo login da demonstracao; tratamento de duplicidade e falha de gravacao cobertos. A verificacao institucional do novo e-mail ainda depende da API.
+
+Verificacao final: 180 testes em 25 arquivos, 0 falhas/pulos; tsc -b --noEmit, eslint ., Vite build, Prettier dos arquivos alterados, check-docs e diff --check aprovados. A contagem anterior de 182 incluia dois testes do helper WhatsApp removido por obsolescencia; o cadastro interno continua coberto. Permanecem avisos act em testes React assincronos legados, sem falhas. No Chrome: mensal com cartoes/feriado nacional, navegacao ate agosto e marcador estadual, alternancia claro/escuro, conta editavel, modal de alocacao escuro e cancelamento somente do cartao sintetico criado para testar arrastar. Os rascunhos do usuario foram preservados. Capturas 14 a 17 em outputs/prints (fora do repositorio). Conferencia visual em desktop; nao houve ensaio em dispositivo iOS real.
+
+Limites: interface continua local; API -> MongoDB foi verificada separadamente. Publicacao, historico, atestados e motor de elegibilidade/score ainda pendentes. Arquivo .env continua ignorado e nao integra os commits. Houve trava vazia antiga do indice Git sem processo Git ativo; removida apos conferencia para concluir os commits locais.

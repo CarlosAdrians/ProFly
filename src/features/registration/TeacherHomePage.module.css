@@ -32,13 +32,13 @@
   align-items: start;
   gap: 16px;
   padding: 20px 24px;
-  background: #eff5fc;
-  border: 1px solid #d2e2f5;
+  background: var(--color-accent-bg);
+  border: 1px solid var(--color-accent-border);
   border-radius: 10px;
-  color: #254975;
+  color: var(--color-link);
 }
 .notice > span {
-  background: #dceaf9;
+  background: var(--color-accent-bg);
   border-radius: 50%;
   padding: 6px 10px;
 }
@@ -89,19 +89,19 @@
 .badge {
   display: inline-flex;
   padding: 5px 10px;
-  color: #805612;
-  background: #fff4db;
+  color: var(--color-warning-text);
+  background: var(--color-warning-bg);
   border-radius: 20px;
   font-size: 0.78rem;
   font-weight: 600;
 }
 .badge[data-status='APPROVED'] {
-  background: #e6f4ea;
-  color: #1e6b2b;
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
 }
 .badge[data-status='REJECTED'] {
-  background: #fdecec;
-  color: #8a0202;
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
 }
 .reason {
   margin-top: 16px;
@@ -156,4 +156,10 @@
   .lower {
     grid-template-columns: 1fr;
   }
+}
+
+.course,
+.empty {
+  background: var(--color-bg);
+  border-radius: 18px;
 }

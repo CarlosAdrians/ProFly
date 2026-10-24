@@ -1,0 +1,120 @@
+.scroll {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+}
+.grid {
+  display: grid;
+  min-width: 700px;
+}
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.heading {
+  text-align: center;
+  padding: 14px 6px;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--color-bg-subtle);
+}
+.day {
+  min-height: 132px;
+  padding: 8px;
+  border-top: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+}
+.day:last-child {
+  border-right: 0;
+}
+.day[data-outside='true'] {
+  background: var(--color-bg-subtle);
+}
+.day[data-outside='true'] .dayNumber {
+  color: var(--color-text-muted);
+}
+.day[data-selected='true'] {
+  box-shadow: inset 0 0 0 2px var(--color-border-strong);
+}
+.dayNumber {
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  min-width: 36px;
+  min-height: 36px;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  margin: 0 0 6px auto;
+  font-size: 0.83rem;
+}
+.dayNumber:hover {
+  background: var(--color-neutral-bg);
+}
+.dayNumber[data-today='true'] {
+  background: var(--color-primary);
+  color: white;
+  font-weight: 700;
+}
+.event,
+.holiday {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  margin: 5px 0;
+  border-radius: 8px;
+  padding: 7px 8px;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.event {
+  border: 0;
+  border-left: 3px solid var(--color-primary);
+  background: var(--color-accent-bg);
+  color: var(--color-link);
+  cursor: pointer;
+}
+.event:hover {
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+.event strong {
+  font-size: 0.74rem;
+}
+.event small {
+  color: var(--color-text-muted);
+}
+.holiday {
+  background: var(--color-holiday-bg);
+  color: var(--color-holiday-text);
+  text-decoration: none;
+  position: relative;
+  padding-left: 17px;
+}
+.holiday small {
+  font-size: 0.6rem;
+}
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  position: absolute;
+  left: 6px;
+  top: 12px;
+}
+@media (max-width: 640px) {
+  .grid {
+    min-width: 630px;
+  }
+  .day {
+    padding: 5px;
+    min-height: 120px;
+  }
+}

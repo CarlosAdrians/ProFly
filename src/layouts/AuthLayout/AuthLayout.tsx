@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import styles from './AuthLayout.module.css';
+import { ThemeToggle } from '../../components/ui/ThemeToggle/ThemeToggle';
 
 interface AuthLayoutProps {
   /**
@@ -14,6 +15,9 @@ interface AuthLayoutProps {
 export function AuthLayout({ variant, children }: AuthLayoutProps) {
   return (
     <div className={`${styles.layout} ${styles[variant]}`}>
+      <div className={styles.theme}>
+        <ThemeToggle />
+      </div>
       {variant === 'split' && <div className={styles.photo} aria-hidden="true" />}
       <main className={styles.content}>
         <div className={styles.card}>

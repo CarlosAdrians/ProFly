@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: minmax(260px, 28%) minmax(0, 1fr);
   min-height: 100dvh;
-  background: #f3f5f8;
+  background: var(--color-canvas);
 }
 .aside {
   position: sticky;
@@ -86,7 +86,7 @@
   margin: auto;
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: white;
+  background: var(--color-bg);
   padding: clamp(20px, 3vw, 40px);
   box-shadow: var(--shadow-sm);
 }
@@ -118,7 +118,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #727986;
+  color: var(--color-text-muted);
   font-size: 0.78rem;
 }
 .steps li > span {
@@ -126,20 +126,20 @@
   height: 28px;
   display: grid;
   place-items: center;
-  background: #eceff4;
+  background: var(--color-neutral-bg);
   border-radius: 50%;
   flex-shrink: 0;
 }
 .steps li[aria-current] {
-  color: var(--color-navbar);
+  color: var(--color-link);
 }
 .steps li[aria-current] > span {
   background: var(--color-navbar);
   color: white;
 }
 .steps li[data-complete='true'] > span {
-  background: #e6f4ea;
-  color: #1e6b2b;
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
 }
 .demo {
   font-size: 0.76rem;
@@ -157,9 +157,9 @@
   gap: 18px 24px;
 }
 .hintBox {
-  background: #f3f6fb;
+  background: var(--color-bg-subtle);
   border-radius: 8px;
-  color: #43526b;
+  color: var(--color-text-muted);
   padding: 14px;
   align-self: end;
   font-size: 0.85rem;
@@ -232,11 +232,11 @@
 .chips li {
   display: flex;
   align-items: center;
-  background: #eff4fb;
-  border: 1px solid #d5e1f1;
+  background: var(--color-accent-bg);
+  border: 1px solid var(--color-accent-border);
   border-radius: 8px;
   font-size: 0.85rem;
-  color: #29446d;
+  color: var(--color-link);
 }
 .chips li span {
   padding: 8px 10px;
@@ -267,8 +267,8 @@
   align-self: start;
 }
 .course[data-selected='true'] {
-  border-color: var(--color-navbar);
-  background: #f7f9fd;
+  border-color: var(--color-link);
+  background: var(--color-bg-subtle);
 }
 .courseTitle {
   display: flex;
@@ -282,7 +282,7 @@
 .legal input {
   width: 18px;
   height: 18px;
-  accent-color: var(--color-navbar);
+  accent-color: var(--color-link);
   flex-shrink: 0;
 }
 .subjects {
@@ -312,7 +312,7 @@
   gap: 16px;
   align-items: center;
   padding: 20px;
-  background: #f3f6fb;
+  background: var(--color-bg-subtle);
   border-radius: 8px;
   margin-bottom: 24px;
 }

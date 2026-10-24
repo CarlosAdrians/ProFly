@@ -1,0 +1,97 @@
+import { monthDays } from './calendarDates';
+import { isoDate, type Plan } from './service';
+import type { Holiday } from './holidays';
+import styles from './MonthCalendar.module.css';
+
+export function MonthCalendar({
+  date,
+  plans,
+  holidays,
+  onDay,
+  onPlan,
+}: {
+  date: string;
+  plans: Plan[];
+  holidays: Holiday[];
+  onDay: (date: string) => void;
+  onPlan: (plan: Plan) => void;
+}) {
+  const days = monthDays(date);
+  const today = isoDate(new Date());
+  return (
+    <div
+      className={styles.scroll}
+      tabIndex={0}
+      role="region"
+      aria-label="Grade mensal com rolagem horizontal"
+    >
+      <div className={styles.grid} role="table" aria-label="Calendário mensal">
+        <div className={styles.week} role="row">
+          {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((day) => (
+            <div className={styles.heading} role="columnheader" key={day}>
+              {day}
+            </div>
+          ))}
+        </div>
+        {Array.from({ length: days.length / 7 }, (_, week) => (
+          <div className={styles.week} role="row" key={week}>
+            {days.slice(week * 7, week * 7 + 7).map((day) => {
+              const entries = plans
+                .filter((plan) => plan.date === day)
+                .sort((a, b) => a.start.localeCompare(b.start));
+              return (
+                <div
+                  role="cell"
+                  className={styles.day}
+                  key={day}
+                  data-outside={day.slice(0, 7) !== date.slice(0, 7)}
+                  data-selected={day === date}
+                >
+                  <button
+                    type="button"
+                    className={styles.dayNumber}
+                    data-today={day === today}
+                    onClick={() => onDay(day)}
+                    aria-label={`Ver dia ${new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${day}T12:00:00`))}`}
+                  >
+                    {Number(day.slice(8))}
+                  </button>
+                  {holidays
+                    .filter((item) => item.date === day)
+                    .map((item) => (
+                      <a
+                        className={styles.holiday}
+                        key={`${item.date}-${item.name}`}
+                        href={item.source}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={`${item.scope}: ${item.name}`}
+                      >
+                        <span className={styles.dot} />
+                        {item.name}
+                        <small>{item.scope}</small>
+                      </a>
+                    ))}
+                  {entries.map((plan) => (
+                    <button
+                      type="button"
+                      className={styles.event}
+                      key={plan.id}
+                      onClick={() => onPlan(plan)}
+                    >
+                      <span>
+                        {plan.start} · {plan.group}
+                      </span>
+                      <strong>{plan.subject}</strong>
+                      <small>{plan.teacherName}</small>
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

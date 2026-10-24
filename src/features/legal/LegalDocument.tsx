@@ -1,3 +1,4 @@
+import { ThemeToggle } from '../../components/ui/ThemeToggle/ThemeToggle';
 import { Link } from 'react-router';
 import { LEGAL_VERSION, legalContent } from './content';
 import styles from './LegalDocument.module.css';
@@ -38,6 +39,7 @@ export function LegalPage({ kind }: { kind: 'terms' | 'privacy' }) {
   return (
     <main className={styles.page}>
       <title>{legalContent[kind].title} | ProFly</title>
+      <ThemeToggle />
       <Link to="/login" className={styles.back}>
         Voltar ao login
       </Link>

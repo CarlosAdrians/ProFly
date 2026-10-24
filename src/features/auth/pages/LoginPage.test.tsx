@@ -118,6 +118,8 @@ describe('LoginPage', () => {
     it('é alcançável pelo teclado antes dos campos de login', async () => {
       const { user } = setup();
       await user.tab();
+      expect(screen.getByRole('switch', { name: 'Modo escuro' })).toHaveFocus();
+      await user.tab();
       expect(registerLink()).toHaveFocus();
       await user.tab();
       expect(screen.getByLabelText('E-mail:')).toHaveFocus();

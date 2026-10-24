@@ -20,17 +20,17 @@
   display: inline-block;
   font-size: 0.75rem;
   font-weight: 600;
-  background: #eef2f8;
-  border: 1px solid #dce3ee;
-  color: #4a5e7d;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
   padding: 5px 9px;
   border-radius: 20px;
   white-space: nowrap;
 }
 .unscheduledBadge {
-  color: #805612;
-  background: #fff5df;
-  border-color: #f5e1b3;
+  color: var(--color-warning-text);
+  background: var(--color-warning-bg);
+  border-color: var(--color-border);
 }
 .toolbar {
   display: flex;
@@ -51,15 +51,15 @@
   height: 44px;
   border: 1px solid var(--color-border);
   border-radius: 7px;
-  background: white;
-  color: #32496e;
+  background: var(--color-bg);
+  color: var(--color-link);
   font-size: 1.5rem;
   cursor: pointer;
 }
 .dateControls > strong {
   font-size: 1.12rem;
   margin-left: 14px;
-  text-transform: capitalize;
+  text-transform: none;
 }
 .dateFilters {
   display: flex;
@@ -80,7 +80,7 @@
   min-height: 42px;
   border: 1px solid var(--color-border-strong);
   border-radius: 7px;
-  background: white;
+  background: var(--color-bg);
   color: var(--color-text);
   padding: 8px 10px;
   font-size: 0.88rem;
@@ -95,7 +95,7 @@
   display: flex;
   padding: 4px;
   border: 1px solid var(--color-border);
-  background: #f4f6fa;
+  background: var(--color-bg-subtle);
   border-radius: 9px;
 }
 .segmented button {
@@ -103,15 +103,15 @@
   min-height: 36px;
   padding: 6px 20px;
   border-radius: 6px;
-  color: #5a6372;
+  color: var(--color-text-muted);
   background: transparent;
   cursor: pointer;
   font-size: 0.88rem;
 }
 .segmented button[aria-pressed='true'] {
-  background: white;
+  background: var(--color-bg);
   box-shadow: var(--shadow-sm);
-  color: var(--color-navbar);
+  color: var(--color-link);
   font-weight: 600;
 }
 .calendarLayout {
@@ -132,7 +132,7 @@
   display: contents;
 }
 .gridCorner {
-  background: #f7f9fc;
+  background: var(--color-bg-subtle);
   color: var(--color-text-muted);
   font-size: 0.68rem;
   display: grid;
@@ -141,13 +141,13 @@
 .dayHeading {
   text-align: center;
   padding: 16px 6px;
-  background: #f7f9fc;
+  background: var(--color-bg-subtle);
   border-left: 1px solid var(--color-border);
 }
 .dayHeading span {
   display: block;
   color: var(--color-text-muted);
-  text-transform: capitalize;
+  text-transform: none;
   font-size: 0.72rem;
 }
 .dayHeading strong {
@@ -165,7 +165,7 @@
 }
 .hour {
   padding: 18px 6px;
-  background: #fafbfd;
+  background: var(--color-bg-subtle);
   text-align: center;
   border-top: 1px solid var(--color-border);
   font-size: 0.7rem;
@@ -175,7 +175,7 @@
   display: block;
 }
 .hour span {
-  color: #687486;
+  color: var(--color-text-muted);
   margin-top: 6px;
 }
 .cell {
@@ -188,7 +188,7 @@
   gap: 6px;
 }
 .cell[data-dragging='true'] {
-  background: #f0f6ff;
+  background: var(--color-accent-bg);
   border: 1px dashed #6895cf;
 }
 .planCard {
@@ -196,32 +196,32 @@
   flex-direction: column;
   gap: 7px;
   padding: 12px 9px;
-  border: 1px solid #ccdaf0;
+  border: 1px solid var(--color-accent-border);
   border-left: 3px solid #347bc0;
   border-radius: 6px;
-  background: #eef4fd;
+  background: var(--color-accent-bg);
   text-align: left;
   width: 100%;
-  color: #2a4770;
+  color: var(--color-link);
   cursor: grab;
   font-size: 0.7rem;
   line-height: 1.45;
 }
 .planCard strong {
-  color: #203d65;
+  color: var(--color-link);
   font-size: 0.76rem;
 }
 .planCard:hover {
-  background: #e6effc;
+  background: var(--color-row-hover);
 }
 .cardTime {
   font-size: 0.67rem;
   font-weight: 600;
-  color: #376293;
+  color: var(--color-link);
 }
 .cardGroup {
   padding-top: 6px;
-  border-top: 1px solid #d3e0f3;
+  border-top: 1px solid var(--color-accent-border);
   font-size: 0.65rem;
 }
 .addCell {
@@ -234,7 +234,7 @@
   flex: 1;
   background: transparent;
   border: 1px dashed transparent;
-  color: #667d9e;
+  color: var(--color-text-muted);
   border-radius: 6px;
   cursor: pointer;
 }
@@ -246,15 +246,15 @@
 }
 .addCell:hover,
 .addCell:focus-visible {
-  background: #f4f7fb;
+  background: var(--color-row-hover);
   border-color: #a6bbd7;
 }
 .breakRow {
   grid-column: 1 / -1;
   padding: 7px 12px;
   text-align: center;
-  color: #697484;
-  background: #f2f4f7;
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle);
   font-size: 0.67rem;
   border-top: 1px solid var(--color-border);
 }
@@ -262,7 +262,7 @@
   padding: 18px 14px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #fbfcfe;
+  background: var(--color-bg);
 }
 .pinShelf header {
   display: flex;
@@ -275,8 +275,8 @@
 }
 .pinShelf header span {
   font-size: 0.75rem;
-  color: #53729c;
-  background: #e8eff8;
+  color: var(--color-link);
+  background: var(--color-accent-bg);
   padding: 3px 7px;
   border-radius: 10px;
 }
@@ -303,7 +303,7 @@
   gap: 18px;
   justify-content: space-between;
   margin-top: 18px;
-  color: #61728c;
+  color: var(--color-text-muted);
   font-size: 0.76rem;
 }
 .calendarFoot a,
@@ -370,7 +370,7 @@
 .check input {
   width: 18px;
   height: 18px;
-  accent-color: var(--color-navbar);
+  accent-color: var(--color-link);
 }
 .noteLabel {
   margin-top: 20px;
@@ -403,7 +403,7 @@
   gap: 36px;
   align-items: center;
   flex-wrap: wrap;
-  background: #f7f9fc;
+  background: var(--color-bg-subtle);
   padding: 22px 24px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
@@ -416,7 +416,7 @@
 }
 .summaryStrip strong {
   font-size: 1.65rem;
-  color: #234978;
+  color: var(--color-link);
   font-weight: 600;
 }
 .summaryStrip span {
@@ -567,4 +567,68 @@
     padding: 12px;
     overflow-x: auto;
   }
+}
+
+/* Rounded grouped surfaces and clear segmented selection. */
+.calendarScroll,
+.pinShelf,
+.summaryStrip,
+.allocationPanel {
+  border-radius: 18px;
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+}
+.segmented {
+  border-radius: 12px;
+  background: var(--color-neutral-bg);
+  border-color: transparent;
+}
+.segmented button {
+  border-radius: 9px;
+  min-height: 40px;
+}
+.planCard {
+  border-radius: 10px;
+}
+.noteLabel textarea {
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+}
+.holidayInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  align-items: center;
+  margin: 18px 0 22px;
+  color: var(--color-text-muted);
+  font-size: 0.73rem;
+}
+.holidayInfo p {
+  margin: 0;
+}
+.holidayInfo a {
+  color: var(--color-link);
+}
+.holidayInfo > button {
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  text-decoration: underline;
+  color: var(--color-link);
+  cursor: pointer;
+  padding: 0;
+}
+.holidayInfo small {
+  flex-basis: 100%;
+  max-width: 850px;
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+.holidayBanner {
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: var(--color-holiday-bg);
+  color: var(--color-holiday-text);
+  font-size: 0.8rem;
+  margin: 10px 0;
 }
