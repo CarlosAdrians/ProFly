@@ -5,6 +5,12 @@ export const paths = {
   account: '/conta',
   teachers: '/professores',
   subjects: '/disciplinas',
+  register: '/cadastro',
+  teacherHome: '/inicio',
+  calendar: '/calendario',
+  allocations: '/alocacoes',
+  terms: '/termos-de-uso',
+  privacy: '/privacidade',
 } as const;
 
 export type AppPath = (typeof paths)[keyof typeof paths];

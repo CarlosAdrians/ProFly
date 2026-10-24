@@ -6,12 +6,14 @@ describe('rotas', () => {
     ['/conta', 'Conta'],
     ['/professores', 'Professores'],
     ['/disciplinas', 'Disciplinas'],
+    ['/calendario', 'Calendário'],
+    ['/alocacoes', 'Alocações'],
   ])('%s exibe a tela %s com sessão', (path, title) => {
     renderApp(path, { authenticated: true });
     expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument();
   });
 
-  it.each(['/conta', '/professores', '/disciplinas'])(
+  it.each(['/conta', '/professores', '/disciplinas', '/calendario', '/alocacoes'])(
     '%s sem sessão redireciona para o login',
     (path) => {
       const { router } = renderApp(path);
@@ -37,7 +39,7 @@ describe('rotas', () => {
     expect(router.state.location.pathname).toBe('/login');
   });
 
-  it.each(['/dashboard', '/calendario', '/alocacoes', '/rota-inexistente'])(
+  it.each(['/dashboard', '/rota-inexistente'])(
     'redireciona %s (fora do escopo) para o login',
     (path) => {
       const { router } = renderApp(path);

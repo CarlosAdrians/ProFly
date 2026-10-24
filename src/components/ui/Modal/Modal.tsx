@@ -7,13 +7,14 @@ interface ModalProps {
   /** Título lido por leitores de tela (o protótipo não exibe título visível). */
   title: string;
   children: ReactNode;
+  size?: 'normal' | 'wide';
 }
 
 /**
  * Modal baseado no <dialog> nativo: prende o foco, fecha com Esc e
  * devolve o foco ao elemento que o abriu.
  */
-export function Modal({ open, onClose, title, children }: ModalProps) {
+export function Modal({ open, onClose, title, children, size = 'normal' }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
     <dialog
       ref={dialogRef}
       className={styles.dialog}
+      data-size={size}
       aria-label={title}
       onCancel={(event) => {
         event.preventDefault();

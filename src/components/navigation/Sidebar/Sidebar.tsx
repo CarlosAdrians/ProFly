@@ -24,8 +24,8 @@ export function Sidebar({ items }: SidebarProps) {
       <div className={styles.brand}>
         <img
           className={styles.symbol}
-          src="/images/navbar-symbol.png"
-          alt="ProFly — Direito UNIFACISA"
+          src="/images/unifacisa-symbol.png"
+          alt="ProFly — UNIFACISA"
         />
         <button
           type="button"

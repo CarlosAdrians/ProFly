@@ -13,8 +13,12 @@ interface RequireAuthProps {
 /** Bloqueia as rotas internas sem sessão ou com perfil sem permissão. */
 export function RequireAuth({ allowedRoles = ['coordinator'], children }: RequireAuthProps) {
   const { session } = useAuth();
-  if (!session || !allowedRoles.includes(session.role)) {
+  if (!session) {
     return <Navigate to={paths.login} replace />;
   }
+  if (!allowedRoles.includes(session.role))
+    return (
+      <Navigate to={session.role === 'teacher' ? paths.teacherHome : paths.teachers} replace />
+    );
   return children;
 }

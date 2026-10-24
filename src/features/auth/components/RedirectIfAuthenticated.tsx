@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router';
-import { postLoginPath } from '../../../app/paths';
+import { paths, postLoginPath } from '../../../app/paths';
 import { useAuth } from '../session/useAuth';
 
 /**
@@ -10,5 +10,6 @@ import { useAuth } from '../session/useAuth';
 export function RedirectIfAuthenticated({ children }: { children: ReactNode }) {
   const { session } = useAuth();
   if (session?.role === 'coordinator') return <Navigate to={postLoginPath} replace />;
+  if (session?.role === 'teacher') return <Navigate to={paths.teacherHome} replace />;
   return children;
 }

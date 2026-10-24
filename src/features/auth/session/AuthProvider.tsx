@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const next = await authenticate(email, password);
     writeJson(sessionStorage, SESSION_KEY, next);
     setSession(next);
+    return next;
   }, []);
 
   const logout = useCallback(() => {

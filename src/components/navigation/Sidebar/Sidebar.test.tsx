@@ -7,13 +7,13 @@ function renderAt(path: string) {
 }
 
 describe('Sidebar', () => {
-  it('exibe somente Conta, Professores e Disciplinas', () => {
+  it('inclui calendario e alocacoes no menu da coordenacao', () => {
     renderAt('/professores');
     const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
     const labels = within(nav)
       .getAllByRole('listitem')
       .map((item) => item.textContent);
-    expect(labels).toEqual(['Conta', 'Professores', 'Disciplinas']);
+    expect(labels).toEqual(['Conta', 'Professores', 'Disciplinas', 'Calendário', 'Alocações']);
   });
 
   it('marca o item da rota atual', () => {
@@ -25,11 +25,15 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: 'Professores' })).not.toHaveAttribute('aria-current');
   });
 
-  it('não exibe itens de telas fora do escopo', () => {
+  it('usa a marca institucional e disponibiliza as novas telas', () => {
     renderAt('/conta');
     expect(screen.queryByText(/Dashboard/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Calendário/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Alocações/)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Calendário' })).toHaveAttribute('href', '/calendario');
+    expect(screen.getByRole('link', { name: 'Alocações' })).toHaveAttribute('href', '/alocacoes');
+    expect(screen.getByRole('img', { name: 'ProFly — UNIFACISA' })).toHaveAttribute(
+      'src',
+      '/images/unifacisa-symbol.png',
+    );
   });
 
   it('navega entre Conta, Professores e Disciplinas', async () => {

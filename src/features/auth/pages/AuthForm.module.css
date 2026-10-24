@@ -9,7 +9,23 @@
 .register {
   display: flex;
   justify-content: center;
-  margin: calc(var(--space-4) * -1) 0 var(--space-2);
+  margin: 0 0 var(--space-4);
+}
+.title {
+  text-align: center;
+  font-size: 1.35rem;
+  margin: 0 0 4px;
+}
+.legalLinks {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8rem;
+  margin-top: 28px;
+}
+.legalLinks a {
+  color: var(--color-link);
 }
 
 .intro {

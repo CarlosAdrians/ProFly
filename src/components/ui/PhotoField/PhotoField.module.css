@@ -1,0 +1,41 @@
+.field {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 18px 0;
+}
+.label {
+  display: block;
+  font-size: 0.94rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.label span {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hint {
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+.error {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+  margin: 8px 0 0;
+}
+@media (max-width: 480px) {
+  .field {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .field img {
+    width: 56px;
+    height: 56px;
+  }
+}

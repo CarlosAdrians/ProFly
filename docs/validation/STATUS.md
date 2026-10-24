@@ -63,3 +63,9 @@ Verificacoes: 8 unitarios e 22 testes de integracao aprovados, sem falhas/pulos;
 A primeira execucao expandida chegou ao limite real de tentativas porque todas as pessoas sinteticas compartilhavam o mesmo IP. Os clientes dos testes funcionais foram separados por pessoa; o teste dedicado de abuso continua usando um unico IP e confirma o 429. A protecao da aplicacao nao foi alterada. Nova execucao: 22/22 aprovados.
 
 Limites atuais: motor de elegibilidade/score, carga institucional, alocacao/publicacao, atestados, ocorrencias/historico e integracao das novas telas continuam pendentes. Configuracoes sinteticas REVIEWED validam os mecanismos, sem representar homologacao da faculdade.
+
+## Interface: cadastro docente e planejamento demonstrativo
+
+Cadastro acessivel pelo login, em quatro etapas, com formacao, conhecimentos, experiencia, cursos, disciplinas, disponibilidade, foto opcional e aceite separado dos termos/aviso. Coordenacao analisa cada solicitacao por curso; nao cadastra a identidade do professor. Calendario semanal/diario com cartoes arrastaveis e alternativa por formulario, lista de alocacoes com conflito de professor entre cursos e turma no curso, edicao versionada e cancelamento demonstrativos.
+
+Validacao: 173 testes em 23 arquivos passaram; build Vite, TypeScript e ESLint aprovados. Testes React legados ainda emitem avisos act sem falhas. No Chrome foram conferidos cadastro completo, preservacao ao voltar/abrir termos, login docente, foto, aprovacao somente em um curso e arrastar um cartao para o horario. Prints 06 a 13 em outputs/prints, fora do repositorio. Todas essas operacoes da interface usam armazenamento local do navegador. Nao ha integracao com a API, publicacao de escala nem controle de acesso institucional nesta demonstracao. Termos e aviso sao minutas do projeto, pendentes de homologacao pela faculdade.

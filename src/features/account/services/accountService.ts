@@ -16,14 +16,16 @@ interface SessionIdentity {
 }
 
 function readStored(email: string): StoredAccount | null {
-  const stored = readJson<StoredAccount>(localStorage, ACCOUNT_STORAGE_KEY);
+  const stored =
+    readJson<StoredAccount>(localStorage, `${ACCOUNT_STORAGE_KEY}:${email}`) ??
+    readJson<StoredAccount>(localStorage, ACCOUNT_STORAGE_KEY);
   const valid =
     stored && stored.email === email && typeof stored.name === 'string' && stored.name.trim();
   return valid ? stored : null;
 }
 
 function roleFor(email: string): string | undefined {
-  return email === demoCoordinator.email ? demoCoordinator.role : undefined;
+  return email === demoCoordinator.email ? demoCoordinator.role : 'Professor';
 }
 
 /**
@@ -43,5 +45,6 @@ export async function getAccount(session: SessionIdentity): Promise<Account> {
 export async function updateAccount(email: string, input: AccountInput): Promise<Account> {
   await simulateLatency(300);
   writeJson(localStorage, ACCOUNT_STORAGE_KEY, { email, name: input.name });
+  writeJson(localStorage, `${ACCOUNT_STORAGE_KEY}:${email}`, { email, name: input.name });
   return { name: input.name, email, role: roleFor(email) };
 }

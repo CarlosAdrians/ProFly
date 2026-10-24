@@ -20,12 +20,10 @@
 /* Fundo branco discreto: o brasão azul-escuro contrasta pouco com a navbar.
    A largura total é mantida (box-sizing: border-box). */
 .symbol {
-  width: 56px;
-  height: auto;
+  width: 48px;
+  height: 56px;
   /* Recorta visualmente a sombra transparente abaixo do escudo (arquivo inalterado). */
-  aspect-ratio: 1;
-  object-fit: cover;
-  object-position: top;
+  object-fit: contain;
   padding: var(--space-1);
   border-radius: var(--radius-md);
   background: var(--color-bg);
@@ -106,6 +104,7 @@
 
   .symbol {
     width: 36px;
+    height: 42px;
     padding: 2px;
     border-radius: var(--radius-sm);
   }

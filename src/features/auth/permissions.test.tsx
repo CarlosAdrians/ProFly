@@ -66,19 +66,30 @@ describe('autenticação e perfis', () => {
   });
 
   describe('separação de permissões', () => {
-    it.each(['/professores', '/disciplinas', '/conta'])(
+    it.each(['/professores', '/disciplinas', '/alocacoes'])(
       'sessão de professor não acessa %s (telas da coordenação)',
       async (path) => {
         storeSession('teacher', ana.email, ana.name);
         const { router } = renderApp(path);
-        await waitFor(() => expect(router.state.location.pathname).toBe('/login'));
-        // Sem laço de redirecionamento: o formulário de login é exibido.
-        expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument();
+        await waitFor(() => expect(router.state.location.pathname).toBe('/inicio'));
+        expect(screen.getByRole('heading', { name: 'Minhas solicitações' })).toBeInTheDocument();
         expect(
-          screen.queryByRole('navigation', { name: 'Navegação principal' }),
+          screen.queryByRole('link', { name: 'Professores' }),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.queryByRole('link', { name: 'Alocações' }),
         ).not.toBeInTheDocument();
       },
     );
+    it('professor tem acesso a propria conta e calendario sem visualizar rascunhos da coordenacao', async () => {
+      storeSession('teacher', ana.email, ana.name);
+      const { router } = renderApp('/conta');
+      expect(await screen.findByRole('heading', { name: 'Conta', level: 1 })).toBeInTheDocument();
+      await router.navigate('/calendario');
+      expect(await screen.findByText('Sua escala ainda não foi publicada')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '+ Nova alocação' })).not.toBeInTheDocument();
+      expect(screen.queryByText('Direito Civil I')).not.toBeInTheDocument();
+    });
 
     it('sessão antiga sem perfil é descartada', async () => {
       sessionStorage.setItem(

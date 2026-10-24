@@ -17,11 +17,17 @@ export function AuthLayout({ variant, children }: AuthLayoutProps) {
       {variant === 'split' && <div className={styles.photo} aria-hidden="true" />}
       <main className={styles.content}>
         <div className={styles.card}>
-          <img
-            className={styles.logo}
-            src="/images/unifacisa-logo.png"
-            alt="UNIFACISA Centro Universitário"
-          />
+          <div className={styles.brand}>
+            <img
+              className={styles.logo}
+              src="/images/unifacisa-symbol.png"
+              alt="UNIFACISA Centro Universitário"
+            />
+            <div>
+              <strong>ProFly</strong>
+              <span>UNIFACISA · Gestão docente</span>
+            </div>
+          </div>
           {children}
         </div>
       </main>

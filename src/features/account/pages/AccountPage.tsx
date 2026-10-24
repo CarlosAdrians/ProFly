@@ -11,9 +11,16 @@ import { AccountDetails } from '../components/AccountDetails';
 import { AccountForm } from '../components/AccountForm';
 import type { AccountInput } from '../types';
 import styles from './AccountPage.module.css';
+import { PhotoField } from '../../../components/ui/PhotoField/PhotoField';
+import { usePhoto } from '../photos';
+import { useDemoProfiles } from '../../registration/demoService';
+import { weekdays } from '../../registration/catalog';
 
 export function AccountPage() {
   const { session, logout, updateSession } = useAuth();
+  const { photo, save: savePhoto } = usePhoto(session?.email ?? '');
+  const { profiles, error: profileError } = useDemoProfiles();
+  const profile = profiles.find((item) => item.email === session?.email);
   const navigate = useNavigate();
   const { account, save } = useAccount(session);
   const [editing, setEditing] = useState(false);
@@ -56,6 +63,7 @@ export function AccountPage() {
   return (
     <>
       <title>Conta | ProFly</title>
+      {profileError && <Alert variant="error">{profileError}</Alert>}
       <section className={styles.page} aria-labelledby="account-title">
         <PageHeader
           title="Conta"
@@ -85,6 +93,7 @@ export function AccountPage() {
               </Button>
             )}
           </div>
+          <PhotoField value={photo} onChange={savePhoto} />
           {!account ? (
             <p className={styles.loading}>Carregando dados…</p>
           ) : editing ? (
@@ -93,6 +102,34 @@ export function AccountPage() {
             <AccountDetails account={account} />
           )}
         </Card>
+        {profile && (
+          <Card className={styles.card}>
+            <h2 className={styles.sectionTitle}>Meu perfil acadêmico</h2>
+            <p>Informações declaradas no cadastro. A aprovação é independente por curso.</p>
+            <h3>Formação</h3>
+            {profile.education.map((item) => (
+              <p key={item.id}>
+                {item.degree} em {item.field} · {item.institution} · {item.year}
+              </p>
+            ))}
+            <h3>Conhecimentos</h3>
+            <ul>
+              {profile.knowledge.map((item) => (
+                <li key={item.id}>
+                  {item.name} — nível {item.level}
+                </li>
+              ))}
+            </ul>
+            <h3>Disponibilidade</h3>
+            <ul>
+              {profile.availability.map((item) => (
+                <li key={item.id}>
+                  {weekdays[item.weekday]} · {item.start}–{item.end}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
       </section>
     </>
   );

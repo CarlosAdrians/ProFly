@@ -49,8 +49,28 @@
 }
 
 .logo {
-  width: min(300px, 100%);
-  margin: 0 auto var(--space-5);
+  width: 55px;
+  height: 62px;
+  object-fit: contain;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.brand strong {
+  display: block;
+  color: var(--color-navbar);
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+}
+.brand span {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.76rem;
+  margin-top: 2px;
 }
 
 @media (max-width: 768px) {

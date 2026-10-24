@@ -9,7 +9,6 @@ import { paths, postLoginPath } from '../../../app/paths';
 import { useAuth } from '../session/useAuth';
 import { InvalidCredentialsError } from '../services/authService';
 import { validateEmail, validatePassword } from '../validation';
-import { registrationRequestUrl } from '../registrationRequest';
 import styles from './AuthForm.module.css';
 
 interface LoginErrors {
@@ -46,8 +45,8 @@ export function LoginPage() {
 
     setLoading(true);
     try {
-      await login(email, password);
-      navigate(postLoginPath, { replace: true });
+      const session = await login(email, password);
+      navigate(session.role === 'teacher' ? paths.teacherHome : postLoginPath, { replace: true });
     } catch (error) {
       setLoading(false);
       setFormError(
@@ -61,17 +60,11 @@ export function LoginPage() {
   return (
     <AuthLayout variant="split">
       <title>Login | ProFly</title>
-      <h1 className="visually-hidden">Acesso ao ProFly</h1>
+      <h1 className={styles.title}>Acesso ao ProFly</h1>
       <p className={styles.register}>
-        <a
-          className={styles.link}
-          href={registrationRequestUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Cadastrar? (solicitar acesso ao coordenador pelo WhatsApp; abre em nova aba)"
-        >
-          Cadastrar?
-        </a>
+        <Link className={styles.link} to={paths.register}>
+          Cadastrar
+        </Link>
       </p>
       <form className={styles.form} noValidate onSubmit={handleSubmit}>
         {formError && <Alert variant="error">{formError}</Alert>}
@@ -112,6 +105,12 @@ export function LoginPage() {
           </Button>
         </div>
       </form>
+      <footer className={styles.legalLinks}>
+        <Link to={paths.terms}>Termos de uso</Link>
+        <span aria-hidden="true">·</span>
+        <Link to={paths.privacy}>Privacidade</Link>
+      </footer>
+      <p className={styles.demoNotice}>Demonstração local · Use dados fictícios.</p>
     </AuthLayout>
   );
 }

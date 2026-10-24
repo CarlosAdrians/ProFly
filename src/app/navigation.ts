@@ -7,12 +7,11 @@ export interface NavItem {
   path: AppPath;
 }
 
-/**
- * Itens do menu lateral, na ordem do protótipo.
- * Dashboard, Calendário e Alocações estão fora do escopo atual e não aparecem.
- */
+/** Menu da coordenacao. O layout seleciona as entradas proprias do professor. */
 export const navItems: NavItem[] = [
   { label: 'Conta', icon: 'conta', path: paths.account },
   { label: 'Professores', icon: 'professores', path: paths.teachers },
   { label: 'Disciplinas', icon: 'disciplinas', path: paths.subjects },
+  { label: 'Calendário', icon: 'calendario', path: paths.calendar },
+  { label: 'Alocações', icon: 'alocacoes', path: paths.allocations },
 ];

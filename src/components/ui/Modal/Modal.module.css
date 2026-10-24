@@ -13,6 +13,9 @@
 .dialog::backdrop {
   background: var(--color-scrim);
 }
+.dialog[data-size='wide'] {
+  width: min(820px, calc(100vw - 2rem));
+}
 
 .content {
   position: relative;

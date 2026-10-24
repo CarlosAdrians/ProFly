@@ -90,12 +90,9 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: 'Entrando…' })).toBeDisabled();
   });
 
-  describe('link Cadastrar?', () => {
-    const expectedMessage =
-      'Olá! Sou professor e gostaria de solicitar meu cadastro no ProFly para ter acesso ao sistema. Como posso prosseguir?';
-
+  describe('cadastro pela tela inicial', () => {
     function registerLink() {
-      return screen.getByRole('link', { name: /^Cadastrar\?/ });
+      return screen.getByRole('link', { name: 'Cadastrar' });
     }
 
     it('aparece logo abaixo do logo, antes do formulário', () => {
@@ -105,31 +102,17 @@ describe('LoginPage', () => {
       const email = screen.getByLabelText('E-mail:');
       expect(logo.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
       expect(link.compareDocumentPosition(email) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-      expect(link).toHaveTextContent(/^Cadastrar\?/);
+      expect(link).toHaveTextContent('Cadastrar');
     });
 
-    it('tem nome acessível que explica o destino', () => {
-      setup();
-      expect(registerLink()).toHaveAccessibleName(
-        'Cadastrar? (solicitar acesso ao coordenador pelo WhatsApp; abre em nova aba)',
-      );
-    });
-
-    it('abre o WhatsApp do coordenador com a mensagem pré-preenchida', () => {
-      setup();
-      const url = new URL(registerLink().getAttribute('href')!);
-      expect(url.origin).toBe('https://wa.me');
-      expect(url.pathname).toBe('/5583986693221');
-      expect(url.searchParams.get('text')).toBe(expectedMessage);
-      expect(registerLink().getAttribute('href')).toBe(
-        `https://wa.me/5583986693221?text=${encodeURIComponent(expectedMessage)}`,
-      );
-    });
-
-    it('abre em nova aba com segurança', () => {
-      setup();
-      expect(registerLink()).toHaveAttribute('target', '_blank');
-      expect(registerLink()).toHaveAttribute('rel', 'noopener noreferrer');
+    it('abre o cadastro do professor dentro do projeto', async () => {
+      const { user, router } = setup();
+      expect(registerLink()).toHaveAttribute('href', '/cadastro');
+      await user.click(registerLink());
+      expect(router.state.location.pathname).toBe('/cadastro');
+      expect(
+        screen.getByRole('heading', { name: 'Cadastro de professor', level: 1 }),
+      ).toBeInTheDocument();
     });
 
     it('é alcançável pelo teclado antes dos campos de login', async () => {
@@ -150,9 +133,17 @@ describe('LoginPage', () => {
     });
   });
 
-  it('não exibe avisos de demonstração', () => {
+  it('identifica a demonstracao e oferece os documentos publicos', () => {
     setup();
-    expect(screen.queryByText(/demonstração|simula/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Demonstração local/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute(
+      'href',
+      '/termos-de-uso',
+    );
+    expect(screen.getByRole('link', { name: 'Privacidade' })).toHaveAttribute(
+      'href',
+      '/privacidade',
+    );
   });
 
   it('navega para Esqueceu senha', async () => {
