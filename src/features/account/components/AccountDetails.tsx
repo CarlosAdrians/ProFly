@@ -16,7 +16,11 @@ export function AccountDetails({ account }: { account: Account }) {
         </div>
         <div className={styles.row}>
           <dt>Telefone</dt>
-          <dd>{account.phone || 'Não informado'}</dd>
+          <dd>
+            {account.phone
+              ? account.phone.replace(/^(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3')
+              : 'Não informado'}
+          </dd>
         </div>
         <div className={styles.row}>
           <dt>Perfil</dt>

@@ -49,9 +49,6 @@ export function AppLayout() {
           </Link>
         </div>
         <Outlet />
-        <footer className={styles.demoFooter}>
-          Demonstração local · Dados de exemplo e alterações salvos neste navegador.
-        </footer>
       </main>
     </div>
   );

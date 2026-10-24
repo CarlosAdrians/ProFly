@@ -5,6 +5,7 @@ import { TextField } from '../../../components/ui/TextField/TextField';
 import { PasswordField } from '../../../components/ui/PasswordField/PasswordField';
 import { Button } from '../../../components/ui/Button/Button';
 import { Alert } from '../../../components/ui/Alert/Alert';
+import { Icon } from '../../../components/ui/Icon/Icon';
 import { paths, postLoginPath } from '../../../app/paths';
 import { useAuth } from '../session/useAuth';
 import { InvalidCredentialsError } from '../services/authService';
@@ -64,6 +65,7 @@ export function LoginPage() {
       <h1 className={`${styles.title} ${styles.loginTitle}`}>Acesso ao ProFly</h1>
       <p className={styles.register}>
         <Link className={styles.link} to={paths.register}>
+          <Icon name="userPlus" size={17} />
           Cadastrar
         </Link>
       </p>
@@ -102,6 +104,7 @@ export function LoginPage() {
             Esqueceu senha
           </Link>
           <Button type="submit" loading={loading} loadingText="Entrando…">
+            <Icon name="login" />
             Login
           </Button>
         </div>
@@ -111,7 +114,6 @@ export function LoginPage() {
         <span aria-hidden="true">·</span>
         <Link to={paths.privacy}>Privacidade</Link>
       </footer>
-      <p className={styles.demoNotice}>Demonstração local · Use dados fictícios.</p>
     </AuthLayout>
   );
 }

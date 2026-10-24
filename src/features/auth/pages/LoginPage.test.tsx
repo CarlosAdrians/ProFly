@@ -133,10 +133,10 @@ describe('LoginPage', () => {
     });
   });
 
-  it('identifica a demonstracao e oferece os documentos publicos', () => {
+  it('mantem os documentos publicos sem avisos de demonstracao no formulario', () => {
     setup();
     expect(screen.queryByRole('switch', { name: 'Modo escuro' })).not.toBeInTheDocument();
-    expect(screen.getByText(/Demonstração local/)).toBeInTheDocument();
+    expect(screen.queryByText(/Demonstração local/)).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute(
       'href',
       '/termos-de-uso',

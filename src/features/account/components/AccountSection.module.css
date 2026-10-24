@@ -1,68 +1,75 @@
-/* Seção "Dados cadastrais": visualização (lista) e edição (formulário). */
+/* Data stays readable in paired fields; forms use the same hierarchy. */
 .view {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-5);
+  min-width: 0;
 }
-
 .details {
-  flex: 1;
-  margin: 0;
-}
-
-.row {
   display: grid;
-  grid-template-columns: 180px 1fr;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.row:last-child {
-  border-bottom: 0;
-}
-
-.row dt {
-  color: var(--color-text-muted);
-  font-size: var(--label-font-size);
-}
-
-.row dd {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0 30px;
   margin: 0;
-  font-weight: var(--font-weight-medium);
-  overflow-wrap: anywhere;
 }
-
-.form {
+.row {
   display: flex;
   flex-direction: column;
-  gap: var(--form-gap);
-  max-width: 560px;
+  gap: 10px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--color-border);
 }
-
+.row:nth-last-child(-n + 2) {
+  border-bottom: 0;
+  padding-bottom: 8px;
+}
+.row dt {
+  color: var(--color-text-muted);
+  font-size: 0.73rem;
+}
+.row dd {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+.form {
+  padding-top: 14px;
+}
+.formFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.fullWidth {
+  grid-column: 1/-1;
+}
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: calc(var(--form-actions-gap) - var(--form-gap));
+  justify-content: end;
+  gap: 10px;
+  margin-top: 26px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 22px;
 }
-
-@media (max-width: 600px) {
-  .view {
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-
-  .details {
-    width: 100%;
-  }
-
-  .row {
+.actions button {
+  min-width: 0;
+  font-size: 0.8rem;
+}
+@media (max-width: 650px) {
+  .details,
+  .formFields {
     grid-template-columns: 1fr;
-    gap: var(--space-1);
   }
-
-  .actions > * {
+  .row:nth-last-child(2) {
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 22px;
+  }
+}
+@media (max-width: 480px) {
+  .actions > button {
     flex: 1;
+    padding: 0 12px;
   }
 }

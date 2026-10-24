@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { TextField } from '../../../components/ui/TextField/TextField';
 import { Alert } from '../../../components/ui/Alert/Alert';
 import { Button } from '../../../components/ui/Button/Button';
+import { Icon } from '../../../components/ui/Icon/Icon';
 import type { Account, AccountInput } from '../types';
 import { validateAccount, type AccountFormErrors } from '../validation';
 import styles from './AccountSection.module.css';
@@ -24,6 +25,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) return;
     setSubmitted(true);
     setFailure('');
     const nextErrors = validateAccount({ name, email, phone });
@@ -46,54 +48,61 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
   return (
     <form className={styles.form} noValidate onSubmit={handleSubmit}>
       {failure && <Alert variant="error">{failure}</Alert>}
-      <TextField
-        label="Nome completo:"
-        name="name"
-        autoComplete="name"
-        required
-        maxLength={100}
-        autoFocus
-        value={name}
-        error={errors.name}
-        onChange={(event) => {
-          setName(event.target.value);
-          if (submitted) setErrors(validateAccount({ name: event.target.value, email, phone }));
-        }}
-      />
-      <TextField
-        label="E-mail de acesso:"
-        name="email"
-        type="email"
-        autoComplete="email"
-        required
-        value={email}
-        error={errors.email}
-        onChange={(event) => setEmail(event.target.value)}
-        hint="Na demonstração, o próximo login usa o novo e-mail. A versão institucional exigirá verificação."
-      />
-      <TextField
-        label="Telefone:"
-        name="phone"
-        type="tel"
-        autoComplete="tel"
-        value={phone}
-        error={errors.phone}
-        onChange={(event) => setPhone(event.target.value)}
-        hint="Opcional. Informe DDD e número."
-      />
-      <TextField
-        label="Perfil:"
-        readOnly
-        aria-readonly="true"
-        value={account.role ?? 'Não informado'}
-        hint="Definido pelo sistema e não pode ser alterado pelo usuário."
-      />
+      <fieldset className={styles.formFields} disabled={saving}>
+        <div className={styles.fullWidth}>
+          <TextField
+            label="Nome completo:"
+            name="name"
+            autoComplete="name"
+            required
+            maxLength={100}
+            autoFocus
+            value={name}
+            error={errors.name}
+            onChange={(event) => {
+              setName(event.target.value);
+              if (submitted) setErrors(validateAccount({ name: event.target.value, email, phone }));
+            }}
+          />
+        </div>
+        <TextField
+          label="E-mail de acesso:"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          error={errors.email}
+          onChange={(event) => setEmail(event.target.value)}
+          hint="Use este e-mail para entrar na sua conta."
+        />
+        <TextField
+          label="Telefone:"
+          name="phone"
+          type="tel"
+          autoComplete="tel"
+          value={phone}
+          error={errors.phone}
+          onChange={(event) => setPhone(event.target.value)}
+          hint="Opcional. Informe DDD e número."
+        />
+        <TextField
+          label="Perfil:"
+          className={styles.fullWidth}
+          readOnly
+          aria-readonly="true"
+          value={account.role ?? 'Não informado'}
+          hint="Definido pelo sistema e não pode ser alterado pelo usuário."
+        />
+      </fieldset>
       <div className={styles.actions}>
-        <Button type="submit" loading={saving} loadingText="Salvando…">
-          Salvar alterações
-        </Button>
         <Button variant="secondary" onClick={onCancel} disabled={saving}>
+          <Icon name="close" />
           Cancelar
+        </Button>
+        <Button type="submit" loading={saving} loadingText="Salvando…">
+          <Icon name="save" />
+          Salvar alterações
         </Button>
       </div>
     </form>

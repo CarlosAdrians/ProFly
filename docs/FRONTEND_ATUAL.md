@@ -13,12 +13,11 @@ Atualizado em 24/10/2026. A interface React amplia a base institucional azul e p
 | `/inicio` | Professor: agenda, histórico ainda sem ocorrências, horários pretendidos e formação declarada. Solicitações recolhidas, salvo quando há ajustes solicitados. |
 | `/disponibilidade` | Professor: consulta semanal, edição explícita dos períodos pretendidos e ligação com o calendário. |
 | `/configuracoes` | Ambos: tema, visualização/turno inicial e exibição de feriados. |
-| `/conta` | Ambos: nome, e-mail, telefone e foto; papel permanece protegido na interface. |
+| `/conta` | Ambos: identidade, dados de contato e editor da foto pelo avatar; professor também consulta seu perfil acadêmico. Papel protegido. |
 | `/professores` | Coordenador: vínculos, visualização do perfil e análise de solicitações por curso. |
 | `/disciplinas` | Coordenador: catálogo demonstrativo de Direito, edição e ativação. |
 | `/calendario` | Ambos: mês, semana e dia; turnos manhã, tarde e noite. |
 | `/alocacoes` | Coordenador: rascunhos locais, edição, pesquisa e cancelamento. |
-| `/esqueceu-senha` | Recuperação ilustrativa, sem envio de mensagem. |
 | `/convite/:token` | Rota legada preservada; ativação indisponível. Não integra o novo fluxo de professores. |
 
 Coordenador fictício: `felipe.araujo@profly.test`, senha `profly123`. O e-mail pode ser alterado na tela Conta; nesse caso, o próximo login usa o novo endereço. Professores entram com a conta de teste que criaram neste navegador. A sessão fica na aba; dados demonstrativos permanecem no navegador. Estes controles não oferecem segurança institucional e não devem receber dados pessoais reais.
@@ -33,6 +32,14 @@ Coordenador fictício: `felipe.araujo@profly.test`, senha `profly123`. O e-mail 
 O cadastro abre solicitações pendentes; não concede aprovação acadêmica. A coordenação registra motivo para aprovar, solicitar ajustes ou recusar cada curso. Aprovar um curso preserva as decisões dos outros. Não há botão Novo Professor nem cadastro público pelo WhatsApp. A derivação local da senha usa PBKDF2/SHA-256 com sal aleatório; isso demonstra o fluxo, sem substituir a autenticação do servidor.
 
 A foto aceita JPEG, PNG e WebP de até 2 MB, é recortada/reduzida a 256 pixels e pode ser trocada ou removida. Nome, e-mail e telefone são editáveis; a mudança do e-mail preserva identidade, solicitações e foto e passa a valer no próximo login demonstrativo. A versão institucional precisará de verificação de e-mail no servidor.
+
+## Conta e ações de acesso
+
+Conta reúne identidade e acesso em uma coluna e organiza dados cadastrais e perfil acadêmico em seções com navegação interna. A edição preserva nome, e-mail, telefone e papel protegido; o telefone tem formatação de leitura sem alterar o valor salvo. A saída da conta é uma ação discreta no bloco de acesso.
+
+Clicar no avatar abre um diálogo com seleção de arquivo, prévia circular, zoom, posição horizontal/vertical e centralização. Escolher ou ajustar uma imagem não salva automaticamente. Salvar foto grava um JPEG de 256 × 256; Cancelar preserva a imagem atual. Remover foto também exige ação explícita. O editor limita formatos, tamanho e dimensões, libera URLs temporárias e bloqueia fechamento durante processamento/gravação. Em falha, a imagem anterior e a edição são preservadas.
+
+Login mantém a composição aprovada e a foto do campus. As ações de Login e Conta recebem ícones SVG locais, com texto ou nome acessível. Os avisos de demonstração do login e o rodapé compartilhado das telas internas foram removidos por solicitação do usuário. Essa alteração visual não muda o armazenamento local nem representa integração com a API; os limites técnicos continuam documentados aqui e em Segurança do ambiente.
 
 ## Calendário e alocações
 

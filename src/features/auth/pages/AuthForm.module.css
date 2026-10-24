@@ -58,6 +58,7 @@
 }
 
 .link {
+  gap: 7px;
   display: inline-flex;
   align-items: center;
   min-height: var(--touch-target);
@@ -73,16 +74,6 @@
 
 .backLink {
   align-self: center;
-}
-
-/* Aviso discreto de que a autenticação é apenas demonstrativa. */
-.demoNotice {
-  margin: var(--space-4) 0 0;
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  text-align: center;
 }
 
 @media (max-width: 480px) {
