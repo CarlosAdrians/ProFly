@@ -135,3 +135,9 @@ Composicao anterior restaurada: foto na metade esquerda, fundo azul e cartao cen
 Otimizacao tecnica da mesma imagem: WebP com 36.138 bytes em vez de JPEG com 46.256 bytes (21,9% menor), mesma resolucao 399 x 501, JPEG original preservado como alternativa, recorte central cover e prioridade de carregamento. Nao houve aumento artificial de resolucao ou substituicao da fotografia.
 
 Verificacoes desta correcao: 49 testes existentes de login, recuperacao, rotas e conta aprovados em 4 arquivos; tipos, lint dos arquivos alterados e build aprovados. Chrome confirmou a composicao restaurada e currentSrc carregando campus.webp com dimensoes naturais corretas. Print 33 em outputs/prints, fora do repositorio. Nao foi repetida a suite inteira nem os testes do back-end por se tratar desta correcao visual localizada.
+
+## Qualidade visual da fotografia do login
+
+Pedido posterior esclareceu que a melhoria desejada era de nitidez/resolucao, e nao apenas compressao. A foto recebeu tratamento conservador de super-resolucao na ferramenta integrada image_gen, partindo do JPEG original 399 x 501. Resultado efetivo 1119 x 1405; detalhes reconstruidos por IA sao estimativas. Foto original preservada, resultado versionado como campus-hd.webp e campus-hd.jpg; layout, recorte cover, formulario e regras de acesso mantidos. Prompt e processo em [CAMPUS.md](../assets/CAMPUS.md).
+
+Verificacoes: tipos e build aprovados; links documentais e diff conferidos. Chrome confirmou carregamento de campus-hd.webp com naturalWidth 1119 e naturalHeight 1405, e a nitidez foi conferida no login renderizado. Print 34 em outputs/prints e PNG de alta resolucao em outputs/imagens/campus-melhorado.png, fora do repositorio. Nao foram repetidos testes de logica ou back-end, pois somente os caminhos/dimensoes da foto e os recursos de imagem foram alterados.

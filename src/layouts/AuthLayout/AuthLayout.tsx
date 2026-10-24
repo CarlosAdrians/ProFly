@@ -16,12 +16,12 @@ export function AuthLayout({ variant, children }: AuthLayoutProps) {
     <div className={`${styles.layout} ${styles[variant]}`}>
       {variant === 'split' && (
         <picture className={styles.photo}>
-          <source type="image/webp" srcSet="/images/campus.webp" />
+          <source type="image/webp" srcSet="/images/campus-hd.webp" />
           <img
-            src="/images/campus.jpg"
+            src="/images/campus-hd.jpg"
             alt="Entrada do campus da UNIFACISA"
-            width="399"
-            height="501"
+            width="1119"
+            height="1405"
             decoding="async"
             fetchPriority="high"
           />
