@@ -10,10 +10,12 @@ Atualizado em 24/10/2026. Branch da etapa: feat/backend-institucional.
 | Spec e matriz de cenarios | PASS | node scripts/check-docs.mjs executado; estrutura de documentos/links e rastreio de 14 requisitos e 56 cenarios planejados conferidos. Nao e evidencia de comportamento de runtime. |
 | Sintaxe do verificador documental | PASS | node --check scripts/check-docs.mjs executado sem erro. |
 | Espacos e conflitos no diff | PASS | git diff --check executado sem erro; repetir no staged antes do commit. |
-| Implementacao do servidor | NOT_IMPLEMENTED | O repositorio ainda contem o front-end demonstrativo e a documentacao do back-end. |
-| Testes unitarios/contratos/autorizacao do back-end | NOT_IMPLEMENTED | Os cenarios da matriz ainda nao sao testes executaveis. |
-| Integracao MongoDB | NOT_RUN | Servidor/repositorios ainda nao existem; banco de teste sera configurado com o integrante responsavel. |
-| Concorrencia e cenarios adversariais de runtime | NOT_IMPLEMENTED | Exigem motor/API e ambiente de teste apropriado. |
+| Estrutura do servidor | PASS | TypeScript, Fastify, configuracao validada, driver MongoDB, indices, health checks e contrato OpenAPI implementados. Modulos de negocio pendentes. |
+| Tipos, lint e build da base | PASS | tsc -p tsconfig.check.json, eslint src test scripts e tsc -p tsconfig.json executados no backend. |
+| Testes unitarios da base | PASS | 4 testes, 0 falhas, 0 pulados. Configuracao, tipos/campos protegidos e respostas de erro; cobertura parcial dos cenarios 014/050/051/052/053, sem declarar esses fluxos inteiros implementados. |
+| Integracao MongoDB da base | PASS | 2 testes, 0 falhas, 0 pulados; replica set local real MongoDB 7.0.24. Readiness, dependencia fechada, origem externa e contrato das rotas reais. |
+| Autenticacao e autorizacao por curso | NOT_IMPLEMENTED | Proxima etapa apos a base. |
+| Concorrencia e cenarios adversariais dos modulos | NOT_IMPLEMENTED | Ainda exigem os modulos de negocio; os testes iniciais nao representam a matriz completa. |
 | Build, testes e navegacao do front-end nesta etapa | NOT_RUN | Nao houve alteracao na aplicacao; a etapa atual e documental e de fluxo de trabalho. |
 
 ## Como registrar as proximas entregas
@@ -23,3 +25,9 @@ Associar cada resultado ao requisito/cenario, ao teste real, ao comando executad
 Na conclusao integrada do back-end, todos os gates obrigatorios da [spec](../specs/BACKEND_V1.md) precisam de evidencia. O verificador documental aprova somente a integridade estrutural dos documentos e da matriz; nao comprova os comportamentos descritos.
 
 Os cenarios permanecem com status PLANNED na matriz porque ela descreve o plano de verificacao. Os resultados reais e os testes implementados devem ser registrados como evidencia, sem confundir planejamento com aprovacao.
+
+## Ocorrencia de validacao da etapa 1
+
+A primeira tentativa de iniciar o MongoDB temporario excedeu o limite padrao de 10 segundos. O prazo de inicializacao do teste foi ajustado para 60 segundos e a suite foi repetida: 2/2 testes aprovados. O binario responde como MongoDB 7.0.24 e e utilizado somente no ambiente efemero de testes. Nenhum banco da faculdade foi acessado.
+
+Comandos usados, na pasta backend: node --import tsx --test test/unit.test.ts e, com PROFLY_RUN_INTEGRATION=1, node --import tsx --test --test-concurrency=1 test/integration.test.ts. A integracao roda fora do sandbox restrito para permitir o processo MongoDB local. Sem a variavel explicita, a suite recusa a execucao em vez de marcar testes pulados como sucesso.

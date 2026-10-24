@@ -1,6 +1,6 @@
 # Spec do back-end institucional do ProFly
 
-Versao: 0.1, 24/10/2026. Estado: contrato de trabalho para implementacao incremental. O servidor e as suites de runtime ainda nao foram implementados. Regras academicas, pesos e politicas ainda pendentes estao identificados; a spec nao os apresenta como aprovados pela faculdade.
+Versao: 0.1, 24/10/2026. Estado: contrato de trabalho para implementacao incremental. A base do servidor e os primeiros testes foram implementados; o andamento de cada area esta em [STATUS.md](../validation/STATUS.md). Regras academicas, pesos e politicas ainda pendentes estao identificados; a spec nao os apresenta como aprovados pela faculdade.
 
 ## 1. Escopo e fontes
 
@@ -122,7 +122,7 @@ O OpenAPI detalhara rotas, schemas e exemplos na implementacao. Erros nao devem 
 
 Suites obrigatorias antes da conclusao do back-end: tipos/lint/build, unitarios de dominio, contratos de entrada/saida, autenticacao/autorizacao, integracao real com MongoDB de teste, concorrencia e cenarios adversariais. Depois, validar os fluxos completos nas telas. Testes de integracao ficam isolados de producao e nao sao confundidos com repositorios simulados.
 
-A [matriz](backend-cases.json) enumera cenarios planejados. Inicialmente todos estao sem teste implementado. O rastreio de evidencias deve associar ID do cenario, teste real, comando, resultado e limitacao. Nenhum cenario pode ser declarado PASS apenas por existir neste arquivo.
+A [matriz](backend-cases.json) enumera cenarios planejados. A cobertura real e incremental e esta registrada em [STATUS.md](../validation/STATUS.md). O rastreio de evidencias deve associar ID do cenario, teste real, comando, resultado e limitacao. Nenhum cenario pode ser declarado PASS apenas por existir neste arquivo.
 
 Cada defeito encontrado deve gerar um cenario reproduzivel e a correcao correspondente. Exercitar valores de fronteira, dados ausentes, tipos trocados, sequencias de estados invalidas e operacoes simultaneas. Conferir invariantes de saida, nao apenas o codigo HTTP.
 

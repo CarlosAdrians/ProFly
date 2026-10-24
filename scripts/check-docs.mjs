@@ -75,7 +75,7 @@ function uniqueIds(items, pattern, label) {
 }
 
 async function main() {
-  const files = [path.join(root, 'README.md'), path.join(root, 'AGENTS.md')];
+  const files = [path.join(root, 'README.md'), path.join(root, 'AGENTS.md'), path.join(root, 'backend/README.md')];
   files.push(...(await markdownFiles(path.join(root, 'docs'))));
   for (const file of files) await checkMarkdown(file);
 
@@ -122,7 +122,7 @@ async function main() {
     return;
   }
   process.stdout.write(`CHECK_DOCS_PASS: ${files.length} documentos, ${localLinks} links locais, ${requirements.size} requisitos e ${matrix.cases.length} cenarios planejados.\n`);
-  process.stdout.write('BACKEND_RUNTIME: NOT_IMPLEMENTED. Este comando nao executa testes de back-end nem valida links externos.\n');
+  process.stdout.write('BACKEND_RUNTIME: NOT_CHECKED. Este comando nao executa testes de back-end nem valida links externos.\n');
 }
 
 main().catch((error) => {

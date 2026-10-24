@@ -91,7 +91,7 @@ As referências incluem os [protótipos originais](docs/prototipos/README.md), a
 | Back-end definido | Node.js. TypeScript e API REST são a proposta de organização técnica. |
 | Banco definido | MongoDB, com configuração coordenada por outro integrante do grupo. |
 | Qualidade do front-end | Vitest, Testing Library, ESLint e Prettier já configurados. |
-| Qualidade do back-end | Spec, contratos e matriz de cenários definidos; suites de execução ainda a implementar. |
+| Qualidade do back-end | Spec, matriz, checagem de tipos/lint/build e primeiros testes unitários e de integração implementados; cobertura dos módulos ainda em andamento. |
 
 Arquitetura pretendida:
 
@@ -149,11 +149,11 @@ Atualizado em **24/10/2026**. Repositório: [CarlosAdrians/ProFly](https://githu
 | Visão institucional, requisitos e matriz | Documentados para orientar a implementação. |
 | Front-end de coordenador | Demonstração com login simulado, conta, professores, disciplinas e convite parcial. |
 | Aprovação de entrada, administrador e dashboard de professor | Ainda não implementados. |
-| Servidor Node.js e persistência MongoDB | Ainda não implementados. |
+| Servidor Node.js e MongoDB | Base HTTP, configuração, conexão e índices implementados; módulos de negócio ainda pendentes. Veja [backend/README.md](backend/README.md). |
 | Motor de elegibilidade e score | Especificado; implementação e validação institucional pendentes. |
 | Calendário, alocações e publicação | Planejados; ainda não implementados. |
 | Histórico de aulas e atestados | Planejados; ainda não implementados. |
-| Testes de execução do back-end | Ainda não implementados; a matriz contém cenários planejados. |
+| Testes de execução do back-end | Primeiros testes unitários e de integração MongoDB implementados; cobertura completa da matriz ainda pendente. |
 
 A base de implementação foi localizada em `claude/pensive-dirac-5rithn`, no commit `6e78ca6`. Na leitura inicial, a `main` continha apenas referências e protótipos. Esses dados registram a origem da etapa, sem presumir publicação desta branch no remoto.
 
@@ -186,7 +186,7 @@ Verificação documental disponível, sem instalar dependências adicionais:
 node scripts/check-docs.mjs
 ```
 
-Esse comando confere estrutura dos documentos, links locais e referências da matriz. Ele não executa o back-end nem valida os comportamentos descritos. A configuração e os comandos de execução do servidor serão adicionados com sua implementação.
+Esse comando confere estrutura dos documentos, links locais e referências da matriz. Ele não executa o back-end nem valida os comportamentos descritos. A configuração e os comandos do servidor estão em [backend/README.md](backend/README.md).
 
 ## Organização do repositório
 
@@ -201,4 +201,4 @@ scripts/               Verificador documental
 AGENTS.md              Regras de trabalho e commits
 ```
 
-A estrutura do servidor será adicionada na etapa de back-end. Modelos, índices, ambiente de teste e requisitos de transação devem ser combinados com o integrante responsável pelo MongoDB. Dados sintéticos permitem desenvolver os testes; a conclusão integrada exige verificar os fluxos em um banco de teste real.
+A estrutura do servidor está em [backend](backend/README.md). Modelos, índices, ambiente de desenvolvimento e requisitos de transação devem ser combinados com o integrante responsável pelo MongoDB. Os testes de integração usam um MongoDB temporário real e isolado; a conclusão integrada exige validar todos os fluxos previstos.

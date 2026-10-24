@@ -1,0 +1,50 @@
+import Fastify from 'fastify';
+import cookie from '@fastify/cookie';
+import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import multipart from '@fastify/multipart';
+import rateLimit from '@fastify/rate-limit';
+import swagger from '@fastify/swagger';
+import { randomUUID } from 'node:crypto';
+import type { Config } from './config.js';
+import type { Database } from './database.js';
+import { AppError, errorResponse } from './shared/errors.js';
+
+export async function buildApp(config: Config, database: Database) {
+  const app = Fastify({
+    logger: false,
+    bodyLimit: 64 * 1024,
+    requestIdHeader: false,
+    genReqId: () => randomUUID(),
+    ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } },
+  });
+  await app.register(cookie);
+  await app.register(cors, { origin: config.origins, credentials: true });
+  await app.register(helmet);
+  await app.register(rateLimit, { global: false });
+  await app.register(multipart, {
+    limits: { fileSize: config.uploadMaxBytes, files: 1, fields: 0 },
+  });
+  await app.register(swagger, { openapi: { info: { title: 'ProFly API', version: '0.1.0' } } });
+
+  app.addHook('onRequest', async (request) => {
+    const origin = request.headers.origin;
+    if (origin && !config.origins.includes(origin))
+      throw new AppError(403, 'ORIGIN_NOT_ALLOWED', 'Origem nao permitida.');
+  });
+  app.setErrorHandler((error, request, reply) => {
+    const result = errorResponse(error, request.id);
+    reply.code(result.status).send(result.body);
+  });
+  app.setNotFoundHandler(() => {
+    throw new AppError(404, 'NOT_FOUND', 'Recurso indisponivel.');
+  });
+
+  app.get('/health/live', { schema: { tags: ['health'] } }, async () => ({ status: 'ok' }));
+  app.get('/health/ready', { schema: { tags: ['health'] } }, async () => {
+    await database.ping();
+    return { status: 'ready' };
+  });
+  app.get('/openapi.json', { schema: { hide: true } }, async () => app.swagger());
+  return app;
+}
