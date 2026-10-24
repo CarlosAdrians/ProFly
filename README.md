@@ -1,141 +1,204 @@
 # ProFly
 
-Sistema web de apoio à gestão e à alocação de professores, competências e disciplinas da UNIFACISA.
+**Plataforma de gestão e alocação docente para os cursos da UNIFACISA.**
 
-O projeto nasceu para atender à coordenação do curso de Direito. A nova direção é expandir esse atendimento para toda a faculdade, contemplando vários cursos e coordenações. Essa expansão está em definição: a implementação disponível ainda é um front-end de demonstração voltado ao cenário original.
+O ProFly organiza informações de professores, disciplinas, competências e disponibilidade para apoiar a montagem das escalas acadêmicas. Cada coordenador trabalha nos cursos pelos quais é responsável; o professor acompanha suas aulas em uma visão reunida; o administrador mantém a estrutura institucional e as responsabilidades de acesso.
 
-## Comece por aqui
+O projeto nasceu no curso de Direito e está sendo ampliado para atender aos demais cursos da faculdade. Este README apresenta a visão do produto completo. A implementação disponível e o trabalho ainda pendente estão identificados na seção [Estado de desenvolvimento](#estado-de-desenvolvimento).
 
-- [Estado e funcionamento do front-end](docs/FRONTEND_ATUAL.md): telas, regras existentes, armazenamento e limites da demonstração.
-- [Expansão para toda a faculdade](docs/EXPANSAO_INSTITUCIONAL.md): proposta inicial, impactos, decisões em aberto e etapas sugeridas.
-- [Definição do back-end](docs/BACKEND.md): decisões confirmadas, responsabilidades, modelo conceitual e regras pendentes.
-- [Proposta de compatibilidade docente](docs/PROPOSTA_COMPATIBILIDADE.md): campos do perfil, requisitos por disciplina, árvore de elegibilidade e score ilustrado para discutir com a coordenação.
-- [Protótipos e referências originais](docs/prototipos/README.md).
-- [Resumo acadêmico do projeto](docs/prototipos/Resumo%20Expandido%20ProFly.pdf).
-- [Referência do Figma](docs/prototipos/FIGMA.md).
+## O problema que queremos resolver
 
-## Qual problema o ProFly procura resolver?
+Distribuir aulas exige combinar o conteúdo de cada disciplina com os conhecimentos do professor, seus horários e sua carga de trabalho. A mesma pessoa pode atuar em vários cursos, o que torna necessário conferir compromissos de forma compartilhada, respeitando os limites de acesso de cada coordenação.
 
-A distribuição de disciplinas exige cruzar área de atuação, competências, disponibilidade e carga horária dos professores. Quando essas informações ficam dispersas, a coordenação precisa conferir manualmente conflitos e possibilidades de alocação.
+O ProFly busca centralizar essas informações, explicar as possibilidades de alocação e reduzir conferências manuais. O sistema recomenda candidatos e aponta restrições; a decisão final da atribuição permanece com a coordenação.
 
-A proposta original é centralizar as informações e apresentar professores possíveis para cada necessidade. A decisão final de alocação permanece com a coordenação. O resumo acadêmico também prevê disponibilidade, recomendações e histórico, mas esses módulos ainda não foram implementados nesta base.
+## Quem utiliza
 
-## Situação do repositório
-
-Leitura inicial realizada em **23/10/2026**, a partir do repositório [CarlosAdrians/ProFly](https://github.com/CarlosAdrians/ProFly).
-
-| Referência examinada | Conteúdo encontrado |
+| Perfil | Responsabilidades |
 | --- | --- |
-| `main` em `19f5b7b` | Documentação, protótipos em PDF e recursos visuais; sem aplicação executável. |
-| `claude/pensive-dirac-5rithn` em `6e78ca6` | Front-end React, serviços locais, componentes e testes automatizados. Base utilizada nesta leitura. |
-| `docs/leitura-inicial` | Branch local criada a partir do front-end para organizar esta documentação. |
+| Administrador | Cadastrar cursos e coordenadores e atribuir as responsabilidades de cada coordenação. |
+| Coordenador | Gerenciar professores e disciplinas no contexto de seus cursos, analisar solicitações de entrada, consultar compatibilidade e organizar alocações e horários. |
+| Professor | Preencher seu perfil, solicitar participação, informar disponibilidade, consultar a própria escala e o histórico de aulas e comunicar ausências com atestado. |
 
-Essas referências descrevem a fotografia inicial do repositório e podem mudar com novos commits. Para baixar a implementação examinada diretamente:
+Uma pessoa pode atuar em mais de um curso sem precisar de perfis docentes duplicados. A aprovação em um curso não concede acesso automático a outro. A autorização deve ser conferida também no servidor em cada operação.
 
-```bash
-git clone --branch claude/pensive-dirac-5rithn https://github.com/CarlosAdrians/ProFly.git
-cd ProFly
+## Fluxo principal
+
+1. O administrador organiza os cursos e seus coordenadores.
+2. O professor preenche seus dados e solicita participação nos cursos e disciplinas selecionados. A coordenação também pode iniciar seu cadastro por convite, respeitando o mesmo controle de acesso.
+3. O coordenador responsável analisa a solicitação, aprova, pede ajustes ou recusa. Enquanto aguarda, o professor acompanha os próprios dados e solicitações.
+4. Ao organizar uma oferta de disciplina para uma turma e um período, a coordenação consulta os professores elegíveis e os motivos da recomendação.
+5. A coordenação monta e publica a escala conforme o fluxo definido; o professor consulta seus horários e mantém as informações permitidas do perfil.
+
+Solicitação de participação, aprovação de aptidões e atribuição de aulas são etapas distintas. A aprovação de entrada não cria uma alocação automaticamente.
+
+## Funcionalidades do produto
+
+### Perfil docente detalhado
+
+Cadastro progressivo de identificação, formação, áreas de atuação, conhecimentos específicos, experiência docente, experiência profissional e disponibilidade. O professor pode completar as seções por etapas, com orientação sobre o que falta informar ou analisar.
+
+Os dados necessários à recomendação têm origem e situação explícitas: declarados, pendentes de análise ou confirmados. O cadastro distingue falta de informação de ausência conhecida de experiência. O limite institucional de carga é separado da dedicação pretendida pelo professor.
+
+### Organização acadêmica
+
+Cursos, competências, disciplinas, períodos letivos, turmas e ofertas. Cada disciplina possui uma ficha de conhecimentos obrigatórios, conhecimentos desejáveis e critérios de experiência. Uma oferta representa aquela disciplina para uma turma em determinado período.
+
+### Elegibilidade e compatibilidade
+
+A indicação combina uma árvore de decisões binárias com uma pontuação explicável:
+
+- **Elegibilidade:** confere vínculo aprovado, formação exigida quando aplicável, cada conhecimento obrigatório, disponibilidade, conflitos e carga horária. A quantidade de verificações acompanha os requisitos da disciplina.
+- **Classificação:** compara os candidatos elegíveis pelos conhecimentos desejáveis e experiências pertinentes, mostrando como cada fator contribuiu para o resultado.
+
+O resultado é específico para professor, disciplina/oferta, horários e período. Dados obrigatórios desconhecidos deixam a avaliação pendente. Um professor pode atender aos requisitos obrigatórios e ainda ter score pendente por informações de classificação incompletas.
+
+A configuração inicial de 60 pontos para conhecimentos, 25 para experiência docente e 15 para experiência profissional é uma **proposta para revisão com a coordenação**. Pesos, requisitos reais e limites acadêmicos ainda precisam dessa revisão. O score não representa uma probabilidade de sucesso e não atribui aulas automaticamente.
+
+Detalhes, nós de decisão, fórmula e exemplos fictícios estão na [proposta de compatibilidade](docs/PROPOSTA_COMPATIBILIDADE.md).
+
+### Alocações e calendário
+
+Planejamento por curso, turma e período, com seleção de dia e turno. Os cartões de aula representam disciplina, turma e professor e podem ser incluídos, editados e movimentados por arraste, com alternativa por formulário.
+
+Toda alteração precisa conferir novamente os horários reais, os compromissos do professor em outros cursos e sua carga. Disputas simultâneas entre coordenações devem preservar a integridade da escala. A proposta de trabalho inclui rascunho e versão publicada estável; a política de reservas e republicação ainda será detalhada.
+
+### Dashboard e histórico do professor
+
+Uma entrada simples reúne a situação das solicitações, aulas de hoje/semana, perfil acadêmico, disponibilidade e comunicação de ausência.
+
+O histórico recente mostra as **últimas 10 aulas**, reunindo os cursos do professor, com disciplina, turma, data, horário e situação. Há acesso ao histórico completo com filtros e paginação. Uma aula apenas agendada ou com data passada não é considerada realizada automaticamente.
+
+O histórico pertinente confirmado pode compor a experiência usada na recomendação, com deduplicação e critérios próprios. A janela de 10 itens é somente um recorte de navegação.
+
+### Ausências e atestados
+
+O professor informa o período de ausência, pode anexar o atestado em fluxo reservado e acompanha o retorno da coordenação responsável. As aulas afetadas são sinalizadas para tratamento.
+
+O afastamento afeta a disponibilidade nas datas aplicáveis e preserva o score acadêmico e os conhecimentos do professor. O documento não aparece na recomendação. Seu envio não apaga, redistribui ou republica aulas automaticamente.
+
+## Direção visual
+
+Preservar a estética do front-end existente, reaproveitando componentes, modais, campos, botões e tokens de estilo. Os novos fluxos devem ampliar essa base de forma consistente, com uso por teclado e em telas menores.
+
+As referências incluem os [protótipos originais](docs/prototipos/README.md), a [referência do Figma](docs/prototipos/FIGMA.md) e os recursos institucionais já presentes no repositório. Materiais adicionais podem partir das referências oficiais da UNIFACISA registradas na documentação.
+
+## Tecnologias e arquitetura
+
+| Camada | Tecnologia / direção |
+| --- | --- |
+| Front-end existente | React, TypeScript, Vite, React Router, CSS Modules e variáveis CSS. |
+| Back-end definido | Node.js. TypeScript e API REST são a proposta de organização técnica. |
+| Banco definido | MongoDB, com configuração coordenada por outro integrante do grupo. |
+| Qualidade do front-end | Vitest, Testing Library, ESLint e Prettier já configurados. |
+| Qualidade do back-end | Spec, contratos e matriz de cenários definidos; suites de execução ainda a implementar. |
+
+Arquitetura pretendida:
+
+```text
+Interface por perfil
+        |
+        v
+API Node.js: identidade, autorização, validação e regras de negócio
+        |
+        v
+MongoDB: cadastros, vínculos, planejamento, histórico e versões
+
+Anexos de atestado: armazenamento privado com acesso autorizado pela API
 ```
 
-## O que existe hoje
+A aplicação deve rejeitar dados incoerentes e operações fora do escopo, manter estados explícitos e retornar erros úteis aos formulários. Validação no navegador complementa as verificações do servidor.
 
-| Área | Comportamento atual |
+## Documentação do projeto
+
+| Documento | Conteúdo |
 | --- | --- |
-| Login | Autenticação simulada de um coordenador fictício e proteção das rotas no navegador. |
-| Recuperação de senha | Formulário demonstrativo; não envia e-mail. |
-| Conta | Consulta do perfil, edição do nome e encerramento da sessão. |
-| Professores | Listagem, pesquisa por nome, cadastro, edição e ativação/inativação. |
-| Disciplinas | Listagem, pesquisa por nome, cadastro, edição e ativação/inativação; códigos gerados com prefixo `DIR`. |
-| Convites | Geração e consulta locais de links de convite; tela para informar uma senha. A ativação da conta está bloqueada até a integração com o back-end. |
+| [Spec do back-end](docs/specs/BACKEND_V1.md) | Requisitos rastreáveis, contratos, invariantes, limites e critérios de aceitação. |
+| [Matriz de cenários](docs/specs/backend-cases.json) | 56 cenários planejados para testes de domínio, contratos, autorização, integração, concorrência e entradas adversariais. |
+| [Fluxo de trabalho](docs/WORKFLOW.md) | Ordem de implementação, ciclo de validação e commits por área. |
+| [Estado das validações](docs/validation/STATUS.md) | O que foi verificado e o que ainda está pendente ou não implementado. |
+| [Definição do back-end](docs/BACKEND.md) | Modelo conceitual, responsabilidades, dados e contratos com o responsável pelo banco. |
+| [Compatibilidade docente](docs/PROPOSTA_COMPATIBILIDADE.md) | Cadastro, árvore detalhada, score, dashboard, histórico e exemplos. |
+| [Expansão institucional](docs/EXPANSAO_INSTITUCIONAL.md) | Contexto, decisões tomadas e etapas da ampliação. |
+| [Front-end demonstrativo](docs/FRONTEND_ATUAL.md) | Funcionamento, rotas e limitações da implementação existente. |
+| [Orientações de trabalho](AGENTS.md) | Regras do repositório para preservar a base, validar e salvar entregas em commits. |
 
-**Ainda não implementado:** gestão de cursos e coordenações, permissões por curso, acesso efetivo do professor, cadastro estruturado de competências, disponibilidade, calendário, recomendações, alocações, histórico e dashboard.
+## Desenvolvimento por etapas
 
-Os PDFs incluem algumas dessas telas futuras; sua presença nos protótipos não significa que exista uma funcionalidade correspondente no código.
+Usar **spec e ciclo de validação em conjunto**: definir o comportamento, implementar uma parte coerente, testar casos válidos e inválidos, corrigir falhas, conferir regressões pertinentes e salvar a entrega em commit.
 
-## Como executar o front-end
+A sequência começa pela estrutura do back-end, identidade e permissões, cadastro/aprovação, organização acadêmica, elegibilidade/score, alocações/publicação, ausências/histórico e integração das telas. A ordem detalhada está no [fluxo de trabalho](docs/WORKFLOW.md).
 
-Use Node.js e npm. Como referência de ambiente para esta base, adote Node.js 24; as dependências têm requisitos próprios registrados no `package-lock.json`.
+Cada entrega recebe commit com área identificada, por exemplo:
+
+```text
+feat(frontend): adiciona formulario de disponibilidade
+feat(backend): valida solicitacao por curso
+test(backend): cobre reserva simultanea do professor
+docs(project): apresenta o projeto institucional completo
+```
+
+Alterações de front-end e back-end ficam em commits separados. Testes e documentação relacionados podem acompanhar sua funcionalidade. Um teste planejado, pulado ou indisponível não conta como aprovado.
+
+## Estado de desenvolvimento
+
+Atualizado em **24/10/2026**. Repositório: [CarlosAdrians/ProFly](https://github.com/CarlosAdrians/ProFly). Branch local desta etapa: `feat/backend-institucional`.
+
+| Parte | Estado atual |
+| --- | --- |
+| Visão institucional, requisitos e matriz | Documentados para orientar a implementação. |
+| Front-end de coordenador | Demonstração com login simulado, conta, professores, disciplinas e convite parcial. |
+| Aprovação de entrada, administrador e dashboard de professor | Ainda não implementados. |
+| Servidor Node.js e persistência MongoDB | Ainda não implementados. |
+| Motor de elegibilidade e score | Especificado; implementação e validação institucional pendentes. |
+| Calendário, alocações e publicação | Planejados; ainda não implementados. |
+| Histórico de aulas e atestados | Planejados; ainda não implementados. |
+| Testes de execução do back-end | Ainda não implementados; a matriz contém cenários planejados. |
+
+A base de implementação foi localizada em `claude/pensive-dirac-5rithn`, no commit `6e78ca6`. Na leitura inicial, a `main` continha apenas referências e protótipos. Esses dados registram a origem da etapa, sem presumir publicação desta branch no remoto.
+
+## Executar a demonstração disponível
+
+Na raiz deste checkout, com Node.js e npm disponíveis, use Node.js 24 como referência de ambiente:
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Abra o endereço informado pelo Vite no terminal. Não há back-end, banco de dados ou arquivo `.env` exigido pela implementação atual.
+Abra o endereço informado pelo Vite. O acesso demonstrativo é `felipe.araujo@profly.test`, senha `profly123`. São credenciais fictícias presentes no código, sem autenticação segura de produção.
 
-### Acesso de demonstração
+A demonstração guarda cadastros no `localStorage` e sessão no `sessionStorage`. Não compartilha dados entre navegadores nem possui banco integrado. A criação de senha por convite não conclui a ativação enquanto o serviço real não existir. Os detalhes estão em [FRONTEND_ATUAL.md](docs/FRONTEND_ATUAL.md).
 
-- E-mail: `felipe.araujo@profly.test`
-- Senha: `profly123`
+Comandos existentes do front-end:
 
-São credenciais fictícias, definidas em `src/mocks/coordinator.ts`. O login demonstrativo não oferece autenticação segura para uso institucional.
-
-### Comandos disponíveis
-
-| Comando | Finalidade |
-| --- | --- |
-| `npm run dev` | Servidor de desenvolvimento. |
-| `npm run build` | Checagem de tipos e geração do build. |
-| `npm run preview` | Visualização local do build. |
-| `npm run lint` | Análise com ESLint. |
-| `npm run typecheck` | Checagem de tipos com TypeScript. |
-| `npm run format:check` | Conferência de formatação com Prettier. |
-| `npm test` | Execução dos testes existentes com Vitest. |
-
-### Rotas existentes
-
-| Rota | Acesso |
-| --- | --- |
-| `/login` | Público; redireciona sessões já autenticadas. |
-| `/esqueceu-senha` | Público. |
-| `/convite/:token` | Público; consulta um convite armazenado localmente. |
-| `/conta` | Coordenador. |
-| `/professores` | Coordenador. |
-| `/disciplinas` | Coordenador. |
-
-Após o login, o destino é `/professores`. A raiz e as rotas desconhecidas levam ao login ou à tela de professores quando já existe sessão. Não existem rotas para dashboard, calendário ou alocações.
-
-## Tecnologias e organização
-
-React 19, TypeScript, Vite 8, React Router 7, CSS Modules e variáveis CSS. A base usa Vitest e Testing Library para testes, além de ESLint e Prettier.
-
-```text
-public/images/       Identidade visual, ícones e imagens
-src/app/             Rotas e navegação
-src/components/      Componentes reutilizáveis
-src/layouts/         Estruturas das telas públicas e internas
-src/features/        auth, account, teachers, subjects e invites
-src/services/        Armazenamento e coleções locais
-src/mocks/           Dados fictícios da demonstração
-src/styles/          Tokens visuais e estilos globais
-src/test/            Configuração e utilitários de testes
-docs/                Documentação de funcionamento e evolução
-docs/prototipos/     Referências originais
+```bash
+npm run build
+npm run lint
+npm run typecheck
+npm run format:check
+npm test
 ```
 
-Em **24/10/2026**, foram definidos **Node.js para o back-end e MongoDB para o banco de dados**. A configuração do banco ficará com outro integrante do grupo, com contratos de integração combinados entre as partes. A implementação atual ainda não contém esses serviços nem uma conexão com o banco. Consulte a [definição do back-end](docs/BACKEND.md).
+Verificação documental disponível, sem instalar dependências adicionais:
 
-## Limites importantes da demonstração
+```bash
+node scripts/check-docs.mjs
+```
 
-- Professores, disciplinas, dados editáveis da conta e convites ficam no `localStorage`; a sessão fica no `sessionStorage`.
-- Os dados não são compartilhados entre computadores, navegadores ou origens diferentes. Um link de convite enviado a outro navegador não leva os dados locais junto.
-- O único login disponível é o do coordenador fictício. O tipo de sessão prevê `teacher`, mas não existe login funcional nem área interna habilitada para professores.
-- A criação de senha falha deliberadamente enquanto o serviço de ativação não estiver integrado. Nenhuma senha é persistida e o convite continua pendente.
-- A solicitação de cadastro abre o WhatsApp de um contato fixo; o sistema não envia a mensagem automaticamente.
-- Os controles do navegador não substituem autenticação e autorização no servidor.
+Esse comando confere estrutura dos documentos, links locais e referências da matriz. Ele não executa o back-end nem valida os comportamentos descritos. A configuração e os comandos de execução do servidor serão adicionados com sua implementação.
 
-## Próxima etapa: definir o funcionamento institucional
+## Organização do repositório
 
-Os perfis definidos são **administrador, coordenador e professor**. O administrador cadastra cursos e coordenadores e define responsabilidades. Cada coordenador cadastra professores e disciplinas nos cursos que gerencia. O professor completa seu próprio cadastro com informações de atuação, conhecimentos e disponibilidade e consulta sua escala. O fluxo de convite e os detalhes de validação estão propostos na [definição do back-end](docs/BACKEND.md).
+```text
+src/                   Front-end existente: aplicação, componentes e funcionalidades
+public/images/         Imagens e recursos visuais
+docs/specs/            Spec e matriz de cenários do back-end
+docs/validation/       Registro das verificações e limitações
+docs/prototipos/       Protótipos e referências originais
+docs/                  Contexto, propostas e fluxo de desenvolvimento
+scripts/               Verificador documental
+AGENTS.md              Regras de trabalho e commits
+```
 
-A entrada do professor exige análise da coordenação: ele solicita participação indicando curso e disciplinas, e a coordenação aprova, pede ajustes ou recusa. Antes da aprovação, o acesso fica limitado aos próprios dados e solicitações. Também foi definido o envio de ausência com atestado pela área do professor: o afastamento afeta a disponibilidade nas datas aplicáveis e preserva o score acadêmico.
-
-O front-end deve preservar a estética atual e aproveitar os componentes de modal existentes para cadastros. Estão previstas as telas de alocações e calendário, com seleção de dia e turno e cartões de aula que possam ser adicionados, editados e movimentados.
-
-A dashboard do professor deve reunir escala, solicitação de entrada, perfil acadêmico, disponibilidade e comunicação de ausência. O cadastro será proposto por etapas, com formação, competências e experiências úteis à recomendação. A [proposta de compatibilidade](docs/PROPOSTA_COMPATIBILIDADE.md) apresenta uma fórmula inicial e um exemplo fictício; a validação com a coordenação ainda está pendente.
-
-Também foi definido o histórico das últimas 10 aulas na dashboard, reunindo os cursos do professor e permitindo acessar o histórico completo. A proposta detalha vários nós de elegibilidade alimentados pelos dados do cadastro; os três grupos de pontuação resumem seus fatores, sem limitar a árvore a três perguntas. O recorte de 10 aulas é apenas visual; a experiência considera o histórico pertinente confirmado conforme regras próprias.
-
-A prioridade atual é concluir a definição do back-end e estruturar os fluxos do front-end. As regras de disponibilidade, publicação da escala e cálculo da compatibilidade estão destacadas no [documento do back-end](docs/BACKEND.md). O [documento de expansão](docs/EXPANSAO_INSTITUCIONAL.md) mantém o contexto dessa evolução.
-
-Esta entrega organiza a leitura e a documentação. O comportamento e a aparência da aplicação foram preservados. A conferência foi documental e estática; build, testes e navegação no navegador não foram executados nesta etapa.
+A estrutura do servidor será adicionada na etapa de back-end. Modelos, índices, ambiente de teste e requisitos de transação devem ser combinados com o integrante responsável pelo MongoDB. Dados sintéticos permitem desenvolver os testes; a conclusão integrada exige verificar os fluxos em um banco de teste real.
