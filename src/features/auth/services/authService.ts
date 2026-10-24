@@ -1,6 +1,7 @@
 import { demoCoordinator } from '../../../mocks/coordinator';
 import { simulateLatency } from '../../../services/storage';
 import { getAccount } from '../../account/services/accountService';
+import { coordinatorLoginEmail } from '../../account/services/coordinatorIdentity';
 import type { Session } from '../session/types';
 import { authenticateDemoTeacher } from '../../registration/demoService';
 
@@ -19,7 +20,7 @@ export class InvalidCredentialsError extends Error {
  */
 export async function authenticate(email: string, password: string): Promise<Session> {
   await simulateLatency();
-  const sameEmail = email.trim().toLowerCase() === demoCoordinator.email;
+  const sameEmail = email.trim().toLowerCase() === coordinatorLoginEmail();
   if (!sameEmail) {
     const teacher = await authenticateDemoTeacher(email, password);
     if (!teacher) throw new InvalidCredentialsError();

@@ -22,7 +22,7 @@ export function AccountPage() {
   const { profiles, error: profileError } = useDemoProfiles();
   const profile = profiles.find((item) => item.email === session?.email);
   const navigate = useNavigate();
-  const { account, save } = useAccount(session);
+  const { account, save, error: accountError } = useAccount(session);
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState<string>();
   const editButtonRef = useRef<HTMLButtonElement>(null);
@@ -49,7 +49,7 @@ export function AccountPage() {
   async function handleSave(input: AccountInput) {
     const updated = await save(input);
     // Mantém a sessão alinhada ao perfil salvo, para todo o restante da interface.
-    updateSession({ name: updated.name });
+    updateSession({ name: updated.name, email: updated.email });
     setMessage('Dados atualizados com sucesso.');
     stopEditing();
   }
@@ -64,6 +64,7 @@ export function AccountPage() {
     <>
       <title>Conta | ProFly</title>
       {profileError && <Alert variant="error">{profileError}</Alert>}
+      {accountError && <Alert variant="error">{accountError}</Alert>}
       <section className={styles.page} aria-labelledby="account-title">
         <PageHeader
           title="Conta"

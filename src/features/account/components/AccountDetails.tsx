@@ -15,6 +15,10 @@ export function AccountDetails({ account }: { account: Account }) {
           <dd>{account.email}</dd>
         </div>
         <div className={styles.row}>
+          <dt>Telefone</dt>
+          <dd>{account.phone || 'Não informado'}</dd>
+        </div>
+        <div className={styles.row}>
           <dt>Perfil</dt>
           <dd>{account.role ?? 'Não informado'}</dd>
         </div>

@@ -49,14 +49,15 @@ describe('Conta', () => {
   });
 
   describe('editar informações', () => {
-    it('entra no modo de edição com o nome editável e os demais campos somente leitura', async () => {
+    it('entra no modo de edição com nome, e-mail e telefone editáveis e perfil protegido', async () => {
       const { user } = await setup();
       const form = await startEditing(user);
       const name = within(form).getByLabelText('Nome completo:');
       expect(name).toHaveValue(demoCoordinator.name);
       expect(name).not.toHaveAttribute('readonly');
       expect(name).toHaveFocus();
-      expect(within(form).getByLabelText('E-mail de acesso:')).toHaveAttribute('readonly');
+      expect(within(form).getByLabelText('E-mail de acesso:')).not.toHaveAttribute('readonly');
+      expect(within(form).getByLabelText('Telefone:')).not.toHaveAttribute('readonly');
       expect(within(form).getByLabelText('E-mail de acesso:')).toHaveValue(demoCoordinator.email);
       expect(within(form).getByLabelText('Perfil:')).toHaveAttribute('readonly');
       expect(within(form).getByRole('button', { name: 'Salvar alterações' })).toBeInTheDocument();

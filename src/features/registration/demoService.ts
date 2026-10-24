@@ -4,9 +4,10 @@ import { teachersSeed } from '../../mocks/teachers';
 import type { TeacherProfile, RegistrationData, CourseRequest } from './model';
 import { validateRegistration } from './validation';
 import { LEGAL_VERSION } from '../legal/content';
+import { coordinatorLoginEmail } from '../account/services/coordinatorIdentity';
 
 export const REGISTRATION_KEY = 'profly:demo:registrations:v1';
-const changedEvent = 'profly:profile-changed';
+export const changedEvent = 'profly:profile-changed';
 interface StoredAccount {
   profile: TeacherProfile;
   salt: number[];
@@ -73,6 +74,7 @@ export async function registerDemo(
   const before = accounts();
   if (
     email === demoCoordinator.email ||
+    email === coordinatorLoginEmail() ||
     teachersSeed.some((item) => item.email === email) ||
     before.some((item) => item.profile.email === email)
   )
@@ -113,6 +115,17 @@ export async function authenticateDemoTeacher(email: string, password: string) {
 export function listDemoProfiles(): TeacherProfile[] {
   return accounts().map((item) => item.profile);
 }
+/** Prepares one storage write; identity and photo migration are committed together by the account adapter. */
+export function prepareDemoContact(
+  email: string,
+  input: { name: string; email: string; phone: string },
+) {
+  const current = accounts();
+  const entry = current.find((item) => item.profile.email === email);
+  if (!entry) return undefined;
+  entry.profile = { ...entry.profile, ...input, version: entry.profile.version + 1 };
+  return JSON.stringify(current);
+}
 export function reviewDemoRequest(
   email: string,
   courseId: string,
@@ -139,7 +152,10 @@ export function useDemoProfiles() {
     try {
       return { profiles: listDemoProfiles(), error: '' };
     } catch (error) {
-      return { profiles: [] as TeacherProfile[], error: error instanceof Error ? error.message : 'Não foi possível carregar os perfis.' };
+      return {
+        profiles: [] as TeacherProfile[],
+        error: error instanceof Error ? error.message : 'Não foi possível carregar os perfis.',
+      };
     }
   };
   const [value, setValue] = useState(read);

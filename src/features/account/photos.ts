@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react';
 import { listDemoProfiles } from '../registration/demoService';
-const PHOTO_KEY = 'profly:demo:photos:v1';
-const photoEvent = 'profly:photo-changed';
+export const PHOTO_KEY = 'profly:demo:photos:v1';
+export const photoEvent = 'profly:photo-changed';
 function photos(): Record<string, string | null> {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(PHOTO_KEY) ?? '{}');
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && Object.values(parsed).every((value) => value === null || typeof value === 'string')) return parsed as Record<string, string | null>;
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed) &&
+      Object.values(parsed).every((value) => value === null || typeof value === 'string')
+    )
+      return parsed as Record<string, string | null>;
   } catch {
     throw new Error('Os dados de foto não puderam ser lidos e foram preservados.');
   }
@@ -23,6 +29,14 @@ export function readPhoto(email: string) {
 export function savePhoto(email: string, photo?: string) {
   localStorage.setItem(PHOTO_KEY, JSON.stringify({ ...photos(), [email]: photo ?? null }));
   window.dispatchEvent(new Event(photoEvent));
+}
+export function preparePhotoMove(email: string, nextEmail: string) {
+  const current = photos();
+  if (Object.hasOwn(current, email)) {
+    current[nextEmail] = current[email];
+    delete current[email];
+  }
+  return JSON.stringify(current);
 }
 export function usePhoto(email: string) {
   const [value, setValue] = useState(() => readPhoto(email));

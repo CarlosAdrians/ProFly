@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateSession = useCallback(
-    (changes: Pick<Session, 'name'>) => {
+    (changes: Pick<Session, 'name'> & Partial<Pick<Session, 'email'>>) => {
       if (!session) return;
       const next = { ...session, ...changes };
       writeJson(sessionStorage, SESSION_KEY, next);
