@@ -47,3 +47,34 @@
 .button[aria-checked='true'] .track span {
   transform: translateX(15px);
 }
+
+.wrap[data-sidebar='true'] {
+  align-items: center;
+  padding: 8px 4px 0;
+}
+.wrap[data-sidebar='true'] .button {
+  flex-direction: column-reverse;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: white;
+  gap: 5px;
+  padding: 4px 8px;
+  font-size: 0.68rem;
+  min-width: 60px;
+}
+.wrap[data-sidebar='true'] small {
+  color: white;
+  max-width: 78px;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .wrap[data-sidebar='true'] {
+    padding: 0;
+  }
+  .wrap[data-sidebar='true'] .button {
+    flex-direction: row;
+    font-size: 0.78rem;
+    gap: 10px;
+  }
+}

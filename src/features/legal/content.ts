@@ -1,4 +1,4 @@
-export const LEGAL_VERSION = '2026-10-24.2';
+export const LEGAL_VERSION = '2026-10-24.3';
 export interface LegalSection {
   title: string;
   text: string;
@@ -57,7 +57,7 @@ export const legalContent: Record<
       },
       {
         title: '2. Armazenamento nesta versão',
-        text: 'Na demonstração, perfis, solicitações, horários e fotos são armazenados no navegador deste computador. A sessão fica no armazenamento da aba. Uma derivação da senha de teste com sal aleatório é guardada para demonstrar o login; a senha não é gravada em texto simples. Não há envio de e-mails nem sincronização desses dados com o MongoDB nesta interface.',
+        text: 'Na demonstração, perfis, solicitações, horários, fotos e preferências de aparência/calendário são armazenados no navegador deste computador. A sessão fica no armazenamento da aba. Uma derivação da senha de teste com sal aleatório é guardada para demonstrar o login; a senha não é gravada em texto simples. Não há envio de e-mails nem sincronização desses dados com o MongoDB nesta interface.',
       },
       {
         title: '3. Acesso e compartilhamento',

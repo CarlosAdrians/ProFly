@@ -1,3 +1,5 @@
+import { HolidayNotice } from './HolidayNotice';
+import { usePreferences } from '../settings/preferences';
 import { useState, type DragEvent } from 'react';
 import { Link } from 'react-router';
 import { PageHeader } from '../../components/ui/PageHeader/PageHeader';
@@ -9,7 +11,6 @@ import { PlanModal, type PlanEditor } from './PlanModal';
 import {
   addDays,
   exampleSlots,
-  isoDate,
   minutes,
   monday,
   movePlan,
@@ -22,7 +23,8 @@ import {
 import styles from './Planning.module.css';
 import { MonthCalendar } from './MonthCalendar';
 import { shiftMonth } from './calendarDates';
-import { PB_SOURCE, useHolidays } from './holidays';
+import { useHolidays } from './holidays';
+import { isPastDate, useInstitutionToday } from './institutionDate';
 const dragType = 'text/x-profly-allocation';
 function PlanCard({
   plan,
@@ -57,13 +59,15 @@ function PlanCard({
   );
 }
 export function CalendarPage() {
+  const today = useInstitutionToday();
   const { session } = useAuth();
   const coordinator = session?.role === 'coordinator';
+  const preferences = usePreferences(session?.email ?? '', !coordinator);
   const { plans, error: readError } = usePlans();
-  const [date, setDate] = useState(() => isoDate(new Date()));
-  const [view, setView] = useState<'month' | 'week' | 'day'>(coordinator ? 'week' : 'month');
-  const holidays = useHolidays(Number(date.slice(0, 4)));
-  const [shift, setShift] = useState<Shift>('night');
+  const [date, setDate] = useState(() => today);
+  const [view, setView] = useState<'month' | 'week' | 'day'>(preferences.view);
+  const holidays = useHolidays(Number(date.slice(0, 4)), preferences.showHolidays);
+  const [shift, setShift] = useState<Shift>(preferences.shift);
   const [courseId, setCourseId] = useState('direito');
   const [editor, setEditor] = useState<PlanEditor | null>(null);
   const [message, setMessage] = useState('');
@@ -152,7 +156,7 @@ export function CalendarPage() {
           >
             ‹
           </button>
-          <Button variant="secondary" onClick={() => setDate(isoDate(new Date()))}>
+          <Button variant="secondary" onClick={() => setDate(today)}>
             Hoje
           </Button>
           <button
@@ -232,38 +236,17 @@ export function CalendarPage() {
           onPlan={(plan) => open({ plan })}
         />
       )}
-      <div className={styles.holidayInfo}>
-        <p role="status">{holidays.status}</p>
-        <button type="button" onClick={holidays.refresh}>
-          Atualizar feriados
-        </button>
-        <span>
-          <a
-            href="https://brasilapi.com.br/docs#tag/Feriados-Nacionais"
-            target="_blank"
-            rel="noreferrer"
-          >
-            BrasilAPI
-          </a>{' '}
-          +{' '}
-          <a href={PB_SOURCE} target="_blank" rel="noreferrer">
-            Paraíba · 5 de agosto
-          </a>
-        </span>
-        <small>
-          Datas religiosas e pontos facultativos exigem confirmação local. Feriados municipais e
-          recessos da faculdade ainda não estão cadastrados. As datas não cancelam aulas
-          automaticamente.
-        </small>
-      </div>
-      {view !== 'month' &&
-        holidays.items
-          .filter((item) => dates.includes(item.date))
-          .map((item) => (
-            <div className={styles.holidayBanner} key={`${item.date}-${item.name}`}>
-              {Number(item.date.slice(8))}/{item.date.slice(5, 7)} · {item.name} · {item.scope}
-            </div>
-          ))}
+      {preferences.showHolidays && (
+        <HolidayNotice
+          items={holidays.items.filter((item) =>
+            view === 'month'
+              ? item.date.slice(0, 7) === date.slice(0, 7)
+              : dates.includes(item.date),
+          )}
+          status={holidays.status}
+          onRefresh={holidays.refresh}
+        />
+      )}
       {!coordinator ? (
         <div className={styles.empty}>
           <img src="/images/icons/calendario.png" alt="" />
@@ -292,7 +275,7 @@ export function CalendarPage() {
                     key={day}
                     className={styles.dayHeading}
                     role="columnheader"
-                    data-today={day === isoDate(new Date())}
+                    data-today={day === today}
                   >
                     <span>
                       {new Intl.DateTimeFormat('pt-BR', { weekday: 'short' }).format(
@@ -318,8 +301,13 @@ export function CalendarPage() {
                           className={styles.cell}
                           role="cell"
                           data-dragging={!!dragging}
+                          data-past={isPastDate(day, today)}
                           onDragOver={(event) => {
-                            if (event.dataTransfer.types.includes(dragType)) event.preventDefault();
+                            if (
+                              !isPastDate(day, today) &&
+                              event.dataTransfer.types.includes(dragType)
+                            )
+                              event.preventDefault();
                           }}
                           onDrop={(event) => void drop(event, day, slot.start, slot.end)}
                         >
@@ -334,6 +322,10 @@ export function CalendarPage() {
                           <button
                             type="button"
                             className={styles.addCell}
+                            disabled={isPastDate(day, today)}
+                            title={
+                              isPastDate(day, today) ? 'Data passada: apenas consulta' : undefined
+                            }
                             aria-label={`Adicionar aula em ${day} às ${slot.start}`}
                             onClick={() =>
                               open({ courseId, date: day, start: slot.start, end: slot.end })
@@ -341,7 +333,9 @@ export function CalendarPage() {
                           >
                             <span>+</span>
                             {entries.length === 0 && (
-                              <span className={styles.addCellText}>Adicionar</span>
+                              <span className={styles.addCellText}>
+                                {isPastDate(day, today) ? 'Data passada' : 'Adicionar'}
+                              </span>
                             )}
                           </button>
                         </div>

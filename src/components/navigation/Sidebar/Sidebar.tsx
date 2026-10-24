@@ -2,6 +2,8 @@ import { useId, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { NavLink } from 'react-router';
 import type { NavItem } from '../../../app/navigation';
 import styles from './Sidebar.module.css';
+import { ThemeToggle } from '../../ui/ThemeToggle/ThemeToggle';
+import { paths } from '../../../app/paths';
 
 interface SidebarProps {
   items: NavItem[];
@@ -20,7 +22,7 @@ export function Sidebar({ items }: SidebarProps) {
   }
 
   return (
-    <header className={styles.sidebar} onKeyDown={handleKeyDown}>
+    <header className={styles.sidebar} data-menu-open={open} onKeyDown={handleKeyDown}>
       <div className={styles.brand}>
         <img
           className={styles.symbol}
@@ -57,6 +59,31 @@ export function Sidebar({ items }: SidebarProps) {
           ))}
         </ul>
       </nav>
+      <div className={styles.utilities}>
+        <nav aria-label="Preferências">
+          <NavLink
+            to={paths.settings}
+            className={({ isActive }) =>
+              isActive ? `${styles.item} ${styles.itemActive}` : styles.item
+            }
+            onClick={() => setOpen(false)}
+          >
+            <svg
+              className={styles.settingsIcon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <path d="m9 3-.5 2-1.8 1-2-.5-2 3.4 1.5 1.5v2.2l-1.5 1.5 2 3.4 2-.5 1.8 1 .5 2h4l.5-2 1.8-1 2 .5 2-3.4-1.5-1.5v-2.2l1.5-1.5-2-3.4-2 .5-1.8-1L13 3Z" />
+              <circle cx="11" cy="11.5" r="3" />
+            </svg>
+            <span className={styles.label}>Ajustes</span>
+          </NavLink>
+        </nav>
+        <ThemeToggle sidebar />
+      </div>
     </header>
   );
 }

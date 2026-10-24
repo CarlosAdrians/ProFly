@@ -106,7 +106,7 @@ export async function loadHolidays(
     signal?.removeEventListener('abort', abort);
   }
 }
-export function useHolidays(year: number) {
+export function useHolidays(year: number, enabled = true) {
   const [state, setState] = useState({
     year,
     items: [paraibaHoliday(year)],
@@ -114,6 +114,7 @@ export function useHolidays(year: number) {
   });
   const [revision, setRevision] = useState(0);
   useEffect(() => {
+    if (!enabled) return;
     const controller = new AbortController();
     void loadHolidays(year, controller.signal)
       .then((result) => {
@@ -123,10 +124,14 @@ export function useHolidays(year: number) {
         /* Unmounted request. */
       });
     return () => controller.abort();
-  }, [year, revision]);
+  }, [year, revision, enabled]);
   return {
-    items: state.year === year ? state.items : [paraibaHoliday(year)],
-    status: state.year === year ? state.status : 'Consultando feriados…',
+    items: !enabled ? [] : state.year === year ? state.items : [paraibaHoliday(year)],
+    status: !enabled
+      ? 'Feriados ocultos nas preferências'
+      : state.year === year
+        ? state.status
+        : 'Consultando feriados…',
     refresh: () => {
       try {
         localStorage.removeItem(keyFor(year));

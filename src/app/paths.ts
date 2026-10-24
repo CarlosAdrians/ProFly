@@ -11,6 +11,8 @@ export const paths = {
   allocations: '/alocacoes',
   terms: '/termos-de-uso',
   privacy: '/privacidade',
+  settings: '/configuracoes',
+  availability: '/disponibilidade',
 } as const;
 
 export type AppPath = (typeof paths)[keyof typeof paths];

@@ -19,7 +19,7 @@ Atualizado em 24/10/2026. Branch da etapa: feat/backend-institucional.
 | Autenticacao e autorizacao por curso | PASS | Rotas reais de identidade, cursos e coordenadores verificadas. CASE-001/002/003/004/005/006/008 e partes de 009/013/049/051/053/054/055 exercitados; aprovacao docente e demais partes desses cenarios ainda pendentes. |
 | Envio real de e-mail | NOT_IMPLEMENTED | Porta Notifications testada com mensagens sinteticas; sem adaptador no servidor principal. Fluxos dependentes retornam 503, sem simular envio. |
 | Concorrencia e cenarios adversariais dos modulos | NOT_IMPLEMENTED | Ainda exigem os modulos de negocio; os testes iniciais nao representam a matriz completa. |
-| Build, tipos, lint e testes do front-end | PASS | Vite build, tsc -b --noEmit, eslint . e 180 testes em 25 arquivos passaram na interface atualizada. Descoberta Vitest limitada a src; consultas de rede bloqueadas por padrao nos testes. |
+| Build, tipos, lint e testes do front-end | PASS | Vite build, tsc -b --noEmit, eslint . e 190 testes em 28 arquivos passaram na interface atualizada. Descoberta Vitest limitada a src; consultas de rede bloqueadas por padrao nos testes. |
 | Navegacao visual da demonstracao | PASS | Login ficticio, listas de professores/disciplinas, abertura/fechamento do modal conferidos no Chrome local; 4 prints em outputs/prints (fora do repositorio). Sem integracao desta interface com a API. |
 
 ## Como registrar as proximas entregas
@@ -100,3 +100,14 @@ Catalogo de Direito reorganizado com busca por nome/codigo, filtros por situacao
 Modal compartilhado: clique interno nao fecha, fechamento e edicao bloqueados durante salvamento, foco devolvido ao acionador e apresentacao adaptada a telas estreitas. Formulario de alocacao recebe data minima, sinaliza data passada e mantem os dados em erro. Botoes recebem feedback de pressionamento e diferenciam indisponibilidade de salvamento.
 
 Evidencia: suite integrada do front-end passou 190 testes em 28 arquivos; validacao de nome/codigo, duplicidade, status e preservacao em falha de gravacao exercitadas. No Chrome, abrir, validar vazio, cancelar e devolver foco do modal de disciplina conferidos sem criar registros. Prints 19/20 em outputs/prints fora do repositorio.
+
+
+## Inicio docente, configuracoes e navegacao
+
+Inicio reformulado com agenda ainda aguardando publicacao, resumo dos dados reais do perfil demonstrativo, disponibilidade por dia, retornos por curso e proximos passos. Criadas Configuracoes e Minha disponibilidade. Tema foi movido ao rodape lateral, junto a Ajustes. Preferencias por conta definem visualizacao, turno inicial e feriados; desligar feriados impede a consulta externa enquanto a opcao estiver desligada. Tema claro/escuro/sistema continua compartilhado pelo navegador.
+
+Aviso de feriados apresenta data, abrangencia e fonte em cartoes, com detalhes recolhiveis. Sem anunciar completude municipal ou cancelamento automatico. Editor de disponibilidade valida sobreposicao, dados obrigatorios, quantidade, horas pretendidas, gravacao e versao; preserva vinculos e analises academicas. Atualizacao de perfil em outra tela avisa sobre obsolescencia sem apagar a edicao aberta.
+
+Verificacoes: 190 testes em 28 arquivos, sem falhas/pulos; tipos, ESLint e build Vite aprovados. Novos cenarios incluem configuracoes aplicadas ao calendario, isolamento por conta, rede desabilitada quando feriados estao ocultos, disponibilidade preservando solicitacoes, perfil obsoleto e falha de gravacao. Persistem avisos act em testes assincronos legados sem falhas. No Chrome foram conferidos os novos formularios, erro de sobreposicao sem gravar alteracoes, avisos de feriados e os temas claro/escuro. Prints 19 a 25 em outputs/prints, fora do repositorio. A preferencia de tema anterior foi restaurada apos a conferencia. Nao houve teste em aparelho iOS real.
+
+Escopo continua demonstrativo no navegador. API de alocacao, integracao das telas, publicacao, historico, atestados e motor de elegibilidade/score continuam pendentes. A conexao MongoDB e o arquivo .env nao foram alterados nesta entrega. Nenhum dado de teste foi escrito no MongoDB institucional.

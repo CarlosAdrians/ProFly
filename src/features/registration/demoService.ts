@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { demoCoordinator } from '../../mocks/coordinator';
 import { teachersSeed } from '../../mocks/teachers';
 import type { TeacherProfile, RegistrationData, CourseRequest } from './model';
+import type { Availability } from './model';
 import { validateRegistration } from './validation';
 import { LEGAL_VERSION } from '../legal/content';
 import { coordinatorLoginEmail } from '../account/services/coordinatorIdentity';
@@ -125,6 +126,31 @@ export function prepareDemoContact(
   if (!entry) return undefined;
   entry.profile = { ...entry.profile, ...input, version: entry.profile.version + 1 };
   return JSON.stringify(current);
+}
+export function saveDemoAvailability(
+  email: string,
+  availability: Availability[],
+  weeklyHours: string,
+  expectedVersion: number,
+) {
+  const current = accounts();
+  const account = current.find((item) => item.profile.email === email);
+  if (!account) throw new Error('Perfil não encontrado nesta conta.');
+  if (account.profile.version !== expectedVersion)
+    throw new Error('Seu perfil mudou em outra tela. Atualize a página antes de salvar.');
+  if (new Set(availability.map((item) => item.id)).size !== availability.length)
+    throw new Error('Confira os horários informados.');
+  const errors = validateRegistration({ ...account.profile, availability, weeklyHours }, 2);
+  if (errors.availability || errors.weeklyHours)
+    throw new Error(errors.availability || errors.weeklyHours);
+  account.profile = {
+    ...account.profile,
+    availability: availability.map((item) => ({ ...item })),
+    weeklyHours,
+    version: account.profile.version + 1,
+  };
+  persist(current);
+  return account.profile;
 }
 export function reviewDemoRequest(
   email: string,

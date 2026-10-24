@@ -1,5 +1,6 @@
 import { monthDays } from './calendarDates';
-import { isoDate, type Plan } from './service';
+import { type Plan } from './service';
+import { useInstitutionToday } from './institutionDate';
 import type { Holiday } from './holidays';
 import styles from './MonthCalendar.module.css';
 
@@ -17,7 +18,7 @@ export function MonthCalendar({
   onPlan: (plan: Plan) => void;
 }) {
   const days = monthDays(date);
-  const today = isoDate(new Date());
+  const today = useInstitutionToday();
   return (
     <div
       className={styles.scroll}

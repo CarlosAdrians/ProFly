@@ -147,10 +147,10 @@ Atualizado em **24/10/2026**. Repositório: [CarlosAdrians/ProFly](https://githu
 | Parte | Estado atual |
 | --- | --- |
 | Visão institucional, requisitos e matriz | Documentados para orientar a implementação. |
-| Front-end de coordenador | Demonstração com login, conta editável e foto, análise por curso, disciplinas, calendário mensal/semanal/diário e alocações locais. |
+| Front-end de coordenador | Demonstração com login, conta editável e foto, análise por curso, disciplinas, calendário mensal/semanal/diário, bloqueio de datas passadas, alocações locais e Configurações. |
 | Administrador e acesso por curso | API de cursos, convites de coordenadores, sessões e revogação implementada; telas administrativas pendentes. |
 | Perfil docente e aprovação de entrada | API de rascunho, versões, solicitação e análise independente por curso implementada; cadastro detalhado e análise disponíveis em demonstração local, ainda sem integração com a API. |
-| Dashboard de professor | Início com perfil, solicitações e calendário mensal. Aulas publicadas e histórico ainda pendentes. |
+| Dashboard de professor | Início com resumo do perfil, solicitações por curso, calendário e edição de disponibilidade. Aulas publicadas e histórico ainda pendentes. |
 | Servidor Node.js e MongoDB | Base HTTP, identidade e cadastro/aprovação implementados. Adaptador de e-mail e demais módulos pendentes. Veja [backend/README.md](backend/README.md). |
 | Catálogo acadêmico | API de competências, disciplinas, períodos, turmas e ofertas, com referências, versões e grade configurável. Revisão de planejamento publicado ainda pendente. |
 | Motor de elegibilidade e score | Especificado; implementação e validação institucional pendentes. |

@@ -9,7 +9,9 @@ Atualizado em 24/10/2026. A interface React amplia a base institucional azul e p
 | `/login` | Login simulado e link interno Cadastrar. |
 | `/cadastro` | Cadastro do próprio professor em quatro etapas. |
 | `/termos-de-uso`, `/privacidade` | Minutas públicas, também disponíveis no cadastro sem perder os campos. |
-| `/inicio` | Professor: perfil, solicitações e estados independentes por curso. |
+| `/inicio` | Professor: resumo acadêmico, disponibilidade por dia, próximos passos e solicitações por curso. |
+| `/disponibilidade` | Professor: edição de intervalos semanais e dedicação pretendida. |
+| `/configuracoes` | Ambos: tema, visualização/turno inicial e exibição de feriados. |
 | `/conta` | Ambos: nome, e-mail, telefone e foto; papel permanece protegido na interface. |
 | `/professores` | Coordenador: vínculos, visualização do perfil e análise de solicitações por curso. |
 | `/disciplinas` | Coordenador: catálogo demonstrativo de Direito, edição e ativação. |
@@ -35,7 +37,7 @@ A foto aceita JPEG, PNG e WebP de até 2 MB, é recortada/reduzida a 256 pixels 
 
 A coordenação mantém a visão semanal e pode alternar para dia ou mês. Cartões mostram disciplina, professor, turma e horário. Podem ser arrastados na grade semanal/diária ou editados pelo formulário, inclusive pelo teclado. Cartões sem horário ficam em Para alocar. A lista de alocações compartilha os mesmos rascunhos. Horários fora dos blocos ilustrativos também são mostrados.
 
-São recusados conflitos de professor entre cursos e de turma no mesmo curso, datas/intervalos inválidos, referências inativas e versões obsoletas. Erros não substituem a posição anterior. O cancelamento conserva o registro no filtro Canceladas. A consistência local entre abas não equivale a uma transação no servidor.
+São recusados conflitos de professor entre cursos e de turma no mesmo curso, datas/intervalos inválidos, datas anteriores a hoje, referências inativas e versões obsoletas. Erros não substituem a posição anterior. O cancelamento conserva o registro no filtro Canceladas. A consistência local entre abas não equivale a uma transação no servidor. Hoje é calculado no fuso America/Fortaleza. Datas antigas continuam visíveis; o bloqueio vale para salvar e mover aulas para o passado, com nova verificação antes da gravação.
 
 O professor abre o mês e consulta feriados. Sua escala não exibe rascunhos da coordenação. Sem publicação implementada, há um estado explícito de aulas ainda não publicadas; nenhum histórico ou encontro é inventado.
 
@@ -45,11 +47,23 @@ A [BrasilAPI](https://brasilapi.com.br/docs#tag/Feriados-Nacionais) é consultad
 
 O dia 5 de agosto recebe o marcador estadual Data Magna da Paraíba, com [referência do Governo da Paraíba](https://codata.pb.gov.br/mural-de-avisos/reparticoes-estaduais-fecham-no-feriado-do-dia-5-de-agosto). O [calendário federal de 2026](https://www.gov.br/gestao/pt-br/assuntos/noticias/2025/dezembro/confira-o-calendario-oficial-de-feriados-nacionais-e-pontos-facultativos-em-2026) diferencia feriados e pontos facultativos. Feriados municipais, recessos e alterações institucionais ainda precisam de cadastro/revisão. Nenhuma dessas datas cancela automaticamente uma aula.
 
-O seletor Modo escuro aplica o tema imediatamente, respeita a preferência do sistema na primeira visita e guarda a escolha local. Fundos, textos, campos, tabelas, modais, cartões e avisos compartilham cores semânticas para os dois temas. Fotos e logo não são invertidos. Em telas estreitas, a navegação recolhe e as grades preservam rolagem horizontal.
+O seletor Modo escuro fica no rodapé da barra lateral, junto ao acesso Ajustes, e aplica o tema imediatamente, respeita a preferência do sistema na primeira visita e guarda a escolha local. Fundos, textos, campos, tabelas, modais, cartões e avisos compartilham cores semânticas para os dois temas. Fotos e logo não são invertidos. Em telas estreitas, a navegação recolhe e as grades preservam rolagem horizontal.
+
+O aviso de feriados reúne cartões com dia, nome e abrangência. Fontes, atualização e limites ficam em uma explicação recolhível, sem ocultar falha de consulta.
+
+## Configurações, disponibilidade e modais
+
+Configurações permite escolher tema claro, escuro ou do sistema, visualização e turno iniciais do calendário, além de mostrar/ocultar feriados. As preferências do calendário são salvas por conta neste navegador; a aparência é compartilhada pelo dispositivo. Ocultar feriados também evita consultar o provedor enquanto a opção estiver desligada. Nada disso muda a disponibilidade acadêmica do professor.
+
+Minha disponibilidade mostra a semana completa e permite adicionar/remover intervalos e alterar as horas pretendidas. Alterações ficam em edição até Salvar disponibilidade. Sobreposição, ausência de intervalos, dedicação inválida, versão obsoleta e falha de armazenamento são recusadas. Os vínculos e decisões por curso são preservados; editar disponibilidade não publica nem redistribui aulas. Edições abertas são preservadas quando o perfil muda em outra tela, com aviso para conferir os dados salvos.
+
+Disciplinas mantém o catálogo demonstrativo de Direito, com pesquisa por nome/código e filtros Todas/Ativas/Inativas. Códigos são imutáveis. A gravação agora falha explicitamente quando o armazenamento não está disponível e não substitui catálogo corrompido por exemplos.
+
+Os modais têm nome acessível, foco inicial quando indicado, retorno do foco ao acionador e controles bloqueados durante o salvamento. Clicar no conteúdo não fecha o diálogo. Erros de cadastro preservam os campos e permitem tentar novamente. As ações usam nomes de operação e cancelamento claros; em telas estreitas, os diálogos e ações se reorganizam.
 
 ## Persistência e limites
 
-Chaves locais: `profly:demo:registrations:v1`, `profly:demo:photos:v1`, `profly:demo:planning:v1`, `profly:account`, `profly:theme`, `profly:holidays:v1:<ano>` e sessão `profly:session`. Os catálogos originais utilizam `profly:teachers` e `profly:subjects`. Limpar os dados do site remove esses registros.
+Chaves locais: `profly:demo:registrations:v1`, `profly:demo:photos:v1`, `profly:demo:planning:v1`, `profly:account`, `profly:theme`, `profly:preferences:v1:<email>`, `profly:holidays:v1:<ano>` e sessão `profly:session`. Os catálogos originais utilizam `profly:teachers` e `profly:subjects`. Limpar os dados do site remove esses registros.
 
 **A interface não está integrada à API/MongoDB.** O servidor possui autenticação, autorização por curso, perfis e catálogo reais, descritos em [backend/README.md](../backend/README.md). O envio de e-mail, motor de elegibilidade/score, publicação, atestados e histórico ainda não estão implementados. Minutas de termos e privacidade precisam de revisão e identificação do controlador institucional antes de uso real.
 

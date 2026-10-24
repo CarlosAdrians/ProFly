@@ -1,3 +1,4 @@
+import { AvailabilityPage } from '../features/registration/AvailabilityPage';
 import { Navigate, type RouteObject } from 'react-router';
 import { AppLayout } from '../layouts/AppLayout/AppLayout';
 import { LoginPage } from '../features/auth/pages/LoginPage';
@@ -14,6 +15,7 @@ import { TeacherHomePage } from '../features/registration/TeacherHomePage';
 import { LegalPage } from '../features/legal/LegalDocument';
 import { CalendarPage } from '../features/planning/CalendarPage';
 import { AllocationsPage } from '../features/planning/AllocationsPage';
+import { SettingsPage } from '../features/settings/SettingsPage';
 
 export const routes: RouteObject[] = [
   { path: '/', element: <Navigate to={paths.login} replace /> },
@@ -47,6 +49,15 @@ export const routes: RouteObject[] = [
     children: [
       { path: paths.account, element: <AccountPage /> },
       { path: paths.calendar, element: <CalendarPage /> },
+      { path: paths.settings, element: <SettingsPage /> },
+      {
+        path: paths.availability,
+        element: (
+          <RequireAuth allowedRoles={['teacher']}>
+            <AvailabilityPage />
+          </RequireAuth>
+        ),
+      },
       {
         path: paths.allocations,
         element: (

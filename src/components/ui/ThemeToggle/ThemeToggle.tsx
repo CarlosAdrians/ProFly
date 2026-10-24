@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { applyTheme, preferredDark, THEME_KEY } from './theme';
 import styles from './ThemeToggle.module.css';
-export function ThemeToggle() {
+export function ThemeToggle({ sidebar = false }: { sidebar?: boolean }) {
   const [dark, setDark] = useState(preferredDark);
   const [notice, setNotice] = useState('');
   useEffect(() => {
@@ -37,7 +37,7 @@ export function ThemeToggle() {
     }
   }
   return (
-    <div className={styles.wrap}>
+    <div className={styles.wrap} data-sidebar={sidebar}>
       <button
         type="button"
         role="switch"
