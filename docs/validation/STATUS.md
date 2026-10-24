@@ -12,12 +12,14 @@ Atualizado em 24/10/2026. Branch da etapa: feat/backend-institucional.
 | Espacos e conflitos no diff | PASS | git diff --check executado sem erro; repetir no staged antes do commit. |
 | Estrutura do servidor | PASS | TypeScript, Fastify, configuracao validada, driver MongoDB, indices, health checks e contrato OpenAPI implementados. Modulos de negocio pendentes. |
 | Tipos, lint e build da base | PASS | tsc -p tsconfig.check.json, eslint src test scripts e tsc -p tsconfig.json executados no backend. |
-| Testes unitarios da base e identidade | PASS | 5 testes, 0 falhas, 0 pulados. Configuracao, entradas, erros seguros, hash de senha, verificacao e tokens. |
-| Integracao MongoDB da base e identidade | PASS | 16 testes, 0 falhas, 0 pulados; replica set local real MongoDB 7.0.24. HTTP por app.inject, persistencia, tokens concorrentes, sessoes, CSRF, origens e limites. Nao representa navegador integrado. |
+| Testes unitarios da base, identidade e perfil | PASS | 7 testes, 0 falhas, 0 pulados. Configuracao, entradas, erros, credenciais, estados desconhecido/nenhum e limites de disponibilidade. |
+| Integracao MongoDB da base, identidade e perfil | PASS | 20 testes, 0 falhas, 0 pulados; replica set local real MongoDB 7.0.24. HTTP por app.inject, persistencia, tokens/edicoes/decisoes concorrentes, permissoes e solicitacoes por curso. Nao representa navegador integrado. |
+| Perfil e aprovacao por curso | PASS | REQ-03/04 e partes de REQ-02/06/12/13/14: CASE-009/010/011/012/013/014/016 e validacao inicial de janelas do CASE-020. Experiencia desconhecida/ausente distinguida no contrato (CASE-015 parcial); motor/score ainda pendentes. |
 | Autenticacao e autorizacao por curso | PASS | Rotas reais de identidade, cursos e coordenadores verificadas. CASE-001/002/003/004/005/006/008 e partes de 009/013/049/051/053/054/055 exercitados; aprovacao docente e demais partes desses cenarios ainda pendentes. |
 | Envio real de e-mail | NOT_IMPLEMENTED | Porta Notifications testada com mensagens sinteticas; sem adaptador no servidor principal. Fluxos dependentes retornam 503, sem simular envio. |
 | Concorrencia e cenarios adversariais dos modulos | NOT_IMPLEMENTED | Ainda exigem os modulos de negocio; os testes iniciais nao representam a matriz completa. |
-| Build, testes e navegacao do front-end nesta etapa | NOT_RUN | Aplicacao visual preservada e ainda demonstrativa. Verificacao visual sendo preparada separadamente. |
+| Build, tipos, lint e testes do front-end | PASS | Vite build, tsc -b --noEmit, eslint . e 174 testes em 20 arquivos passaram. Descoberta Vitest limitada a src para nao coletar suites Node/MongoDB. |
+| Navegacao visual da demonstracao | PASS | Login ficticio, lista de professores, abertura/fechamento do modal conferidos no Chrome local; 3 prints em outputs/prints (fora do repositorio). Sem integracao desta interface com a API. |
 
 ## Como registrar as proximas entregas
 
@@ -40,3 +42,13 @@ Implementados cadastro docente pendente de verificacao, login/logout, cookie de 
 TypeScript, lint e 5 testes unitarios passaram. A primeira solicitacao de integracao nao foi executada por limite temporario da revisao automatica; apos o horario de renovacao, uma nova solicitacao pela mesma via foi liberada e os 16 testes passaram sem pulos. A suite cobre isolamento horizontal e vertical, campos protegidos, tokens expirados/reutilizados/concorrentes, revogacao, redefinicao, logout, expiracao, CSRF, corpo malformado/excessivo, limite de tentativas, persistencia apos recriar a aplicacao e falta de envio configurado.
 
 Limites: o teste de reinicio recria aplicacao/conexao mantendo o MongoDB efemero, sem simular reinicio do sistema operacional. Nao houve envio real de e-mail, uso do banco institucional ou integracao da interface. A recuperacao usa a porta de notificacao injetada nos testes. Modulos posteriores continuam sem implementacao.
+
+## Etapa 3: perfil e analise por curso
+
+Rascunho progressivo, lista de campos pendentes, copias imutaveis por versao, referencias academicas validadas e analise independente por curso implementados. As confirmacoes de itens ficam em revisao separada dos dados declarados. Aprovacao cria somente vinculo docente, preserva decisoes de outros cursos e nao cria aulas. Atualizacao obsoleta e segunda decisao simultanea retornam 409.
+
+A integracao inicial encontrou codigo academico ausente nas fixtures de disciplinas, acionando corretamente o indice unico courseId/code. As fixtures foram corrigidas com codigos unicos e o teste de isolamento passou a criar seus proprios dados, sem depender de resultado de outro teste. A nova execucao passou os 20 testes, sem pulos. Um erro de inferencia do TypeScript no teste foi corrigido com tipo explicito da resposta HTTP; checagem de tipos repetida com sucesso.
+
+Comandos: tsc -p tsconfig.check.json, eslint src test scripts, tsc -p tsconfig.json, node --import tsx scripts/export-openapi.ts, node --import tsx --test test/unit.test.ts e a suite de integracao explicitamente habilitada. O catalogo academico ainda nao tem rotas; referencias sinteticas nos testes nao representam cadastro institucional. Nao ha motor de elegibilidade/score nem interface conectada ao modulo.
+
+Na verificacao da interface, o primeiro Vitest coletou tambem os testes Node do backend e falhou em 2 suites, apesar de os 174 testes da interface passarem. Corrigido em vite.config.ts limitando include a src/**/*.test.{ts,tsx}; repeticao: 20 arquivos e 174 testes aprovados. O back-end continua com comandos proprios e integracao explicitamente habilitada. A instalacao local para visualizar as telas preservou package-lock.json.

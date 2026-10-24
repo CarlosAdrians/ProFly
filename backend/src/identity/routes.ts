@@ -164,14 +164,12 @@ export function identityRoutes(app: FastifyInstance, service: IdentityService) {
     '/api/v1/auth/invites/lookup',
     z.strictObject({ token: opaqueToken }),
     async (_request, _reply, body) => {
-      const proof = await db.db
-        .collection<AccessToken>('tokens')
-        .findOne({
-          tokenHash: tokenHash(body.token),
-          purpose: 'INVITE',
-          consumedAt: null,
-          expiresAt: { $gt: new Date() },
-        });
+      const proof = await db.db.collection<AccessToken>('tokens').findOne({
+        tokenHash: tokenHash(body.token),
+        purpose: 'INVITE',
+        consumedAt: null,
+        expiresAt: { $gt: new Date() },
+      });
       if (!proof) throw new AppError(410, 'TOKEN_UNAVAILABLE', 'Link invalido ou indisponivel.');
       const user = await service.users.findOne({ _id: proof.userId, state: 'INVITED' });
       if (!user) throw new AppError(410, 'TOKEN_UNAVAILABLE', 'Link invalido ou indisponivel.');

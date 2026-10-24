@@ -118,19 +118,17 @@ export class IdentityService {
 
   async createToken(userId: string, purpose: AccessToken['purpose'], session: ClientSession) {
     const raw = token();
-    await this.database.db
-      .collection<AccessToken>('tokens')
-      .insertOne(
-        {
-          _id: randomUUID(),
-          userId,
-          purpose,
-          tokenHash: tokenHash(raw),
-          expiresAt: new Date(Date.now() + (purpose === 'INVITE' ? 48 * 3600000 : 3600000)),
-          consumedAt: null,
-        },
-        { session },
-      );
+    await this.database.db.collection<AccessToken>('tokens').insertOne(
+      {
+        _id: randomUUID(),
+        userId,
+        purpose,
+        tokenHash: tokenHash(raw),
+        expiresAt: new Date(Date.now() + (purpose === 'INVITE' ? 48 * 3600000 : 3600000)),
+        consumedAt: null,
+      },
+      { session },
+    );
     return raw;
   }
 

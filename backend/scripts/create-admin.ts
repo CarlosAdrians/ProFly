@@ -6,13 +6,11 @@ import { email, name, password } from '../src/shared/http.js';
 
 async function main() {
   const config = loadConfig();
-  const input = z
-    .strictObject({ name, email, password })
-    .safeParse({
-      name: process.env.BOOTSTRAP_ADMIN_NAME,
-      email: process.env.BOOTSTRAP_ADMIN_EMAIL,
-      password: process.env.BOOTSTRAP_ADMIN_PASSWORD,
-    });
+  const input = z.strictObject({ name, email, password }).safeParse({
+    name: process.env.BOOTSTRAP_ADMIN_NAME,
+    email: process.env.BOOTSTRAP_ADMIN_EMAIL,
+    password: process.env.BOOTSTRAP_ADMIN_PASSWORD,
+  });
   if (!input.success)
     throw new Error(
       'Defina BOOTSTRAP_ADMIN_NAME, BOOTSTRAP_ADMIN_EMAIL e BOOTSTRAP_ADMIN_PASSWORD validos.',

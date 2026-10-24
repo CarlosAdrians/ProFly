@@ -11,6 +11,7 @@ src/app.ts             Composicao HTTP, protecoes, erros e health checks
 src/server.ts          Inicializacao e encerramento
 src/shared/            Erros e validacao de contratos
 src/identity/          Contas, sessoes, convites, cursos e responsabilidades
+src/teachers/          Perfil versionado, solicitacoes e analise por curso
 test/                  Testes unitarios e integracao explicitamente habilitada
 scripts/               Exportacao do contrato OpenAPI e administrador inicial
 docs/openapi.json      Contrato gerado das rotas implementadas
@@ -85,8 +86,27 @@ Sessoes usam cookie HttpOnly/SameSite Strict (Secure em producao), token aleator
 | PATCH /api/v1/admin/courses/:courseId/coordinators/:userId | Ativa/revoga responsabilidade com controle de versao. |
 | PATCH /api/v1/admin/users/:userId/state | Desativa/reativa identidade; protege o ultimo administrador. |
 | GET /api/v1/admin/users | Consulta administrativa paginada, sem hashes ou tokens. |
+| GET e PUT /api/v1/me/profile | Consulta/salva o proprio perfil e informa pendencias. |
+| GET /api/v1/me/applications | Solicitações do proprio professor. |
+| POST /api/v1/me/applications/:courseId | Submete disciplinas e versao do perfil para o curso. |
+| POST /api/v1/courses/:courseId/teachers/invites | Convite docente pela coordenacao, sem aprovacao automatica. |
+| GET /api/v1/courses/:courseId/applications | Solicitacoes do curso autorizado. |
+| GET /api/v1/courses/:courseId/applications/:applicationId | Perfil submetido e resultado da analise. |
+| POST /api/v1/courses/:courseId/applications/:applicationId/review | Aprova, pede ajustes ou recusa, com motivo e autoria real. |
 
-Os prefixos /api/v1 se aplicam aos caminhos abreviados na tabela. Contratos completos de entrada estao em [openapi.json](docs/openapi.json). Perfil docente, aprovacao por curso e demais modulos ainda estao pendentes. A interface existente continua demonstrativa e ainda nao usa estas rotas.
+Os prefixos /api/v1 se aplicam aos caminhos abreviados na tabela. Contratos completos de entrada estao em [openapi.json](docs/openapi.json). A interface existente continua demonstrativa e ainda nao usa estas rotas.
+
+## Perfil e aprovacao docente
+
+PUT /me/profile substitui os dados editaveis do proprio perfil; exige expectedVersion (0 na criacao), sem aceitar campos de aprovacao. Campos validos podem ser omitidos no rascunho. A resposta lista missingFields para a submissao. Cada salvamento cria uma copia imutavel em profileVersions; analises anteriores continuam associadas a sua versao, sem confirmar alteracoes futuras automaticamente.
+
+O perfil recebe contato, formacao, conhecimentos por competencia/nível 1 a 5, experiencias docente e profissional, disponibilidade e dedicacao pretendida. Cada item tem UUID estavel. Experiencia usa UNKNOWN, NONE ou PROVIDED; completedUnits representa **semestres completos** na experiencia docente e **meses completos** na profissional, sempre declarados, sujeitos a analise. Nao e carga contratual. Janelas de disponibilidade incluem fuso IANA, dia ISO 1 a 7, horario HH:MM e vigencia. Sobreposicao, horario invertido, meia-noite e datas invalidas sao recusados; adjacencia e permitida.
+
+A submissao exige contato, formacao, conhecimentos, situacao conhecida de experiencia/disponibilidade e dedicacao pretendida positiva. Esses campos sao o contrato do formulario; exigencias de habilitacao de cada disciplina ainda dependem de configuracao institucional. Referencias de competencia e disciplina precisam existir e estar ativas; disciplinas devem pertencer ao curso. O catalogo academico sera entregue na proxima etapa; os testes deste modulo usam referencias sinteticas identificadas explicitamente.
+
+A coordenacao analisa somente seus cursos, recebe a copia submetida e confirma/rejeita itens de formacao, conhecimento ou experiencia individualmente. Itens omitidos continuam sem confirmacao. Declaracoes de ausencia de experiencia ficam registradas na revisao aprovada. Aprovacao cria vinculo docente apenas naquele curso, sem criar aulas. Alterar o perfil exige nova submissao antes de uma nova analise; revisao obsoleta retorna 409. O vinculo de participacao existente e preservado, mas a confirmacao academica antiga nao se aplica a outra versao do perfil.
+
+O motivo e obrigatorio nas tres decisoes. Versoes esperadas e guardas transacionais impedem duas decisoes simultaneas ou sobrescrita silenciosa. Convites docentes ativam identidade para completar o cadastro, mantendo obrigatoria a analise academica por curso.
 
 ## Decisoes tecnicas
 

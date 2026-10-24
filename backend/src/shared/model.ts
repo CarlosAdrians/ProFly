@@ -15,7 +15,7 @@ export interface Audit extends Entity {
   courseId?: string;
 }
 
-export function entity(id = randomUUID()): Entity {
+export function entity(id: string = randomUUID()): Entity {
   const now = new Date().toISOString();
   return { _id: id, version: 1, createdAt: now, updatedAt: now };
 }

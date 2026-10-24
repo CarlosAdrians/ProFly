@@ -12,6 +12,7 @@ import { AppError, errorResponse } from './shared/errors.js';
 import { IdentityService } from './identity/service.js';
 import { identityRoutes } from './identity/routes.js';
 import type { Notifications } from './identity/models.js';
+import { teacherRoutes } from './teachers/routes.js';
 
 export async function buildApp(
   config: Config,
@@ -53,6 +54,8 @@ export async function buildApp(
     return { status: 'ready' };
   });
   app.get('/openapi.json', { schema: { hide: true } }, async () => app.swagger());
-  identityRoutes(app, new IdentityService(database, config, options.notifications));
+  const identity = new IdentityService(database, config, options.notifications);
+  identityRoutes(app, identity);
+  teacherRoutes(app, identity);
   return app;
 }

@@ -1,12 +1,14 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import { loadConfig } from '../src/config.js';
 import { Database } from '../src/database.js';
 import { buildApp } from '../src/app.js';
 import { IdentityService } from '../src/identity/service.js';
 import type { AccessToken, Notifications, Session, User } from '../src/identity/models.js';
+import type { ProfileData } from '../src/teachers/contracts.js';
 
 if (process.env.PROFLY_RUN_INTEGRATION !== '1') {
   throw new Error('Integracao exige PROFLY_RUN_INTEGRATION=1; usa somente MongoDB efemero local.');
@@ -603,4 +605,334 @@ test('administrador inicial nao e sobrescrito nem o ultimo administrador desativ
     (await app.inject({ url: '/api/v1/auth/session', headers: adminHeaders })).statusCode,
     200,
   );
+});
+
+async function teacherFixture(label: string) {
+  const teacher = await registerTeacher(`${label}@profly.test`);
+  const competencyId = randomUUID();
+  const subjectA = randomUUID();
+  const subjectB = randomUUID();
+  // Academic routes belong to the following delivery. These are explicit synthetic references.
+  await database.db
+    .collection<{ _id: string; active: boolean }>('competencies')
+    .insertOne({ _id: competencyId, active: true });
+  await database.db
+    .collection<{ _id: string; code: string; courseId: string; active: boolean }>('subjects')
+    .insertMany([
+      { _id: subjectA, code: `${label}-A`, courseId: courseA, active: true },
+      { _id: subjectB, code: `${label}-B`, courseId: courseB, active: true },
+    ]);
+  const data: ProfileData = {
+    contact: { phone: '+55 83 99999-0000' },
+    education: [
+      {
+        id: randomUUID(),
+        level: 'MASTER',
+        field: 'Direito',
+        institution: 'Instituicao de Teste',
+        completedYear: 2020,
+      },
+    ],
+    knowledge: [{ id: randomUUID(), competencyId, level: 4 }],
+    teaching: { status: 'NONE', entries: [] },
+    professional: { status: 'NONE', entries: [] },
+    availability: {
+      status: 'PROVIDED',
+      timeZone: 'America/Fortaleza',
+      windows: [
+        {
+          id: randomUUID(),
+          weekday: 1,
+          startsAt: '18:30',
+          endsAt: '21:10',
+          validFrom: '2026-01-01',
+          validUntil: '2026-12-31',
+        },
+      ],
+    },
+    desiredWeeklyMinutes: 1200,
+  };
+  const save = (expectedVersion: number, values: ProfileData) =>
+    app.inject({
+      method: 'PUT',
+      url: '/api/v1/me/profile',
+      headers: teacher.headers,
+      payload: { expectedVersion, data: values },
+    });
+  const submit = (courseId: string, subjectId: string, expectedVersion = 0, profileVersion = 1) =>
+    app.inject({
+      method: 'POST',
+      url: `/api/v1/me/applications/${courseId}`,
+      headers: teacher.headers,
+      payload: { expectedVersion, profileVersion, subjectIds: [subjectId] },
+    });
+  return { ...teacher, data, save, submit, subjectA, subjectB };
+}
+
+test('CASE-012/013/014/016: rascunho, submissao incompleta e edicoes concorrentes preservam versao', async () => {
+  const teacher = await teacherFixture('profile-draft');
+  const empty = await app.inject({ url: '/api/v1/me/profile', headers: teacher.headers });
+  assert.equal(empty.json().version, 0);
+  assert.ok(empty.json().missingFields.education);
+  assert.equal((await teacher.save(0, {})).statusCode, 200);
+  const incomplete = await teacher.submit(courseA, teacher.subjectA);
+  assert.equal(incomplete.statusCode, 422, incomplete.body);
+  assert.ok(incomplete.json().error.fieldErrors.knowledge);
+  assert.equal(
+    await database.db.collection('applications').countDocuments({ teacherId: teacher.id }),
+    0,
+  );
+  const responses = await Promise.all([
+    teacher.save(1, teacher.data),
+    teacher.save(1, { ...teacher.data, desiredWeeklyMinutes: 600 }),
+  ]);
+  assert.deepEqual(responses.map((r) => r.statusCode).sort(), [200, 409]);
+  const current = await app.inject({ url: '/api/v1/me/profile', headers: teacher.headers });
+  assert.equal(current.json().version, 2);
+  assert.equal(current.json().source, 'TEACHER_DECLARED');
+  assert.deepEqual(current.json().missingFields, {});
+  const invalid = await app.inject({
+    method: 'PUT',
+    url: '/api/v1/me/profile',
+    headers: teacher.headers,
+    payload: { expectedVersion: 2, data: { ...teacher.data, approved: true } },
+  });
+  assert.equal(invalid.statusCode, 422);
+  const badReference = await teacher.save(2, {
+    ...teacher.data,
+    knowledge: [{ id: randomUUID(), competencyId: randomUUID(), level: 5 }],
+  });
+  assert.equal(badReference.statusCode, 422);
+  assert.equal(
+    await database.db.collection('profileVersions').countDocuments({ teacherId: teacher.id }),
+    2,
+  );
+});
+
+test('CASE-009/010/011: aprovacao por curso exige analise, autoria real e nao cria aula', async () => {
+  const teacher = await teacherFixture('profile-approval');
+  assert.equal((await teacher.save(0, teacher.data)).statusCode, 200);
+  assert.equal((await teacher.submit(courseA, teacher.subjectB)).statusCode, 422);
+  const first = await teacher.submit(courseA, teacher.subjectA);
+  const second = await teacher.submit(courseB, teacher.subjectB);
+  assert.equal(first.statusCode, 201, first.body);
+  assert.equal(second.statusCode, 201, second.body);
+  assert.equal((await teacher.submit(courseA, teacher.subjectA, 1)).statusCode, 409);
+  assert.deepEqual(
+    (await app.inject({ url: '/api/v1/courses', headers: teacher.headers })).json().items,
+    [],
+  );
+  const review = (applicationId: string, courseId: string, decision: string, items: unknown[]) =>
+    app.inject({
+      method: 'POST',
+      url: `/api/v1/courses/${courseId}/applications/${applicationId}/review`,
+      headers: adminHeaders,
+      payload: {
+        expectedVersion: 1,
+        profileVersion: 1,
+        decision,
+        reason: 'Analise sintetica de teste',
+        items,
+      },
+    });
+  assert.equal(
+    (
+      await review(first.json().id, courseA, 'APPROVED', [
+        { id: randomUUID(), status: 'CONFIRMED' },
+      ])
+    ).statusCode,
+    422,
+  );
+  const decisions = await Promise.all([
+    review(first.json().id, courseA, 'APPROVED', [
+      { id: teacher.data.knowledge![0]!.id, status: 'CONFIRMED' },
+    ]),
+    review(first.json().id, courseA, 'APPROVED', []),
+  ]);
+  assert.deepEqual(decisions.map((r) => r.statusCode).sort(), [200, 409]);
+  // Only one review commits; B's rejection remains independent from A's approval.
+  const rejectedB = await review(second.json().id, courseB, 'REJECTED', []);
+  assert.equal(rejectedB.statusCode, 200);
+  assert.equal(rejectedB.json().reason, 'Analise sintetica de teste');
+  const admin = await identity.users.findOne({ email: 'admin@profly.test' });
+  assert.equal(rejectedB.json().reviewerId, admin!._id);
+  assert.equal(
+    await identity.memberships.countDocuments({
+      userId: teacher.id,
+      courseId: courseB,
+      role: 'teacher',
+      active: true,
+    }),
+    0,
+  );
+  const accepted = decisions.find((r) => r.statusCode === 200)!;
+  assert.equal(
+    await identity.memberships.countDocuments({
+      userId: teacher.id,
+      courseId: courseA,
+      role: 'teacher',
+      active: true,
+    }),
+    accepted.json().status === 'APPROVED' ? 1 : 0,
+  );
+  assert.equal(
+    await database.db.collection('allocations').countDocuments({ teacherId: teacher.id }),
+    0,
+  );
+  assert.equal(
+    await database.db.collection('occurrences').countDocuments({ teacherId: teacher.id }),
+    0,
+  );
+  const own = await app.inject({ url: '/api/v1/me/applications', headers: teacher.headers });
+  assert.equal(own.json().items.length, 2);
+  assert.equal(
+    (await app.inject({ url: `/api/v1/courses/${courseA}/applications`, headers: teacher.headers }))
+      .statusCode,
+    403,
+  );
+});
+
+test('CASE-011/016: edicao de perfil torna analise antiga obsoleta e exige nova submissao', async () => {
+  const teacher = await teacherFixture('profile-stale');
+  assert.equal((await teacher.save(0, teacher.data)).statusCode, 200);
+  const first = await teacher.submit(courseA, teacher.subjectA);
+  assert.equal(first.statusCode, 201);
+  assert.equal(
+    (await teacher.save(1, { ...teacher.data, desiredWeeklyMinutes: 600 })).statusCode,
+    200,
+  );
+  const stale = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/applications/${first.json().id}/review`,
+    headers: adminHeaders,
+    payload: {
+      expectedVersion: 1,
+      profileVersion: 1,
+      decision: 'APPROVED',
+      reason: 'Analise sintetica',
+      items: [],
+    },
+  });
+  assert.equal(stale.statusCode, 409);
+  assert.equal(stale.json().error.code, 'STALE_PROFILE');
+  assert.equal((await teacher.submit(courseA, teacher.subjectA, 1, 2)).statusCode, 201);
+  const detail = await app.inject({
+    url: `/api/v1/courses/${courseA}/applications/${first.json().id}`,
+    headers: adminHeaders,
+  });
+  assert.equal(detail.json().profile.profileVersion, 2);
+  assert.equal(detail.json().profile.data.desiredWeeklyMinutes, 600);
+  const old = await database.db
+    .collection('profileVersions')
+    .findOne({ teacherId: teacher.id, profileVersion: 1 });
+  assert.equal(old!.data.desiredWeeklyMinutes, 1200);
+  const changes = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/applications/${first.json().id}/review`,
+    headers: adminHeaders,
+    payload: {
+      expectedVersion: 2,
+      profileVersion: 2,
+      decision: 'CHANGES_REQUESTED',
+      reason: 'Complemente a evidencia',
+      items: [],
+    },
+  });
+  assert.equal(changes.statusCode, 200, changes.body);
+  assert.equal(changes.json().status, 'CHANGES_REQUESTED');
+});
+
+test('CASE-004/005/006: convite docente e analise respeitam escopo e nao aprovam automaticamente', async () => {
+  const submittedTeacher = await teacherFixture('profile-isolation');
+  assert.equal((await submittedTeacher.save(0, submittedTeacher.data)).statusCode, 200);
+  const submittedApplication = await submittedTeacher.submit(courseB, submittedTeacher.subjectB);
+  assert.equal(submittedApplication.statusCode, 201);
+  const coordinator = await app.inject({
+    method: 'POST',
+    url: '/api/v1/admin/coordinators',
+    headers: adminHeaders,
+    payload: {
+      name: 'Coordenador de Perfil',
+      email: 'profile-coordinator@profly.test',
+      courseIds: [courseA],
+    },
+  });
+  assert.equal(coordinator.statusCode, 201, coordinator.body);
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/invites/accept',
+        payload: { token: coordinator.json().inviteToken, password: 'ExampleTest2026' },
+      })
+    ).statusCode,
+    200,
+  );
+  const headers = await loginClient('profile-coordinator@profly.test');
+  const invite = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/teachers/invites`,
+    headers,
+    payload: { name: 'Docente Convidado', email: 'invited-teacher@profly.test' },
+  });
+  assert.equal(invite.statusCode, 201, invite.body);
+  assert.equal(invite.json().academicApprovalRequired, true);
+  assert.equal(invite.json().teacher.state, 'INVITED');
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: `/api/v1/courses/${courseB}/teachers/invites`,
+        headers,
+        payload: { name: 'Docente Bloqueado', email: 'forbidden-invite@profly.test' },
+      })
+    ).statusCode,
+    404,
+  );
+  assert.equal(await identity.users.countDocuments({ email: 'forbidden-invite@profly.test' }), 0);
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/invites/accept',
+        payload: { token: invite.json().inviteToken, password: 'ExampleTest2026' },
+      })
+    ).statusCode,
+    200,
+  );
+  const invitedHeaders = await loginClient('invited-teacher@profly.test');
+  assert.equal(
+    (await app.inject({ url: '/api/v1/me/profile', headers: invitedHeaders })).statusCode,
+    200,
+  );
+  assert.deepEqual(
+    (await app.inject({ url: '/api/v1/courses', headers: invitedHeaders })).json().items,
+    [],
+  );
+  assert.equal(
+    (await app.inject({ url: `/api/v1/courses/${courseA}/applications`, headers })).statusCode,
+    200,
+  );
+  const target = { _id: submittedApplication.json().id as string };
+  for (const courseId of [courseA, courseB]) {
+    const detail: { statusCode: number; body: string } = await app.inject({
+      url: `/api/v1/courses/${courseId}/applications/${target._id}`,
+      headers,
+    });
+    assert.equal(detail.statusCode, 404);
+    assert.ok(!detail.body.includes('phone'));
+  }
+  const decision = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseB}/applications/${target._id}/review`,
+    headers,
+    payload: {
+      expectedVersion: 1,
+      profileVersion: 1,
+      decision: 'APPROVED',
+      reason: 'Tentativa fora do escopo',
+      items: [],
+    },
+  });
+  assert.equal(decision.statusCode, 404);
 });
