@@ -2,6 +2,8 @@
 
 Atualização: 24/10/2026. Este documento consolida decisões da conversa e propõe o funcionamento do back-end. Não representa uma implementação pronta. Regras propostas e pendências devem permanecer identificadas até serem resolvidas.
 
+A [spec de implementação](specs/BACKEND_V1.md) organiza os requisitos rastreáveis e os contratos de validação. O [fluxo de trabalho](WORKFLOW.md) define a sequência e os commits por área; a [matriz de cenários](specs/backend-cases.json) registra os casos ainda planejados.
+
 ## 1. Decisões confirmadas
 
 | Tema | Decisão |
