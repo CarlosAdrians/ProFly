@@ -594,41 +594,31 @@
   background: var(--color-bg-subtle);
   color: var(--color-text);
 }
-.holidayInfo {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 18px;
-  align-items: center;
-  margin: 18px 0 22px;
-  color: var(--color-text-muted);
-  font-size: 0.73rem;
+.cell[data-past='true'] {
+  background: var(--color-bg-subtle);
 }
-.holidayInfo p {
-  margin: 0;
+.addCell:disabled {
+  cursor: default;
+  opacity: 0.65;
 }
-.holidayInfo a {
-  color: var(--color-link);
-}
-.holidayInfo > button {
-  min-height: 36px;
-  border: 0;
+.addCell:disabled:hover {
+  border-color: transparent;
   background: transparent;
-  text-decoration: underline;
-  color: var(--color-link);
-  cursor: pointer;
+}
+
+.planFields {
+  border: 0;
   padding: 0;
+  margin: 0;
+  min-width: 0;
 }
-.holidayInfo small {
-  flex-basis: 100%;
-  max-width: 850px;
-  font-size: 0.72rem;
-  line-height: 1.6;
-}
-.holidayBanner {
-  border-radius: 10px;
-  padding: 10px 14px;
-  background: var(--color-holiday-bg);
-  color: var(--color-holiday-text);
-  font-size: 0.8rem;
-  margin: 10px 0;
+
+@media (max-width: 480px) {
+  .formActions {
+    flex-direction: column-reverse;
+  }
+  .formActions button {
+    width: 100%;
+    min-width: 0;
+  }
 }

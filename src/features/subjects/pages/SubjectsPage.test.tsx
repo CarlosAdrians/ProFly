@@ -4,6 +4,7 @@ import { renderApp } from '../../../test/renderApp';
 import { subjectsSeed } from '../../../mocks/subjects';
 import { SUBJECTS_STORAGE_KEY } from '../services/subjectService';
 import type { Subject } from '../types';
+import { vi } from 'vitest';
 
 type User = ReturnType<typeof userEvent.setup>;
 
@@ -32,7 +33,7 @@ function stored(): Subject[] {
 }
 
 async function openCreate(user: User) {
-  await user.click(screen.getByRole('button', { name: '+ Nova Disciplina' }));
+  await user.click(screen.getByRole('button', { name: '+ Nova disciplina' }));
   return screen.getByRole('dialog', { name: 'Cadastrar disciplina' });
 }
 
@@ -48,7 +49,7 @@ async function fillName(user: User, dialog: HTMLElement, name: string) {
   if (name) await user.type(input, name);
 }
 
-const submit = (user: User, dialog: HTMLElement, label = 'CADASTRAR') =>
+const submit = (user: User, dialog: HTMLElement, label = 'Criar disciplina') =>
   user.click(within(dialog).getByRole('button', { name: label }));
 
 async function createSubject(user: User, name: string) {
@@ -59,12 +60,12 @@ async function createSubject(user: User, name: string) {
 }
 
 describe('Disciplinas', () => {
-  it('exibe o título visível com o botão + Nova Disciplina no cabeçalho', async () => {
+  it('exibe o título visível com o botão + Nova disciplina no cabeçalho', async () => {
     await setup();
     const title = screen.getByRole('heading', { level: 1, name: 'Disciplinas' });
     expect(title).not.toHaveClass('visually-hidden');
     const header = title.closest('header')!;
-    expect(within(header).getByRole('button', { name: '+ Nova Disciplina' })).toBeInTheDocument();
+    expect(within(header).getByRole('button', { name: '+ Nova disciplina' })).toBeInTheDocument();
   });
 
   describe('listagem', () => {
@@ -101,14 +102,33 @@ describe('Disciplinas', () => {
       expect(names()).toEqual(['Direito Processual Civil I']);
     });
 
-    it('pesquisa somente pelo nome, não pelo código', async () => {
+    it('pesquisa também pelo código', async () => {
       const { user } = await setup();
       await user.type(screen.getByRole('searchbox'), 'DIR201');
-      expect(screen.getByText('Nenhuma disciplina encontrada para “DIR201”.')).toBeInTheDocument();
+      expect(names()).toEqual(['Direito Civil I']);
     });
   });
 
   describe('formulário', () => {
+    it('preserva o formulario e nao confirma cadastro quando a gravacao falha', async () => {
+      const { user } = await setup();
+      const dialog = await openCreate(user);
+      await fillName(user, dialog, 'Disciplina de teste');
+      const before = localStorage.getItem(SUBJECTS_STORAGE_KEY);
+      const fail = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('quota');
+      });
+      await submit(user, dialog);
+      expect(within(dialog).getByRole('alert')).toHaveTextContent(
+        'Não foi possível salvar o catálogo',
+      );
+      expect(within(dialog).getByLabelText('Nome da disciplina:')).toHaveValue(
+        'Disciplina de teste',
+      );
+      expect(within(dialog).getByRole('button', { name: 'Criar disciplina' })).toBeEnabled();
+      fail.mockRestore();
+      expect(localStorage.getItem(SUBJECTS_STORAGE_KEY)).toBe(before);
+    });
     it('no cadastro, só o nome é editável e o código aparece somente para leitura', async () => {
       const { user } = await setup();
       const dialog = await openCreate(user);
@@ -226,12 +246,12 @@ describe('Disciplinas', () => {
       const { user } = await setup();
       const dialog = await openEdit(user, 'Direito Penal I');
       await fillName(user, dialog, 'Direito Civil I');
-      await submit(user, dialog, 'SALVAR');
+      await submit(user, dialog, 'Salvar alterações');
       expect(
         within(dialog).getByText(/Já existe a disciplina “Direito Civil I”/),
       ).toBeInTheDocument();
       await fillName(user, dialog, 'Direito Penal I');
-      await submit(user, dialog, 'SALVAR');
+      await submit(user, dialog, 'Salvar alterações');
       expect(await screen.findByText('Dados de Direito Penal I atualizados.')).toBeInTheDocument();
     });
   });
@@ -250,7 +270,7 @@ describe('Disciplinas', () => {
       expect(code).toHaveValue('DIR303');
 
       await fillName(user, dialog, 'Direito Empresarial I');
-      await submit(user, dialog, 'SALVAR');
+      await submit(user, dialog, 'Salvar alterações');
       expect(
         await screen.findByText('Dados de Direito Empresarial I atualizados.'),
       ).toBeInTheDocument();
@@ -305,10 +325,16 @@ describe('Disciplinas', () => {
       expect(within(rowOf('Direito Digital')).getByText('DIR503')).toBeInTheDocument();
     });
 
-    it('recria os dados fictícios se o armazenamento estiver corrompido', async () => {
+    it('preserva catálogo corrompido e exibe falha sem substituir pelos exemplos', async () => {
       localStorage.setItem(SUBJECTS_STORAGE_KEY, 'não é json');
-      await setup();
-      expect(bodyRows()).toHaveLength(subjectsSeed.length);
+      renderApp('/disciplinas', { authenticated: true });
+      expect(
+        await screen.findByText(
+          'Não foi possível ler o catálogo. Os dados salvos foram preservados.',
+        ),
+      ).toBeInTheDocument();
+      expect(localStorage.getItem(SUBJECTS_STORAGE_KEY)).toBe('não é json');
+      expect(screen.queryByText('Direito Civil I')).not.toBeInTheDocument();
     });
   });
 

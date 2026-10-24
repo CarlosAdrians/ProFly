@@ -92,3 +92,11 @@ Limites: interface continua local; API -> MongoDB foi verificada separadamente. 
 Regra solicitada: criar ou mover um rascunho para uma data anterior a hoje e recusado. Datas antigas continuam consultaveis e os registros existentes nao sao removidos. O dia e calculado no fuso America/Fortaleza; hoje continua permitido. O adaptador confere novamente a data depois das consultas assincronas e antes de salvar, protegendo tambem o arrastar.
 
 Verificacao: 7 testes do servico de planejamento passaram com data controlada, incluindo dias/meses/anos passados, preservacao do rascunho e virada de dia as 03:00 UTC. Esta regra esta no adaptador demonstrativo; a API de alocacao ainda precisa ser implementada e validar a mesma politica no servidor.
+
+## Revisao de disciplinas e modais
+
+Catalogo de Direito reorganizado com busca por nome/codigo, filtros por situacao, codigos preservados, estado vazio e orientacoes para alocacao. Formulario com titulo visivel, foco inicial, acoes Criar/Salvar/Cancelar, erro de persistencia sem apagar os campos e tentativa posterior habilitada. O catalogo nao substitui dados corrompidos pelos exemplos nem confirma uma escrita que falhou.
+
+Modal compartilhado: clique interno nao fecha, fechamento e edicao bloqueados durante salvamento, foco devolvido ao acionador e apresentacao adaptada a telas estreitas. Formulario de alocacao recebe data minima, sinaliza data passada e mantem os dados em erro. Botoes recebem feedback de pressionamento e diferenciam indisponibilidade de salvamento.
+
+Evidencia: suite integrada do front-end passou 190 testes em 28 arquivos; validacao de nome/codigo, duplicidade, status e preservacao em falha de gravacao exercitadas. No Chrome, abrir, validar vazio, cancelar e devolver foco do modal de disciplina conferidos sem criar registros. Prints 19/20 em outputs/prints fora do repositorio.

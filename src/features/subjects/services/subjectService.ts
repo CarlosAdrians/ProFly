@@ -5,8 +5,22 @@ import type { Subject, SubjectInput } from '../types';
 
 export const SUBJECTS_STORAGE_KEY = 'profly:subjects';
 
-const collection = createLocalCollection<Subject>(SUBJECTS_STORAGE_KEY, () =>
-  subjectsSeed.map((subject) => ({ ...subject })),
+const collection = createLocalCollection<Subject>(
+  SUBJECTS_STORAGE_KEY,
+  () => subjectsSeed.map((subject) => ({ ...subject })),
+  {
+    strict: true,
+    validate: (value): value is Subject[] =>
+      Array.isArray(value) &&
+      value.every(
+        (item) =>
+          item &&
+          typeof item.id === 'string' &&
+          typeof item.name === 'string' &&
+          typeof item.code === 'string' &&
+          ['active', 'inactive'].includes(item.status),
+      ),
+  },
 );
 
 /** Disciplinas persistidas no navegador. Substituir por chamadas à API no futuro. */

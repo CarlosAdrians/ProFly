@@ -15,7 +15,8 @@
   cursor: pointer;
   transition:
     background-color 0.15s ease,
-    filter 0.15s ease;
+    filter 0.15s ease,
+    transform 0.1s ease;
 }
 
 .button:hover:not(:disabled) {
@@ -23,7 +24,7 @@
 }
 
 .button:disabled {
-  cursor: progress;
+  cursor: not-allowed;
   opacity: 0.75;
 }
 
@@ -54,4 +55,11 @@
 
 .danger {
   background: var(--color-danger-button);
+}
+
+.button[aria-busy='true'] {
+  cursor: progress;
+}
+.button:active:not(:disabled) {
+  transform: translateY(1px);
 }

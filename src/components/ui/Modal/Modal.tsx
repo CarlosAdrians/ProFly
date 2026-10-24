@@ -4,24 +4,41 @@ import styles from './Modal.module.css';
 interface ModalProps {
   open: boolean;
   onClose: () => void;
-  /** Título lido por leitores de tela (o protótipo não exibe título visível). */
+  /** Nome acessível do diálogo. O conteúdo fornece o título visível. */
   title: string;
   children: ReactNode;
   size?: 'normal' | 'wide';
+  busy?: boolean;
 }
 
 /**
  * Modal baseado no <dialog> nativo: prende o foco, fecha com Esc e
  * devolve o foco ao elemento que o abriu.
  */
-export function Modal({ open, onClose, title, children, size = 'normal' }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  size = 'normal',
+  busy = false,
+}: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
+    if (open && !dialog.open) {
+      returnFocus.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      dialog.showModal();
+      dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+    }
+    if (!open && dialog.open) {
+      dialog.close();
+      if (returnFocus.current?.isConnected) returnFocus.current.focus();
+    }
   }, [open]);
 
   return (
@@ -30,18 +47,33 @@ export function Modal({ open, onClose, title, children, size = 'normal' }: Modal
       className={styles.dialog}
       data-size={size}
       aria-label={title}
+      aria-busy={busy || undefined}
       onCancel={(event) => {
         event.preventDefault();
-        onClose();
+        if (!busy) onClose();
       }}
       onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
+        if (!busy && event.target === event.currentTarget) {
+          const bounds = event.currentTarget.getBoundingClientRect();
+          if (
+            event.clientX < bounds.left ||
+            event.clientX > bounds.right ||
+            event.clientY < bounds.top ||
+            event.clientY > bounds.bottom
+          )
+            onClose();
+        }
       }}
     >
       {open && (
         <div className={styles.content}>
-          <h2 className="visually-hidden">{title}</h2>
-          <button type="button" className={styles.close} onClick={onClose} aria-label="Fechar">
+          <button
+            type="button"
+            className={styles.close}
+            onClick={onClose}
+            aria-label="Fechar"
+            disabled={busy}
+          >
             <span aria-hidden="true">×</span>
           </button>
           {children}

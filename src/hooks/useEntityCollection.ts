@@ -17,14 +17,25 @@ export function useEntityCollection<T extends StatusEntity, I = Omit<T, 'id' | '
 ) {
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
-    service.list().then((loaded) => {
-      if (!active) return;
-      setItems(loaded);
-      setLoading(false);
-    });
+    service
+      .list()
+      .then((loaded) => {
+        if (!active) return;
+        setItems(loaded);
+        setLoading(false);
+      })
+      .catch((failure) => {
+        if (active) {
+          setError(
+            failure instanceof Error ? failure.message : 'Não foi possível carregar os dados.',
+          );
+          setLoading(false);
+        }
+      });
     return () => {
       active = false;
     };
@@ -65,5 +76,5 @@ export function useEntityCollection<T extends StatusEntity, I = Omit<T, 'id' | '
     [service, replace],
   );
 
-  return { items, loading, create, update, setStatus };
+  return { items, loading, error, create, update, setStatus };
 }
