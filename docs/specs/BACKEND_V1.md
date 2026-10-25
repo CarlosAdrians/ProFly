@@ -30,6 +30,7 @@ Os identificadores abaixo ligam a spec aos cenarios da [matriz JSON](backend-cas
 | REQ-12 | Validar entrada e saida, tratar falhas e rejeitar resultados contraditorios, incompletos ou excessivamente permissivos. |
 | REQ-13 | Persistir dados e invariantes no MongoDB e validar falhas de dependencia sem sucesso ficticio. |
 | REQ-14 | Manter autoria, historico e versoes e permitir integracao dos modais sem perder dados preenchidos. |
+| REQ-15 | Proteger dados pessoais, registrar ciencia versionada e atender protocolos/consultas do titular sem acesso a terceiros ou exclusao automatica de registros obrigatorios. |
 
 ## 3. Identidade e fronteira de confianca
 
@@ -141,3 +142,9 @@ Para concluir: todos os requisitos com testes e evidencia, nenhum teste obrigato
 - Tratamento de ausencia ainda em analise, substituicao/reposicao e visibilidade entre cursos.
 
 Essas pendencias podem ser representadas por configuracao e estados explicitos durante o desenvolvimento. Fixtures sinteticas permitem testar o mecanismo; nao substituem a definicao institucional.
+
+## Privacidade e LGPD: incremento de 25/10/2026
+
+REQ-15, CASE-057..062. A politica operacional e a matriz de dados estao em [LGPD.md](../LGPD.md). Protocolo autenticado para direitos, consulta propria paginada, resposta administrativa versionada com eventos preservados e auditoria. Respondido nao significa exclusao/anonimizacao executada. Acesso/confirmacao completos possuem referencia de15 dias; demais direitos dependem da analise e das regras aplicaveis, sem aplicar15 dias indiscriminadamente.
+
+Exportacao propria exige senha atual, CSRF, sessao ativa, projecoes de inclusao e snapshot transacional. Sem hashes de senha, tokens, sessoes ou arquivos de terceiros; binarios privados baixados separadamente sob autorizacao existente. Limites de5000 itens por categoria/10MB, sem truncar silenciosamente; excedente orienta protocolo completo. Novos atestados bloqueados por padrao, com permissao sintetica em testes e habilitacao institucional explicita fora deles. Producao exige dados minimos de politica homologada; isso nao prova conformidade juridica. Nenhuma retencao ou base legal e inventada. Aceites antigos nao sao reescritos.

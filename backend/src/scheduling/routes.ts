@@ -632,6 +632,12 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
       const actor = identity.actor(request),
         absenceId = routeId(request, 'absenceId');
       await allowed(actor, absenceId);
+      if (identity.config.privacy.healthUploads === 'BLOCKED')
+        throw new AppError(
+          403,
+          'HEALTH_UPLOADS_DISABLED',
+          'Envio de atestados bloqueado ate a definicao institucional de privacidade.',
+        );
       const file = await request.file();
       if (!file) throw new AppError(422, 'FILE_REQUIRED', 'Selecione o atestado.');
       const bytes = await validateImage(

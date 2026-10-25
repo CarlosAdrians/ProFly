@@ -22,11 +22,12 @@ export async function createUiFixture(
   });
   const config = loadConfig({
     NODE_ENV: 'test',
+    PRIVACY_HEALTH_UPLOADS_ENABLED: 'true',
     MONGODB_URI: replica.getUri(),
     MONGODB_DATABASE: `profly_ui_${randomUUID().replaceAll('-', '')}_test`,
     ALLOWED_ORIGINS: preview.https
       ? 'https://127.0.0.1:5176,https://localhost:5176'
-      : 'http://localhost:5173,http://127.0.0.1:5174,http://127.0.0.1:5175',
+      : 'http://localhost:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://localhost:5177',
     COOKIE_SECURE: preview.https ? 'true' : 'false',
   });
   const database = new Database(config);

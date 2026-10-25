@@ -166,3 +166,7 @@ Planejamento, recomendacoes em snapshot unico, historico e atestados estao em [P
 ALLOWED_ORIGINS aceita somente origens exatas, sem wildcard. O guard de origem roda antes do preflight; métodos PUT/PATCH/DELETE e o header CSRF são explicitamente permitidos. Origem hostil é recusada mesmo no OPTIONS. Helmet também cobre essas recusas; HSTS fica ativo somente em produção, sem preload nem includeSubDomains.
 
 COOKIE_SECURE=true permite desenvolvimento atrás de proxy HTTPS; em produção o cookie é sempre Secure e uma tentativa de desligá-lo é recusada. A prévia isolada aceita PROFLY_PREVIEW_HTTPS=1 para API3335, origens HTTPS5176 e cookie seguro, em outro banco efêmero. [Segurança do ambiente](../docs/SEGURANCA.md) registra os controles e limites de implantação.
+
+## Privacidade e direitos do titular
+
+GET /api/v1/catalog/privacy publica somente configuração pública do tratamento. GET/POST /api/v1/me/privacy/requests recebem/consultam protocolos próprios; GET/PATCH /api/v1/admin/privacy/requests atende administradores, com versão e eventos preservados. POST /api/v1/me/privacy/export exige currentPassword/CSRF e entrega cópia privada estruturada. Curso/coordenador não autoriza acessar protocolos de outro titular. Detalhes, configuração e limites em [LGPD.md](../docs/LGPD.md). A matriz foi ampliada com REQ-15/CASE-057..062; o status da matriz continua planejamento, e resultados reais são registrados no relatório de validação.

@@ -11,7 +11,7 @@ import { audit, lock } from '../shared/model.js';
 import { hashPassword, tokenHash, verifyPassword } from '../shared/crypto.js';
 import { profileData, type ProfileData } from '../teachers/contracts.js';
 import { validateImage } from '../scheduling/media.js';
-export const LEGAL_VERSION = '2026-10-24.4';
+export const LEGAL_VERSION = '2026-10-25.1';
 export const legalAcceptance = z.strictObject({
   version: z.literal(LEGAL_VERSION),
   termsAccepted: z.literal(true),

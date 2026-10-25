@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import { privacyRoutes } from './privacy/routes.js';
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
@@ -86,6 +87,7 @@ export async function buildApp(
   );
   identityRoutes(app, identity);
   accountRoutes(app, identity);
+  privacyRoutes(app, identity);
   teacherRoutes(app, identity);
   academicRoutes(app, identity);
   schedulingRoutes(app, identity);

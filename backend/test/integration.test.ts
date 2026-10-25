@@ -158,6 +158,7 @@ before(
     });
     config = loadConfig({
       NODE_ENV: 'test',
+      PRIVACY_HEALTH_UPLOADS_ENABLED: 'true',
       MONGODB_URI: replica.getUri(),
       MONGODB_DATABASE: 'profly_integration_test',
       ALLOWED_ORIGINS: 'http://localhost:5173',
@@ -225,6 +226,7 @@ test('CASE-053: readiness depende do MongoDB real, sem fallback em memoria', asy
   const other = new Database(
     loadConfig({
       NODE_ENV: 'test',
+      PRIVACY_HEALTH_UPLOADS_ENABLED: 'true',
       MONGODB_URI: replica.getUri(),
       MONGODB_DATABASE: 'profly_closed_test',
       ALLOWED_ORIGINS: 'http://localhost:5173',
@@ -234,6 +236,7 @@ test('CASE-053: readiness depende do MongoDB real, sem fallback em memoria', asy
   const closedApp = await buildApp(
     loadConfig({
       NODE_ENV: 'test',
+      PRIVACY_HEALTH_UPLOADS_ENABLED: 'true',
       MONGODB_URI: replica.getUri(),
       MONGODB_DATABASE: 'profly_closed_test',
       ALLOWED_ORIGINS: 'http://localhost:5173',

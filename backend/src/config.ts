@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { loadPrivacyConfig, type PrivacyConfig } from './privacy/config.js';
 import { z } from 'zod';
 import { loadMailConfig, type MailConfig } from './notifications/config.js';
 
@@ -32,6 +33,7 @@ export interface Config {
   uploadDirectory: string;
   secureCookies: boolean;
   mail?: MailConfig;
+  privacy: PrivacyConfig;
 }
 
 export function loadConfig(input: Record<string, string | undefined> = process.env): Config {
@@ -77,5 +79,6 @@ export function loadConfig(input: Record<string, string | undefined> = process.e
     uploadDirectory: path.resolve(env.UPLOAD_DIRECTORY),
     secureCookies: env.NODE_ENV === 'production' || env.COOKIE_SECURE === 'true',
     mail: loadMailConfig(input, env.NODE_ENV, origins),
+    privacy: loadPrivacyConfig(input, env.NODE_ENV),
   };
 }

@@ -57,6 +57,10 @@
     {
       "id": "REQ-14",
       "title": "Versoes e rastreabilidade"
+    },
+    {
+      "id": "REQ-15",
+      "title": "Privacidade e atendimento aos direitos do titular"
     }
   ],
   "cases": [
@@ -652,6 +656,78 @@
       "layer": "contract",
       "scenario": "Recalcular depois de alterar perfil ou ficha da disciplina.",
       "expected": "Nova avaliacao identifica versoes atuais; avaliacao anterior nao e reescrita como se usasse os dados novos.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-057",
+      "requirements": [
+        "REQ-15",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "contract",
+      "scenario": "Configuracao institucional ausente ou habilitacao indevida de dados de saude.",
+      "expected": "Producao recusa politica ausente; novos atestados bloqueados por padrao; teste sintetico explicito.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-058",
+      "requirements": [
+        "REQ-15",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "authorization",
+      "scenario": "Titular abre protocolo, tenta forjar dono ou acessar pedidos de outro usuario.",
+      "expected": "Identidade vem da sessao, CSRF obrigatorio, consulta propria isolada e administracao exclusiva.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-059",
+      "requirements": [
+        "REQ-15",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "concurrency",
+      "scenario": "Duas respostas administrativas com a mesma versao ou tentativa de reescrever resposta final.",
+      "expected": "Uma resposta vence; conflito409 preserva eventos e trilha, sem executar eliminacao de dados.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-060",
+      "requirements": [
+        "REQ-15",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "adversarial",
+      "scenario": "Exportar sem senha atual, sem CSRF ou misturar registros de terceiros.",
+      "expected": "Recusa indevida, projecoes de inclusao excluem segredos/terceiros; copia privada no-store auditada.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-061",
+      "requirements": [
+        "REQ-15",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "integration",
+      "scenario": "Mais de50 protocolos com mesma data de criacao e cursor malformado.",
+      "expected": "Paginacao estavel sem perdas/duplicatas, sempre por titular; cursor invalido422.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-062",
+      "requirements": [
+        "REQ-15",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "integration",
+      "scenario": "Upload de atestado quando tratamento de saude nao esta habilitado.",
+      "expected": "403 antes de ler arquivo/persistir bytes, sem alterar documentos anteriores ou score.",
       "status": "PLANNED"
     }
   ]
