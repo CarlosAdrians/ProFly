@@ -1,0 +1,257 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { evaluate, type EvaluationInput } from '../src/scheduling/engine.js';
+import { expand, overlaps, unionMinutes } from '../src/scheduling/temporal.js';
+import { criteriaInput, periodInput } from '../src/academics/contracts.js';
+import { entity } from '../src/shared/model.js';
+import type { Occurrence } from '../src/scheduling/models.js';
+const teacherId = randomUUID(),
+  offeringId = randomUUID(),
+  competencyId = randomUUID(),
+  educationId = randomUUID(),
+  knowledgeId = randomUUID();
+const meeting = {
+  id: randomUUID(),
+  weekday: 1,
+  startsAt: '18:30',
+  endsAt: '19:20',
+  validFrom: '2030-01-07',
+  validUntil: '2030-01-14',
+};
+function fixture(): EvaluationInput {
+  const criteria = criteriaInput.parse({
+    status: 'REVIEWED',
+    mandatoryKnowledge: [{ competencyId, minLevel: 3 }],
+    desiredKnowledge: [{ competencyId, weight: 1, targetLevel: 4 }],
+    minimumEducation: null,
+    relevantCompetencyIds: [competencyId],
+    minimumTeachingSemesters: 0,
+    minimumProfessionalMonths: 0,
+    score: {
+      knowledgeWeight: 60,
+      teachingWeight: 25,
+      professionalWeight: 15,
+      teachingCapSemesters: 4,
+      professionalCapMonths: 24,
+    },
+  });
+  const period = periodInput.parse({
+    code: 'TEST',
+    name: 'Periodo teste',
+    active: true,
+    startsOn: '2030-01-01',
+    endsOn: '2030-03-31',
+    timeZone: 'America/Fortaleza',
+    calendarStatus: 'REVIEWED',
+    blocks: [{ weekday: 1, startsAt: '18:30', endsAt: '19:20', shift: 'NIGHT' }],
+  });
+  const experience = (id: string, units: number) => ({
+    id,
+    organization: 'Instituicao teste',
+    activity: 'Atividade pertinente',
+    competencyIds: [competencyId],
+    startsOn: '2020-01-01',
+    endsOn: '2022-01-01',
+    completedUnits: units,
+  });
+  const teaching = experience(randomUUID(), 2),
+    professional = experience(randomUUID(), 24);
+  return {
+    teacherId,
+    offeringId,
+    profileVersion: 1,
+    rulesVersion: 1,
+    criteria,
+    period,
+    profile: {
+      education: [
+        {
+          id: educationId,
+          level: 'MASTER',
+          field: 'Direito',
+          institution: 'Instituicao teste',
+          completedYear: 2020,
+        },
+      ],
+      knowledge: [{ id: knowledgeId, competencyId, level: 3 }],
+      teaching: { status: 'PROVIDED', entries: [teaching] },
+      professional: { status: 'PROVIDED', entries: [professional] },
+      availability: {
+        status: 'PROVIDED',
+        timeZone: period.timeZone,
+        windows: [{ ...meeting, startsAt: '18:00', endsAt: '20:00' }],
+      },
+    },
+    review: {
+      ...entity(),
+      teacherId,
+      courseId: randomUUID(),
+      applicationId: randomUUID(),
+      reviewerId: randomUUID(),
+      profileVersion: 1,
+      subjectIds: [randomUUID()],
+      items: [educationId, knowledgeId, teaching.id, professional.id].map((id) => ({
+        id,
+        status: 'CONFIRMED',
+      })),
+      experienceDeclarations: { teaching: 'PROVIDED', professional: 'PROVIDED' },
+    },
+    member: true,
+    slots: expand([meeting], period.timeZone),
+    occupied: [],
+    workload: {
+      ...entity(teacherId),
+      teacherId,
+      weeklyMinutes: 50,
+      validFrom: period.startsOn,
+      validUntil: period.endsOn,
+      timeZone: period.timeZone,
+    },
+    absences: [],
+    history: [],
+  };
+}
+
+test('CASE-020/021/022/024: fronteiras, todos os encontros, fuso e carga semanal', () => {
+  const input = fixture(),
+    first = input.slots[0]!;
+  assert.equal(first.startsAt, '2030-01-07T21:30:00.000Z');
+  assert.equal(
+    overlaps(first, { startsAt: first.endsAt, endsAt: '2030-01-07T23:30:00.000Z' }),
+    false,
+  );
+  assert.equal(
+    overlaps(first, { startsAt: '2030-01-07T22:00:00.000Z', endsAt: '2030-01-07T23:30:00.000Z' }),
+    true,
+  );
+  assert.equal(evaluate(input).eligibility, 'ELIGIBLE');
+  input.workload!.weeklyMinutes = 49;
+  assert.equal(evaluate(input).eligibility, 'INELIGIBLE');
+  input.workload!.weeklyMinutes = 50;
+  input.profile!.availability!.windows[0]!.validUntil = '2030-01-07';
+  assert.equal(evaluate(input).eligibility, 'INELIGIBLE');
+  assert.equal(unionMinutes([first, first], input.period.timeZone)[0]!.minutes, 50);
+  assert.throws(
+    () =>
+      expand(
+        [
+          {
+            ...meeting,
+            weekday: 7,
+            validFrom: '2030-03-10',
+            validUntil: '2030-03-10',
+            startsAt: '02:15',
+            endsAt: '03:00',
+          },
+        ],
+        'America/New_York',
+      ),
+    /inexistente/,
+  );
+});
+
+test('CASE-026/027/028/029: ausencia e falha conhecidas prevalecem; score incompleto nao vira zero', () => {
+  const input = fixture();
+  input.profile!.professional = undefined;
+  let result = evaluate(input);
+  assert.equal(result.eligibility, 'ELIGIBLE');
+  assert.equal(result.score.state, 'PENDING');
+  assert.equal(result.score.value, null);
+  input.profile!.knowledge = [];
+  result = evaluate(input);
+  assert.equal(result.eligibility, 'PENDING');
+  input.member = false;
+  result = evaluate(input);
+  assert.equal(result.eligibility, 'INELIGIBLE');
+  assert.ok(result.pending.length);
+  input.member = true;
+  input.criteria = null;
+  result = evaluate(input);
+  assert.equal(result.eligibility, 'CONFIGURATION_PENDING');
+  assert.equal(result.score.state, 'NOT_APPLICABLE');
+});
+
+test('CASE-030/031/032/034: proposta Ana 80 e Bruno 85, fatores, teto e determinismo', () => {
+  const input = fixture();
+  input.profile!.knowledge![0]!.level = 3;
+  input.profile!.teaching!.entries[0]!.completedUnits = 4;
+  input.profile!.professional!.entries[0]!.completedUnits = 16;
+  const ana = evaluate(input);
+  assert.equal(ana.score.value, 80);
+  assert.equal(
+    ana.score.factors.reduce((n, f) => n + f.points!, 0),
+    80,
+  );
+  input.profile!.knowledge![0]!.level = 4;
+  input.profile!.teaching!.entries[0]!.completedUnits = 4;
+  input.profile!.professional!.entries[0]!.completedUnits = 0;
+  const bruno = evaluate(input);
+  assert.equal(bruno.score.value, 85);
+  assert.equal(evaluate(input).score.value, bruno.score.value);
+  input.profile!.knowledge!.push({ id: randomUUID(), competencyId: randomUUID(), level: 5 });
+  assert.equal(evaluate(input).score.value, 85);
+  input.profile!.teaching!.entries[0]!.completedUnits = 80;
+  assert.equal(evaluate(input).score.value, 85);
+});
+
+test('CASE-015/033/035: sobreposicao exige consolidacao; ausencia nao altera fatores', () => {
+  const input = fixture(),
+    initial = evaluate(input).score;
+  input.absences = [
+    {
+      ...entity(),
+      teacherId,
+      startsOn: meeting.validFrom,
+      endsOn: meeting.validUntil,
+      courseIds: [],
+      decisions: { test: { status: 'ACCEPTED' } },
+    },
+  ];
+  assert.equal(evaluate(input).eligibility, 'INELIGIBLE');
+  assert.deepEqual(evaluate(input).score, initial);
+  const extra = { ...input.profile!.teaching!.entries[0]!, id: randomUUID() };
+  input.profile!.teaching!.entries.push(extra);
+  input.review!.items.push({ id: extra.id, status: 'CONFIRMED' });
+  assert.equal(evaluate(input).score.state, 'PENDING');
+  input.profile!.teaching = { status: 'NONE', entries: [] };
+  input.review!.experienceDeclarations.teaching = 'NONE';
+  assert.equal(evaluate(input).score.factors.find((f) => f.id === 'teaching')!.points, 0);
+  input.profile!.teaching = { status: 'UNKNOWN', entries: [] };
+  assert.equal(evaluate(input).score.factors.find((f) => f.id === 'teaching')!.points, null);
+});
+
+test('CASE-047/048: historico completo, equivalencia explicita e deduplicacao de declaracoes', () => {
+  const input = fixture();
+  input.profile!.teaching = { status: 'NONE', entries: [] };
+  input.review!.experienceDeclarations.teaching = 'NONE';
+  input.history = Array.from(
+    { length: 20 },
+    (_, i) =>
+      ({
+        ...entity(),
+        teacherId,
+        allocationId: randomUUID(),
+        courseId: randomUUID(),
+        periodId: randomUUID(),
+        subjectId: randomUUID(),
+        groupId: randomUUID(),
+        startsAt: `2024-01-${String(i + 1).padStart(2, '0')}T21:30:00.000Z`,
+        endsAt: `2024-01-${String(i + 1).padStart(2, '0')}T22:20:00.000Z`,
+        date: `2024-01-${String(i + 1).padStart(2, '0')}`,
+        minutes: 50,
+        courseName: 'Curso teste',
+        subjectName: 'Materia teste',
+        groupName: 'Turma teste',
+        status: 'COMPLETED',
+      }) as Occurrence,
+  );
+  assert.equal(evaluate(input).score.state, 'PENDING');
+  input.criteria!.score.confirmedMinutesPerTeachingSemester = 250;
+  const result = evaluate(input);
+  assert.equal(result.history.confirmedCount, 20);
+  assert.equal(result.history.confirmedMinutes, 1000);
+  assert.equal(result.score.factors.find((f) => f.id === 'teaching')!.points, 25);
+  input.history.push({ ...input.history[0]!, _id: randomUUID() });
+  assert.equal(evaluate(input).score.value, result.score.value);
+});

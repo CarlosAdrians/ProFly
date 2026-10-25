@@ -14,6 +14,7 @@ import {
   type ProfileData,
 } from './contracts.js';
 import type { Application, ProfileSnapshot, Review, TeacherProfile } from './models.js';
+import { notify } from '../scheduling/service.js';
 
 export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
   const db = identity.database;
@@ -239,6 +240,18 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
         delete record.reviewedAt;
         await applications.replaceOne({ _id: record._id }, record, { session, upsert: true });
         await audit(db, session, actor.user._id, 'APPLICATION_SUBMITTED', record._id, courseId);
+        const coordinators = await identity.memberships
+          .find({ courseId, role: 'coordinator', active: true }, { session })
+          .toArray();
+        for (const member of coordinators)
+          await notify(
+            identity,
+            session,
+            member.userId,
+            'APPLICATION',
+            record._id,
+            'Uma solicitacao docente aguarda analise.',
+          );
         return view(record);
       });
       return reply.code(201).send(result);
@@ -398,6 +411,14 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
           { session, returnDocument: 'after' },
         );
         if (!updated) conflict('STALE_VERSION');
+        await notify(
+          identity,
+          session,
+          application.teacherId,
+          'APPLICATION',
+          applicationId,
+          'Sua solicitacao de entrada foi analisada.',
+        );
         await audit(
           db,
           session,

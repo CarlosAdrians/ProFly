@@ -42,36 +42,66 @@ test('CASE-004/001: validade exata de uma hora e consumo concorrente', async () 
     for (const elapsed of [3599999, 3600000, 3600001]) {
       time = base;
       const email = `expiry-${purpose.toLowerCase()}-${elapsed}@profly.test`;
-      const result = await clocked.register({ name: 'Limite Temporal', email, password: 'ExampleTest2026' });
-      const verification = messages.findLast(m => m.email === email)!;
+      const result = await clocked.register({
+        name: 'Limite Temporal',
+        email,
+        password: 'ExampleTest2026',
+      });
+      const verification = messages.findLast((m) => m.email === email)!;
       if (purpose === 'RESET') await clocked.activate(verification.token, 'VERIFY_EMAIL');
-      const raw = purpose === 'VERIFY_EMAIL' ? verification.token : await database.transaction(s => clocked.createToken(result.user.id, 'RESET', s));
-      const stored = await database.db.collection<AccessToken>('tokens').findOne({ tokenHash: tokenHash(raw) });
+      const raw =
+        purpose === 'VERIFY_EMAIL'
+          ? verification.token
+          : await database.transaction((s) => clocked.createToken(result.user.id, 'RESET', s));
+      const stored = await database.db
+        .collection<AccessToken>('tokens')
+        .findOne({ tokenHash: tokenHash(raw) });
       assert.equal(stored!.expiresAt.getTime(), base + 3600000);
       const before = await identity.users.findOne({ _id: result.user.id });
       const sessions = purpose === 'RESET' ? await loginClient(email) : null;
       time = base + elapsed;
-      const action = () => purpose === 'RESET' ? clocked.resetPassword(raw, 'synthetic-hash') : clocked.activate(raw, 'VERIFY_EMAIL');
+      const action = () =>
+        purpose === 'RESET'
+          ? clocked.resetPassword(raw, 'synthetic-hash')
+          : clocked.activate(raw, 'VERIFY_EMAIL');
       if (elapsed < 3600000) {
         await action();
         await assert.rejects(action(), { code: 'TOKEN_UNAVAILABLE' });
-        if (sessions) assert.equal((await app.inject({ url: '/api/v1/auth/session', headers: sessions })).statusCode, 401);
+        if (sessions)
+          assert.equal(
+            (await app.inject({ url: '/api/v1/auth/session', headers: sessions })).statusCode,
+            401,
+          );
       } else {
         await assert.rejects(action(), { code: 'TOKEN_UNAVAILABLE' });
         const after = await identity.users.findOne({ _id: result.user.id });
         assert.equal(after!.passwordHash, before!.passwordHash);
         assert.equal(after!.state, before!.state);
-        assert.equal((await database.db.collection<AccessToken>('tokens').findOne({ _id: stored!._id }))!.consumedAt, null);
-        if (sessions) assert.equal((await app.inject({ url: '/api/v1/auth/session', headers: sessions })).statusCode, 200);
+        assert.equal(
+          (await database.db.collection<AccessToken>('tokens').findOne({ _id: stored!._id }))!
+            .consumedAt,
+          null,
+        );
+        if (sessions)
+          assert.equal(
+            (await app.inject({ url: '/api/v1/auth/session', headers: sessions })).statusCode,
+            200,
+          );
       }
     }
   }
   const teacher = await registerTeacher('reset-race@profly.test');
-  const raw = await database.transaction(s => identity.createToken(teacher.id, 'RESET', s));
+  const raw = await database.transaction((s) => identity.createToken(teacher.id, 'RESET', s));
   const hash = await hashPassword('AnotherTest2026');
-  const results = await Promise.allSettled([identity.resetPassword(raw, hash), identity.resetPassword(raw, hash)]);
-  assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
-  assert.equal((await app.inject({ url: '/api/v1/auth/session', headers: teacher.headers })).statusCode, 401);
+  const results = await Promise.allSettled([
+    identity.resetPassword(raw, hash),
+    identity.resetPassword(raw, hash),
+  ]);
+  assert.equal(results.filter((r) => r.status === 'fulfilled').length, 1);
+  assert.equal(
+    (await app.inject({ url: '/api/v1/auth/session', headers: teacher.headers })).statusCode,
+    401,
+  );
 });
 
 async function loginClient(email: string, password = 'ExampleTest2026') {
@@ -1279,5 +1309,564 @@ test('CASE-018/019/020: ofertas exigem curso, periodo e blocos compativeis e pre
       })
     ).statusCode,
     403,
+  );
+});
+
+async function schedulingFixture(label: string) {
+  const teacher = await teacherFixture(label);
+  const year = new Date().getUTCFullYear() + 1;
+  const from = `${year}-01-01`,
+    until = `${year}-03-31`;
+  teacher.data.availability!.windows[0]!.validFrom = from;
+  teacher.data.availability!.windows[0]!.validUntil = until;
+  assert.equal((await teacher.save(0, teacher.data)).statusCode, 200);
+  const competencyId = teacher.data.knowledge![0]!.competencyId;
+  const criteria = {
+    status: 'REVIEWED',
+    mandatoryKnowledge: [{ competencyId, minLevel: 3 }],
+    desiredKnowledge: [{ competencyId, weight: 1, targetLevel: 4 }],
+    minimumEducation: { level: 'BACHELOR', field: 'Direito' },
+    relevantCompetencyIds: [competencyId],
+    minimumTeachingSemesters: 0,
+    minimumProfessionalMonths: 0,
+    score: {
+      knowledgeWeight: 60,
+      teachingWeight: 25,
+      professionalWeight: 15,
+      teachingCapSemesters: 4,
+      professionalCapMonths: 24,
+      confirmedMinutesPerTeachingSemester: null,
+    },
+  };
+  const write = async (
+    url: string,
+    payload: object,
+    headers = adminHeaders,
+    method: 'POST' | 'PUT' = 'POST',
+  ) => {
+    const r = await app.inject({ method, url, payload, headers });
+    assert.equal(r.statusCode, method === 'POST' ? 201 : 200, r.body);
+    return r.json();
+  };
+  for (const [courseId, subjectId] of [
+    [courseA, teacher.subjectA],
+    [courseB, teacher.subjectB],
+  ]) {
+    await write(
+      `/api/v1/courses/${courseId}/subjects/${subjectId}`,
+      {
+        expectedVersion: 1,
+        data: { code: label, name: 'Materia de planejamento', active: true, criteria },
+      },
+      adminHeaders,
+      'PUT',
+    );
+    const submission = await teacher.submit(courseId!, subjectId!);
+    assert.equal(submission.statusCode, 201, submission.body);
+    const reviewed = await app.inject({
+      method: 'POST',
+      url: `/api/v1/courses/${courseId}/applications/${submission.json().id}/review`,
+      headers: adminHeaders,
+      payload: {
+        expectedVersion: 1,
+        profileVersion: 1,
+        decision: 'APPROVED',
+        reason: 'Analise sintetica completa',
+        items: [...teacher.data.education!, ...teacher.data.knowledge!].map((i) => ({
+          id: i.id,
+          status: 'CONFIRMED',
+        })),
+      },
+    });
+    assert.equal(reviewed.statusCode, 200, reviewed.body);
+  }
+  const period = await write('/api/v1/admin/periods', {
+    code: label,
+    name: 'Periodo teste',
+    active: true,
+    startsOn: from,
+    endsOn: until,
+    timeZone: 'America/Fortaleza',
+    calendarStatus: 'REVIEWED',
+    blocks: [
+      { weekday: 1, startsAt: '18:30', endsAt: '19:20', shift: 'NIGHT' },
+      { weekday: 1, startsAt: '19:20', endsAt: '20:10', shift: 'NIGHT' },
+    ],
+  });
+  const meeting = {
+    id: randomUUID(),
+    weekday: 1,
+    startsAt: '18:30',
+    endsAt: '19:20',
+    validFrom: from,
+    validUntil: until,
+  };
+  const groups = [],
+    offerings = [];
+  for (const [courseId, subjectId] of [
+    [courseA, teacher.subjectA],
+    [courseB, teacher.subjectB],
+  ]) {
+    const group = await write(`/api/v1/courses/${courseId}/groups`, {
+      code: label,
+      name: 'Turma teste',
+      active: true,
+      periodId: period.id,
+    });
+    groups.push(group);
+    offerings.push(
+      await write(`/api/v1/courses/${courseId}/offerings`, {
+        code: label,
+        name: 'Oferta teste',
+        active: true,
+        periodId: period.id,
+        subjectId,
+        groupId: group.id,
+        meetings: [meeting],
+      }),
+    );
+  }
+  await write(
+    `/api/v1/admin/teachers/${teacher.id}/workload`,
+    {
+      expectedVersion: 0,
+      weeklyMinutes: 100,
+      validFrom: from,
+      validUntil: until,
+      timeZone: 'America/Fortaleza',
+    },
+    adminHeaders,
+    'PUT',
+  );
+  return { teacher, from, until, meeting, period, groups, offerings, write };
+}
+
+test('CASE-020..040/056: elegibilidade, reservas globais concorrentes, versoes e publicacao estavel', async () => {
+  const f = await schedulingFixture('planning-race');
+  const data = (i: number) => ({
+    offeringId: f.offerings[i].id,
+    teacherId: f.teacher.id,
+    meetings: [f.meeting],
+  });
+  const assess = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/eligibility`,
+    headers: coordinatorHeaders,
+    payload: data(0),
+  });
+  assert.equal(assess.statusCode, 200, assess.body);
+  assert.equal(assess.json().eligibility, 'ELIGIBLE');
+  assert.equal(assess.json().score.value, 60);
+  assert.equal(assess.json().policy, 'PROPOSAL_CONFIGURABLE');
+  assert.ok(assess.json().checks.length >= 7);
+  const responses = await Promise.all(
+    [0, 1].map((i) =>
+      app.inject({
+        method: 'POST',
+        url: `/api/v1/courses/${i ? courseB : courseA}/allocations`,
+        headers: adminHeaders,
+        payload: data(i),
+      }),
+    ),
+  );
+  assert.deepEqual(responses.map((r) => r.statusCode).sort(), [201, 409]);
+  const winner = responses.findIndex((r) => r.statusCode === 201),
+    courseId = winner ? courseB : courseA,
+    allocation = responses[winner]!.json();
+  const planning = (
+    await app.inject({ url: `/api/v1/courses/${courseId}/planning`, headers: adminHeaders })
+  ).json();
+  const plan = planning.plans[0];
+  const publish = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseId}/periods/${f.period.id}/publish`,
+    headers: adminHeaders,
+    payload: { expectedVersion: plan.version },
+  });
+  assert.equal(publish.statusCode, 200, publish.body);
+  const schedule = (
+    await app.inject({
+      url: `/api/v1/me/schedule?from=${f.from}&until=${f.until}`,
+      headers: f.teacher.headers,
+    })
+  ).json();
+  assert.ok(schedule.items.length > 10);
+  assert.ok(schedule.items.every((i: { status: string }) => i.status === 'PLANNED'));
+  const moved = {
+    ...data(winner),
+    meetings: [{ ...f.meeting, startsAt: '19:20', endsAt: '20:10' }],
+  };
+  const update = await app.inject({
+    method: 'PUT',
+    url: `/api/v1/courses/${courseId}/allocations/${allocation.id}`,
+    headers: adminHeaders,
+    payload: { expectedVersion: allocation.version, data: moved },
+  });
+  assert.equal(update.statusCode, 200, update.body);
+  assert.deepEqual(
+    (
+      await app.inject({
+        url: `/api/v1/me/schedule?from=${f.from}&until=${f.until}`,
+        headers: f.teacher.headers,
+      })
+    ).json(),
+    schedule,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: `/api/v1/courses/${courseId}/periods/${f.period.id}/publish`,
+        headers: adminHeaders,
+        payload: { expectedVersion: plan.version },
+      })
+    ).statusCode,
+    409,
+  );
+  const later = (
+    await app.inject({ url: `/api/v1/courses/${courseId}/planning`, headers: adminHeaders })
+  ).json().plans[0];
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: `/api/v1/courses/${courseId}/periods/${f.period.id}/publish`,
+        headers: adminHeaders,
+        payload: { expectedVersion: later.version },
+      })
+    ).statusCode,
+    200,
+  );
+  const newer = (
+    await app.inject({
+      url: `/api/v1/me/schedule?from=${f.from}&until=${f.until}`,
+      headers: f.teacher.headers,
+    })
+  ).json();
+  assert.ok(newer.items.some((i: { status: string }) => i.status === 'RESCHEDULED'));
+  assert.equal(
+    (
+      await app.inject({
+        method: 'PUT',
+        url: `/api/v1/courses/${courseId}/allocations/${allocation.id}`,
+        headers: adminHeaders,
+        payload: { expectedVersion: 1, data: moved },
+      })
+    ).statusCode,
+    409,
+  );
+  // Failed publication rolls back every write and keeps the last revision and occurrences intact.
+  await f.teacher.save(1, {
+    ...f.teacher.data,
+    availability: { ...f.teacher.data.availability!, status: 'NONE', windows: [] },
+  });
+  const before = await database.db
+    .collection('publicationVersions')
+    .countDocuments({ planId: later.id });
+  const current = (
+    await app.inject({ url: `/api/v1/courses/${courseId}/planning`, headers: adminHeaders })
+  ).json().plans[0];
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: `/api/v1/courses/${courseId}/periods/${f.period.id}/publish`,
+        headers: adminHeaders,
+        payload: { expectedVersion: current.version },
+      })
+    ).statusCode,
+    409,
+  );
+  assert.equal(
+    await database.db.collection('publicationVersions').countDocuments({ planId: later.id }),
+    before,
+  );
+  assert.deepEqual(
+    (
+      await app.inject({
+        url: `/api/v1/me/schedule?from=${f.from}&until=${f.until}`,
+        headers: f.teacher.headers,
+      })
+    ).json(),
+    newer,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: `/api/v1/courses/${courseB}/eligibility`,
+        headers: coordinatorHeaders,
+        payload: data(1),
+      })
+    ).statusCode,
+    404,
+  );
+});
+
+test('CASE-037/038: disputa de carga sem sobreposicao e disputa de turma sao serializadas', async () => {
+  const f = await schedulingFixture('planning-load');
+  await f.write(
+    `/api/v1/admin/teachers/${f.teacher.id}/workload`,
+    {
+      expectedVersion: 1,
+      weeklyMinutes: 50,
+      validFrom: f.from,
+      validUntil: f.until,
+      timeZone: 'America/Fortaleza',
+    },
+    adminHeaders,
+    'PUT',
+  );
+  const results = await Promise.all(
+    [0, 1].map((i) =>
+      app.inject({
+        method: 'POST',
+        url: `/api/v1/courses/${i ? courseB : courseA}/allocations`,
+        headers: adminHeaders,
+        payload: {
+          offeringId: f.offerings[i].id,
+          teacherId: f.teacher.id,
+          meetings: [{ ...f.meeting, ...(i ? { startsAt: '19:20', endsAt: '20:10' } : {}) }],
+        },
+      }),
+    ),
+  );
+  assert.deepEqual(results.map((r) => r.statusCode).sort(), [201, 409]);
+  assert.ok(results.find((r) => r.statusCode === 409)!.body.includes('Limite semanal'));
+});
+
+test('CASE-035/041..048: ausencia privada, arquivo validado, notificacoes e historico proprio', async () => {
+  const f = await schedulingFixture('absence-private');
+  const data = { offeringId: f.offerings[0].id, teacherId: f.teacher.id, meetings: [f.meeting] };
+  const evaluate = () =>
+    app.inject({
+      method: 'POST',
+      url: `/api/v1/courses/${courseA}/eligibility`,
+      headers: coordinatorHeaders,
+      payload: data,
+    });
+  const initial = (await evaluate()).json();
+  const absence = await f.write(
+    '/api/v1/me/absences',
+    { startsOn: f.from, endsOn: f.until, courseIds: [courseA] },
+    f.teacher.headers,
+  );
+  const pending = (await evaluate()).json();
+  assert.equal(pending.eligibility, 'PENDING');
+  assert.deepEqual(pending.score, initial.score);
+  const stranger = await registerTeacher('absence-stranger@profly.test');
+  assert.equal(
+    (
+      await app.inject({
+        url: `/api/v1/me/absences/${absence.id}/attachment`,
+        headers: stranger.headers,
+      })
+    ).statusCode,
+    404,
+  );
+  const upload = async (bytes: Buffer, type = 'image/png', headers = f.teacher.headers) => {
+    const boundary = 'profly-test-boundary';
+    return app.inject({
+      method: 'POST',
+      url: `/api/v1/me/absences/${absence.id}/attachment`,
+      headers: { ...headers, 'content-type': `multipart/form-data; boundary=${boundary}` },
+      payload: Buffer.concat([
+        Buffer.from(
+          `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="test.png"\r\nContent-Type: ${type}\r\n\r\n`,
+        ),
+        bytes,
+        Buffer.from(`\r\n--${boundary}--\r\n`),
+      ]),
+    });
+  };
+  assert.equal((await upload(Buffer.from('not a png'))).statusCode, 415);
+  assert.equal((await upload(Buffer.alloc(config.uploadMaxBytes + 1))).statusCode, 413);
+  const sharp = (await import('sharp')).default;
+  const image = await sharp({ create: { width: 20, height: 20, channels: 3, background: '#fff' } })
+    .png()
+    .toBuffer();
+  assert.equal((await upload(image)).statusCode, 201);
+  assert.equal((await upload(image)).statusCode, 409);
+  const downloaded = await app.inject({
+    url: `/api/v1/courses/${courseA}/absences/${absence.id}/attachment`,
+    headers: coordinatorHeaders,
+  });
+  assert.equal(downloaded.statusCode, 200, downloaded.body);
+  assert.deepEqual(downloaded.rawPayload, image);
+  assert.match(String(downloaded.headers['content-disposition']), /attachment/);
+  assert.equal(
+    (
+      await app.inject({
+        url: `/api/v1/courses/${courseB}/absences/${absence.id}/attachment`,
+        headers: coordinatorHeaders,
+      })
+    ).statusCode,
+    404,
+  );
+  const reviewed = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/absences/${absence.id}/review`,
+    headers: coordinatorHeaders,
+    payload: { expectedVersion: 2, decision: 'ACCEPTED' },
+  });
+  assert.equal(reviewed.statusCode, 200, reviewed.body);
+  const rejected = (await evaluate()).json();
+  assert.equal(rejected.eligibility, 'INELIGIBLE');
+  assert.deepEqual(rejected.score, initial.score);
+  assert.ok(!JSON.stringify(rejected).includes('attachment'));
+  const prefs = (
+    await app.inject({ url: '/api/v1/me/preferences', headers: f.teacher.headers })
+  ).json();
+  assert.equal(
+    (
+      await app.inject({
+        method: 'PUT',
+        url: '/api/v1/me/preferences',
+        headers: f.teacher.headers,
+        payload: { expectedVersion: prefs.version, notifications: false },
+      })
+    ).statusCode,
+    200,
+  );
+  const count = await database.db.collection('notices').countDocuments({ userId: f.teacher.id });
+  const { notify } = await import('../src/scheduling/service.js');
+  await database.transaction((s) =>
+    notify(identity, s, f.teacher.id, 'SCHEDULE', 'synthetic', 'Teste'),
+  );
+  assert.equal(
+    await database.db.collection('notices').countDocuments({ userId: f.teacher.id }),
+    count,
+  );
+  const { entity } = await import('../src/shared/model.js');
+  // Isolated past occurrences exercise stable pagination; none is inferred completed by elapsed time.
+  const records = Array.from({ length: 16 }, () => ({
+    ...entity(),
+    allocationId: randomUUID(),
+    courseId: courseA,
+    periodId: f.period.id,
+    subjectId: f.teacher.subjectA,
+    groupId: f.groups[0].id,
+    teacherId: f.teacher.id,
+    startsAt: '2020-01-06T21:30:00.000Z',
+    endsAt: '2020-01-06T22:20:00.000Z',
+    date: '2020-01-06',
+    minutes: 50,
+    courseName: 'Curso sintetico',
+    subjectName: 'Disciplina sintetica',
+    groupName: 'Turma sintetica',
+    status: 'PLANNED',
+  }));
+  await database.db
+    .collection<{ _id: string } & Record<string, unknown>>('occurrences')
+    .insertMany(records);
+  const first = (
+    await app.inject({ url: '/api/v1/me/history', headers: f.teacher.headers })
+  ).json();
+  assert.equal(first.items.length, 10);
+  assert.ok(
+    first.items.every(
+      (r: { displayStatus: string }) => r.displayStatus === 'AWAITING_CONFIRMATION',
+    ),
+  );
+  const second = (
+    await app.inject({
+      url: `/api/v1/me/history?before=${encodeURIComponent(first.next.before)}&cursorId=${first.next.cursorId}`,
+      headers: f.teacher.headers,
+    })
+  ).json();
+  assert.equal(second.items.length, 6);
+  assert.equal(new Set([...first.items, ...second.items].map((r) => r.id)).size, 16);
+  assert.equal(
+    (
+      await app.inject({
+        url: `/api/v1/me/history?teacherId=${f.teacher.id}`,
+        headers: stranger.headers,
+      })
+    ).statusCode,
+    422,
+  );
+  assert.equal(
+    (await app.inject({ url: '/api/v1/me/history', headers: stranger.headers })).json().items
+      .length,
+    0,
+  );
+  const confirm = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/occurrences/${records[0]!._id}/status`,
+    headers: coordinatorHeaders,
+    payload: { expectedVersion: 1, status: 'COMPLETED' },
+  });
+  assert.equal(confirm.statusCode, 200, confirm.body);
+  assert.ok(confirm.json().confirmedBy);
+});
+
+test('CASE-038/005: dois professores disputam a turma e candidato de outro curso fica oculto', async () => {
+  const f = await schedulingFixture('group-race');
+  const second = await registerTeacher('group-second@profly.test');
+  let r = await app.inject({
+    method: 'PUT',
+    url: '/api/v1/me/profile',
+    headers: second.headers,
+    payload: { expectedVersion: 0, data: f.teacher.data },
+  });
+  assert.equal(r.statusCode, 200, r.body);
+  r = await app.inject({
+    method: 'POST',
+    url: `/api/v1/me/applications/${courseA}`,
+    headers: second.headers,
+    payload: { expectedVersion: 0, profileVersion: 1, subjectIds: [f.teacher.subjectA] },
+  });
+  assert.equal(r.statusCode, 201, r.body);
+  r = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/applications/${r.json().id}/review`,
+    headers: coordinatorHeaders,
+    payload: {
+      expectedVersion: 1,
+      profileVersion: 1,
+      decision: 'APPROVED',
+      reason: 'Analise sintetica',
+      items: [...f.teacher.data.education!, ...f.teacher.data.knowledge!].map((i) => ({
+        id: i.id,
+        status: 'CONFIRMED',
+      })),
+    },
+  });
+  assert.equal(r.statusCode, 200, r.body);
+  await f.write(
+    `/api/v1/admin/teachers/${second.id}/workload`,
+    {
+      expectedVersion: 0,
+      weeklyMinutes: 100,
+      validFrom: f.from,
+      validUntil: f.until,
+      timeZone: 'America/Fortaleza',
+    },
+    adminHeaders,
+    'PUT',
+  );
+  const results = await Promise.all(
+    [f.teacher.id, second.id].map((teacherId) =>
+      app.inject({
+        method: 'POST',
+        url: `/api/v1/courses/${courseA}/allocations`,
+        headers: coordinatorHeaders,
+        payload: { offeringId: f.offerings[0].id, teacherId, meetings: [f.meeting] },
+      }),
+    ),
+  );
+  assert.deepEqual(results.map((r) => r.statusCode).sort(), [201, 409]);
+  assert.ok(results.find((r) => r.statusCode === 409)!.body.includes('Turma ocupada'));
+  const outsider = await registerTeacher('group-outsider@profly.test');
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: `/api/v1/courses/${courseA}/eligibility`,
+        headers: coordinatorHeaders,
+        payload: { offeringId: f.offerings[0].id, teacherId: outsider.id, meetings: [f.meeting] },
+      })
+    ).statusCode,
+    404,
   );
 });

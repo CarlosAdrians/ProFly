@@ -53,6 +53,12 @@ export class Database {
       .createIndex({ teacherId: 1, courseId: 1, profileVersion: 1 }, { unique: true });
     await this.db.collection('allocations').createIndex({ courseId: 1, periodId: 1, state: 1 });
     await this.db.collection('occurrences').createIndex({ teacherId: 1, startsAt: -1, _id: -1 });
+    await this.db
+      .collection('occurrences')
+      .createIndex({ allocationId: 1, teacherId: 1, startsAt: 1, endsAt: 1 }, { unique: true });
+    await this.db.collection('publishedAllocations').createIndex({ teacherId: 1, courseId: 1 });
+    await this.db.collection('absences').createIndex({ teacherId: 1, startsOn: 1, endsOn: 1 });
+    await this.db.collection('notices').createIndex({ userId: 1, createdAt: -1, _id: -1 });
   }
 
   async transaction<T>(operation: (session: ClientSession) => Promise<T>): Promise<T> {

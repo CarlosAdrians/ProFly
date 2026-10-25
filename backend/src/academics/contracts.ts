@@ -29,7 +29,13 @@ export const criteriaInput = z
       .max(100)
       .refine(unique),
     desiredKnowledge: z
-      .array(z.strictObject({ competencyId: id, weight: z.number().finite().positive().max(100) }))
+      .array(
+        z.strictObject({
+          competencyId: id,
+          weight: z.number().finite().positive().max(100),
+          targetLevel: z.number().int().min(1).max(5).default(3),
+        }),
+      )
       .max(100)
       .refine(unique),
     minimumEducation: education.nullable(),
@@ -42,6 +48,13 @@ export const criteriaInput = z
       professionalWeight: z.number().finite().min(0).max(100),
       teachingCapSemesters: z.number().int().min(1).max(80),
       professionalCapMonths: z.number().int().min(1).max(1200),
+      confirmedMinutesPerTeachingSemester: z
+        .number()
+        .int()
+        .min(1)
+        .max(100000)
+        .nullable()
+        .default(null),
     }),
   })
   .superRefine((value, context) => {
