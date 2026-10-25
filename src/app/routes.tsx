@@ -16,8 +16,9 @@ import { LegalPage } from '../features/legal/LegalDocument';
 import { CalendarPage } from '../features/planning/CalendarPage';
 import { AllocationsPage } from '../features/planning/AllocationsPage';
 import { SettingsPage } from '../features/settings/SettingsPage';
+import { RouteErrorPage } from './RouteErrorPage';
 
-export const routes: RouteObject[] = [
+const pages: RouteObject[] = [
   { path: '/', element: <Navigate to={paths.login} replace /> },
   {
     path: paths.login,
@@ -95,3 +96,4 @@ export const routes: RouteObject[] = [
   // Rotas inexistentes retornam ao acesso apropriado para a sessao.
   { path: '*', element: <Navigate to="/" replace /> },
 ];
+export const routes: RouteObject[] = [{ errorElement: <RouteErrorPage />, children: pages }];

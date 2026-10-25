@@ -25,11 +25,17 @@ Coordenador fictício: `felipe.araujo@profly.test`, senha `profly123`. O e-mail 
 ## Cadastro e aprovação
 
 1. Conta: nome, e-mail, telefone, senha/confirmacão e foto opcional.
-2. Perfil acadêmico: múltiplas formações, conhecimentos/níveis, experiência docente e profissional. Dado desconhecido é diferente de não possuir experiência.
-3. Cursos e horários: cursos, disciplinas, disponibilidade por dia/hora e carga semanal declarada. Janelas sobrepostas são recusadas.
+2. Perfil acadêmico: múltiplas formações já concluídas, conhecimentos/níveis, experiência docente e profissional. Dado desconhecido é diferente de não possuir experiência. Titulação, curso, instituição e ano têm erros individuais; um ano futuro destaca e recebe foco somente no campo do ano. Instituição aceita o nome ou a sigla da faculdade/universidade emissora do diploma.
+3. Cursos e horários: cursos, disciplinas e disponibilidade por dia/hora. Dedicação semanal pretendida é opcional; em branco significa não informada e pode ser definida depois em Horários. Janelas sobrepostas são recusadas.
 4. Revisão: resumo editável e confirmações separadas, inicialmente desmarcadas, dos termos e da leitura do aviso de privacidade.
 
 O cadastro abre solicitações pendentes; não concede aprovação acadêmica. A coordenação registra motivo para aprovar, solicitar ajustes ou recusar cada curso. Aprovar um curso preserva as decisões dos outros. Não há botão Novo Professor nem cadastro público pelo WhatsApp. A derivação local da senha usa PBKDF2/SHA-256 com sal aleatório; isso demonstra o fluxo, sem substituir a autenticação do servidor.
+
+A conta permite acompanhar o próprio cadastro enquanto a análise está pendente. O dashboard mostra um aviso com os cursos que aguardam aprovação; o novo professor só aparece nos vínculos aprovados depois da decisão. A conta fictícia de coordenação está atribuída somente a Direito. A tela e o adaptador de análise recusam decisões fora desse escopo e de perfis de professor. Na versão institucional, essas responsabilidades vêm das atribuições do administrador no servidor; os controles locais não são uma fronteira de segurança.
+
+Telefone usa formato nacional com DDD brasileiro existente, celular iniciado em 9 ou fixo iniciado de 2 a 5; o campo orienta a não incluir +55. A lista de DDDs referencia os [Códigos Nacionais da Anatel](https://www.gov.br/anatel/pt-br/regulado/numeracao/codigos-nacionais). A validação não comprova titularidade. A política de nova senha mantém 8 a 72 caracteres, pelo menos uma letra e um número, e confirmação igual, com checklist visível. Credenciais existentes de login não receberam novas exigências.
+
+A leitura dos perfis valida a estrutura completa antes de fornecer listas às páginas, acompanha alterações entre abas por snapshot e preserva o conteúdo original em erro. Perfis malformados geram aviso na listagem, sem limpar cadastros. Erros inesperados de rota recebem uma tela institucional com nova tentativa e retorno ao início, sem exibir stack técnico.
 
 A foto aceita JPEG, PNG e WebP de até 2 MB, é recortada/reduzida a 256 pixels e pode ser trocada ou removida. Nome, e-mail e telefone são editáveis; a mudança do e-mail preserva identidade, solicitações e foto e passa a valer no próximo login demonstrativo. A versão institucional precisará de verificação de e-mail no servidor.
 
@@ -40,6 +46,10 @@ Conta reúne identidade e acesso em uma coluna e organiza dados cadastrais e per
 Clicar no avatar abre um diálogo com seleção de arquivo, prévia circular, zoom, posição horizontal/vertical e centralização. Escolher ou ajustar uma imagem não salva automaticamente. Salvar foto grava um JPEG de 256 × 256; Cancelar preserva a imagem atual. Remover foto também exige ação explícita. O editor limita formatos, tamanho e dimensões, libera URLs temporárias e bloqueia fechamento durante processamento/gravação. Em falha, a imagem anterior e a edição são preservadas.
 
 Login mantém a composição aprovada e a foto do campus. As ações de Login e Conta recebem ícones SVG locais, com texto ou nome acessível. Os avisos de demonstração do login e o rodapé compartilhado das telas internas foram removidos por solicitação do usuário. Essa alteração visual não muda o armazenamento local nem representa integração com a API; os limites técnicos continuam documentados aqui e em Segurança do ambiente.
+
+O bloco de marca do login exibe somente a logo completa da UNIFACISA centralizada, sem o nome ProFly ao lado. Foto e composição em duas metades foram preservadas; no celular a foto continua recolhida. Cadastro recebeu seletores nativos com seta SVG, ícones nas ações e erros por campo. Seu aviso visual de demonstração foi removido; limites técnicos continuam nesta documentação. Toggle usa sol/lua em SVG, preservando teclado, foco, preferência e semântica de switch nos dois temas. Pins têm hierarquia de horário, disciplina, professor e turma; a grade mantém uma largura mínima de célula e rolagem interna em telas estreitas. Handlers de arraste e alternativa por formulário foram preservados.
+
+O progresso de horas realizadas em relação à meta semanal ainda depende do histórico de ocorrências confirmadas. A interface informa essa dependência e não inventa horas cumpridas, percentuais ou aulas realizadas a partir da disponibilidade.
 
 ## Calendário e alocações
 

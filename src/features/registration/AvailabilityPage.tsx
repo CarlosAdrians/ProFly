@@ -61,7 +61,11 @@ function AvailabilityEditor({
         <header>
           <div>
             <h2>Minha semana pretendida</h2>
-            <p>Preferências declaradas · {displayedHours || '—'} horas semanais pretendidas</p>
+            <p>
+              {displayedHours
+                ? `${displayedHours} horas semanais pretendidas`
+                : 'Meta semanal não informada (opcional)'}
+            </p>
           </div>
           {!editing && (
             <Button
@@ -172,7 +176,7 @@ function AvailabilityEditor({
               max="168"
               value={hours}
               onChange={(event) => setHours(event.target.value)}
-              hint="Sua preferência de dedicação. O limite contratual é definido pela instituição."
+              hint="Opcional. Deixe em branco se ainda não definiu uma meta semanal."
             />
           </div>
           <p className={styles.note}>

@@ -1,4 +1,5 @@
 import { ThemeToggle } from '../../components/ui/ThemeToggle/ThemeToggle';
+import { Icon } from '../../components/ui/Icon/Icon';
 import { useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { TextField } from '../../components/ui/TextField/TextField';
@@ -22,20 +23,25 @@ function ExperienceFields({
   value,
   onChange,
   error,
+  errors,
+  prefix,
   unit,
 }: {
   title: string;
   value: Experience;
   onChange: (value: Experience) => void;
   error?: string;
+  errors: FieldErrors;
+  prefix: string;
   unit: 'semestres' | 'meses';
 }) {
   return (
-    <fieldset className={styles.section}>
+    <fieldset className={styles.section} data-error={!!error}>
       <legend>{title}</legend>
       <label className={styles.selectLabel}>
         Você possui essa experiência?
         <select
+          aria-invalid={!!error}
           value={value.status}
           onChange={(e) => onChange({ ...value, status: e.target.value as Experience['status'] })}
         >
@@ -49,6 +55,7 @@ function ExperienceFields({
           <TextField
             label={unit === 'semestres' ? 'Instituição de ensino' : 'Empresa ou organização'}
             value={value.organization}
+            error={errors[`${prefix}-organization`]}
             maxLength={100}
             onChange={(e) => onChange({ ...value, organization: e.target.value })}
           />
@@ -57,12 +64,14 @@ function ExperienceFields({
               unit === 'semestres' ? 'Disciplinas ou área de ensino' : 'Função ou área de atuação'
             }
             value={value.activity}
+            error={errors[`${prefix}-activity`]}
             maxLength={100}
             onChange={(e) => onChange({ ...value, activity: e.target.value })}
           />
           <TextField
             label={`Tempo de experiência (${unit} completos)`}
             value={value.units}
+            error={errors[`${prefix}-units`]}
             type="number"
             min={1}
             max={unit === 'semestres' ? 80 : 1200}
@@ -208,14 +217,11 @@ export function RegisterPage() {
                 aria-current={step === index ? 'step' : undefined}
                 data-complete={index < step}
               >
-                <span>{index < step ? '✓' : index + 1}</span>
+                <span>{index < step ? <Icon name="check" size={16} /> : index + 1}</span>
                 <strong>{label}</strong>
               </li>
             ))}
           </ol>
-          <p className={styles.demo}>
-            Demonstração local. Use dados fictícios; o cadastro fica neste navegador.
-          </p>
           <form ref={form} noValidate onSubmit={submit}>
             {message && (
               <div className={styles.message}>
@@ -252,6 +258,8 @@ export function RegisterPage() {
                     type="tel"
                     value={data.phone}
                     autoComplete="tel"
+                    placeholder="(83) 99999-9999"
+                    hint="DDD + número, sem +55. Aceitamos celular e telefone fixo."
                     maxLength={25}
                     error={errors.phone}
                     onChange={(e) => setData({ ...data, phone: e.target.value })}
@@ -276,6 +284,28 @@ export function RegisterPage() {
                     onChange={(e) => setConfirmation(e.target.value)}
                   />
                 </div>
+                <ul className={styles.passwordRules} aria-label="Requisitos da senha">
+                  {[
+                    {
+                      label: 'De 8 a 72 caracteres',
+                      met: password.length >= 8 && password.length <= 72,
+                    },
+                    { label: 'Pelo menos uma letra', met: /\p{L}/u.test(password) },
+                    { label: 'Pelo menos um número', met: /\d/.test(password) },
+                    {
+                      label: 'Confirmação igual à senha',
+                      met: !!password && password === confirmation,
+                    },
+                  ].map(({ label, met }) => (
+                    <li key={label} data-met={met}>
+                      <Icon name={met ? 'check' : 'circle'} size={15} />
+                      <span>
+                        {label}
+                        <span className={styles.srOnly}>{met ? ': atendido' : ': pendente'}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
                 <PhotoField value={data.photo} onChange={(photo) => setData({ ...data, photo })} />
               </section>
             )}
@@ -288,17 +318,23 @@ export function RegisterPage() {
                 </p>
                 <fieldset className={styles.section}>
                   <legend>Formação acadêmica</legend>
+                  <p className={styles.description}>
+                    Informe apenas formações já concluídas. A instituição é a faculdade ou
+                    universidade que emitiu seu diploma.
+                  </p>
                   {data.education.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className={styles.repeatBlock}
-                      data-error={!!errors[`education-${index}`]}
-                    >
+                    <div key={item.id} className={styles.repeatBlock}>
                       <div className={styles.grid}>
                         <label className={styles.selectLabel}>
                           Titulação {index + 1}
                           <select
                             value={item.degree}
+                            aria-invalid={!!errors[`education-${index}-degree`]}
+                            aria-describedby={
+                              errors[`education-${index}-degree`]
+                                ? `degree-error-${item.id}`
+                                : undefined
+                            }
                             onChange={(e) =>
                               setData({
                                 ...data,
@@ -313,6 +349,11 @@ export function RegisterPage() {
                               <option key={option}>{option}</option>
                             ))}
                           </select>
+                          {errors[`education-${index}-degree`] && (
+                            <span id={`degree-error-${item.id}`} className={styles.error}>
+                              {errors[`education-${index}-degree`]}
+                            </span>
+                          )}
                         </label>
                         {(['field', 'institution', 'year'] as const).map((key) => (
                           <TextField
@@ -321,6 +362,19 @@ export function RegisterPage() {
                             value={item[key]}
                             maxLength={key === 'year' ? 4 : 100}
                             inputMode={key === 'year' ? 'numeric' : undefined}
+                            error={errors[`education-${index}-${key}`]}
+                            placeholder={
+                              {
+                                field: 'Ex.: Direito',
+                                institution: 'Ex.: UEPB ou UNIFACISA',
+                                year: 'Ex.: 2024',
+                              }[key]
+                            }
+                            hint={
+                              key === 'year'
+                                ? `Ano da conclusão, de 1900 a ${new Date().getFullYear()}.`
+                                : undefined
+                            }
                             onChange={(e) =>
                               setData({
                                 ...data,
@@ -332,9 +386,6 @@ export function RegisterPage() {
                           />
                         ))}
                       </div>
-                      {errors[`education-${index}`] && (
-                        <p className={styles.error}>{errors[`education-${index}`]}</p>
-                      )}
                       {data.education.length > 1 && (
                         <Button
                           variant="secondary"
@@ -345,7 +396,7 @@ export function RegisterPage() {
                             })
                           }
                         >
-                          Remover formação {index + 1}
+                          <Icon name="trash" /> Remover formação {index + 1}
                         </Button>
                       )}
                     </div>
@@ -369,7 +420,7 @@ export function RegisterPage() {
                         })
                       }
                     >
-                      Adicionar outra formação
+                      <Icon name="plus" /> Adicionar outra formação
                     </Button>
                   )}
                 </fieldset>
@@ -408,7 +459,7 @@ export function RegisterPage() {
                       </select>
                     </label>
                     <Button variant="secondary" onClick={addKnowledge}>
-                      Adicionar conhecimento
+                      <Icon name="plus" /> Adicionar conhecimento
                     </Button>
                   </div>
                   <ul className={styles.chips}>
@@ -427,7 +478,7 @@ export function RegisterPage() {
                             })
                           }
                         >
-                          ×
+                          <Icon name="close" size={16} />
                         </button>
                       </li>
                     ))}
@@ -439,6 +490,8 @@ export function RegisterPage() {
                   value={data.teaching}
                   onChange={(teaching) => setData({ ...data, teaching })}
                   error={errors.teaching}
+                  errors={errors}
+                  prefix="teaching"
                   unit="semestres"
                 />
                 <ExperienceFields
@@ -446,6 +499,8 @@ export function RegisterPage() {
                   value={data.professional}
                   onChange={(professional) => setData({ ...data, professional })}
                   error={errors.professional}
+                  errors={errors}
+                  prefix="professional"
                   unit="meses"
                 />
               </section>
@@ -546,7 +601,7 @@ export function RegisterPage() {
                       onChange={(e) => setEnd(e.target.value)}
                     />
                     <Button variant="secondary" onClick={addAvailability}>
-                      Adicionar horário
+                      <Icon name="plus" /> Adicionar horário
                     </Button>
                   </div>
                   <ul className={styles.chips}>
@@ -568,7 +623,7 @@ export function RegisterPage() {
                             })
                           }
                         >
-                          ×
+                          <Icon name="close" size={16} />
                         </button>
                       </li>
                     ))}
@@ -581,7 +636,7 @@ export function RegisterPage() {
                     max={168}
                     value={data.weeklyHours}
                     error={errors.weeklyHours}
-                    hint="Essa é sua preferência. O limite contratual será definido pela instituição."
+                    hint="Opcional. Você pode definir sua meta semanal depois. O limite contratual é definido pela instituição."
                     onChange={(e) => setData({ ...data, weeklyHours: e.target.value })}
                   />
                 </fieldset>
@@ -672,7 +727,7 @@ export function RegisterPage() {
             <footer className={styles.actions}>
               {step > 0 ? (
                 <Button variant="secondary" disabled={loading} onClick={() => go(step - 1)}>
-                  Voltar
+                  <Icon name="arrowLeft" /> Voltar
                 </Button>
               ) : (
                 <Link to="/login">Já tenho uma conta</Link>
@@ -680,6 +735,7 @@ export function RegisterPage() {
               <span>Etapa {step + 1} de 4</span>
               <Button type="submit" loading={loading} loadingText="Criando conta…">
                 {step === 3 ? 'Criar conta e solicitar acesso' : 'Continuar'}
+                <Icon name={step === 3 ? 'userPlus' : 'arrowRight'} />
               </Button>
             </footer>
           </form>

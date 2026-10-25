@@ -24,6 +24,7 @@ export function TeacherHomePage() {
       .sort((a, b) => a.start.localeCompare(b.start)) ?? [];
   const adjustments =
     profile?.requests.filter((item) => item.status === 'CHANGES_REQUESTED').length ?? 0;
+  const pending = profile?.requests.filter((item) => item.status === 'PENDING') ?? [];
   return (
     <section className={styles.page}>
       <title>Meu início | ProFly</title>
@@ -44,6 +45,20 @@ export function TeacherHomePage() {
         </Link>
       </header>
       {error && <Alert variant="error">{error}</Alert>}
+      {pending.length > 0 && (
+        <Alert variant="info">
+          Seu cadastro aguarda aprovação em{' '}
+          {pending
+            .map(
+              (request) =>
+                courses.find((course) => course.id === request.courseId)?.name ?? request.courseId,
+            )
+            .join(', ')}
+          . Cada coordenação aprova apenas a entrada em seu curso. Enquanto isso, você pode
+          acompanhar a análise e atualizar seus horários pretendidos.{' '}
+          <a href="#minhas-solicitacoes">Ver situação das solicitações</a>
+        </Alert>
+      )}
       {adjustments > 0 && (
         <Alert variant="info">
           A coordenação pediu ajustes em seu cadastro.{' '}
@@ -142,6 +157,8 @@ export function TeacherHomePage() {
               )}
               <p className={styles.note}>
                 Preferências de disponibilidade não são aulas atribuídas.
+                {profile?.weeklyHours &&
+                  ' O acompanhamento da meta semanal depende do registro de aulas realizadas; ainda não há dados para calcular esse progresso.'}
               </p>
             </div>
             <footer className={styles.panelFooter}>

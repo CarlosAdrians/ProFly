@@ -32,15 +32,17 @@ export function AuthLayout({ variant, children }: AuthLayoutProps) {
           <div className={styles.brand}>
             <img
               className={styles.logo}
-              src="/images/unifacisa-symbol.png"
+              src={
+                variant === 'split' ? '/images/unifacisa-logo.png' : '/images/unifacisa-symbol.png'
+              }
               alt="UNIFACISA Centro Universitário"
             />
-            <div>
-              <strong>{variant === 'split' ? 'ProFly' : 'UNIFACISA'}</strong>
-              <span>
-                {variant === 'split' ? 'UNIFACISA · Gestão docente' : 'ProFly · Gestão docente'}
-              </span>
-            </div>
+            {variant === 'backdrop' && (
+              <div>
+                <strong>UNIFACISA</strong>
+                <span>ProFly · Gestão docente</span>
+              </div>
+            )}
           </div>
           {children}
         </div>

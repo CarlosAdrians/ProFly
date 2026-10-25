@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { applyTheme, preferredDark, THEME_KEY } from './theme';
 import styles from './ThemeToggle.module.css';
+import { Icon } from '../Icon/Icon';
 export function ThemeToggle({ sidebar = false }: { sidebar?: boolean }) {
   const [dark, setDark] = useState(preferredDark);
   const [notice, setNotice] = useState('');
@@ -48,7 +49,11 @@ export function ThemeToggle({ sidebar = false }: { sidebar?: boolean }) {
       >
         <span aria-hidden="true">{dark ? 'Escuro' : 'Claro'}</span>
         <span className={styles.track} aria-hidden="true">
-          <span />
+          <Icon name="sun" size={14} />
+          <Icon name="moon" size={14} />
+          <span className={styles.thumb}>
+            <Icon name={dark ? 'moon' : 'sun'} size={15} />
+          </span>
         </span>
       </button>
       {notice && <small role="status">{notice}</small>}

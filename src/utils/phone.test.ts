@@ -14,6 +14,11 @@ describe('telefone', () => {
     expect(isValidPhone('8333334444')).toBe(true);
     expect(isValidPhone('83 8669-322')).toBe(false);
     expect(isValidPhone('83812345678')).toBe(false);
+    expect(isValidPhone('00999999999')).toBe(false);
+    expect(isValidPhone('23999999999')).toBe(false);
+    expect(isValidPhone('8311112222')).toBe(false);
+    expect(isValidPhone('abc83999999999')).toBe(false);
+    expect(isValidPhone('+55 (83) 99999-9999')).toBe(false);
     expect(phoneDigits('(83) 9 8669-3221')).toBe('83986693221');
   });
 });

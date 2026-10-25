@@ -6,6 +6,7 @@ import { vi } from 'vitest';
 import { registrationFixture, TEST_PASSWORD } from '../../test/registrationFixture';
 import { renderApp } from '../../test/renderApp';
 import { SESSION_KEY } from '../auth/session/authContext';
+import { demoCoordinator } from '../../mocks/coordinator';
 import {
   listDemoProfiles,
   registerDemo,
@@ -45,7 +46,10 @@ it('edita e persiste disponibilidade pela pagina, preservando os cursos', async 
 });
 it('recusa sobreposicao, perfil obsoleto e falha de gravacao sem mudar o perfil', async () => {
   const profile = await teacher();
-  reviewDemoRequest(profile.email, 'direito', 'APPROVED', 'Formação conferida', profile.version);
+  reviewDemoRequest(profile.email, 'direito', 'APPROVED', 'Formação conferida', profile.version, {
+    email: demoCoordinator.email,
+    role: 'coordinator',
+  });
   const current = listDemoProfiles()[0];
   const before = JSON.stringify(current);
   expect(() =>

@@ -1,4 +1,5 @@
 import { HolidayNotice } from './HolidayNotice';
+import { Icon } from '../../components/ui/Icon/Icon';
 import { usePreferences } from '../settings/preferences';
 import { useState, type DragEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
@@ -51,12 +52,22 @@ function PlanCard({
       onDragEnd={() => onDrag(undefined)}
       aria-label={`Editar ${plan.subject}, ${plan.teacherName}`}
     >
-      <span className={styles.cardTime}>
-        {plan.date ? `${plan.start}–${plan.end}` : 'A definir'}
+      <span className={styles.cardTop}>
+        <span className={styles.cardTime}>
+          <Icon name="clock" size={13} />
+          {plan.date ? `${plan.start}–${plan.end}` : 'Horário a definir'}
+        </span>
+        <Icon name="grip" size={15} />
       </span>
       <strong>{plan.subject}</strong>
-      <span>{plan.teacherName}</span>
-      <span className={styles.cardGroup}>{plan.group}</span>
+      <span className={styles.cardTeacher}>
+        <Icon name="user" size={13} />
+        {plan.teacherName}
+      </span>
+      <span className={styles.cardGroup}>
+        <Icon name="graduation" size={13} />
+        {plan.group}
+      </span>
     </button>
   );
 }
@@ -286,7 +297,7 @@ export function CalendarPage() {
                 className={styles.calendarGrid}
                 role="table"
                 aria-label={`Calendário de ${shiftLabels[shift].toLowerCase()}`}
-                style={{ gridTemplateColumns: `68px repeat(${dates.length},minmax(110px,1fr))` }}
+                style={{ gridTemplateColumns: `68px repeat(${dates.length},minmax(140px,1fr))` }}
               >
                 <div className={styles.gridCorner} role="columnheader">
                   Horário

@@ -14,10 +14,35 @@ import {
 } from './demoService';
 import { SESSION_KEY } from '../auth/session/authContext';
 import { LEGAL_VERSION } from '../legal/content';
+import { demoCoordinator } from '../../mocks/coordinator';
+const reviewer = { email: demoCoordinator.email, role: 'coordinator' as const };
 beforeAll(() => vi.stubGlobal('crypto', webcrypto));
 afterAll(() => vi.unstubAllGlobals());
 
 describe('cadastro proprio e analise independente', () => {
+  it('exibe o novo professor somente nas solicitacoes ate a coordenacao aprovar seu curso', async () => {
+    const data = { ...registrationFixture(), weeklyHours: '' };
+    await registerDemo(data, TEST_PASSWORD, TEST_PASSWORD, true, true);
+    const user = userEvent.setup();
+    renderApp('/professores', { authenticated: true });
+    await screen.findByText('Ana Beatriz Lima');
+    expect(within(screen.getByRole('table')).queryByText(data.name)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: /Solicitações/ }));
+    await user.click(screen.getByRole('button', { name: 'Analisar solicitação' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('não informada (opcional)');
+    await user.type(
+      screen.getByLabelText('Motivo ou orientações'),
+      'Formação conferida para Direito',
+    );
+    await user.click(screen.getByRole('button', { name: 'Aprovar neste curso' }));
+    expect(listDemoProfiles()[0].requests.map((request) => request.status)).toEqual([
+      'APPROVED',
+      'PENDING',
+    ]);
+    await user.click(screen.getByRole('tab', { name: 'Professores do curso' }));
+    expect(within(screen.getByRole('table')).getByText(data.name)).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByText('Não informada')).toBeInTheDocument();
+  });
   it('rejeita incompletude e sobreposicao sem substituir desconhecido por experiencia inexistente', () => {
     const data = registrationFixture();
     expect(
@@ -79,28 +104,47 @@ describe('cadastro proprio e analise independente', () => {
   it('aprova apenas o curso analisado, exige motivo e rejeita versoes antigas', async () => {
     const data = registrationFixture();
     await registerDemo(data, TEST_PASSWORD, TEST_PASSWORD, true, true);
-    expect(() => reviewDemoRequest(data.email, 'direito', 'APPROVED', '', 1)).toThrow(/motivo/);
-    reviewDemoRequest(data.email, 'direito', 'APPROVED', 'Entrada aprovada para este curso', 1);
+    expect(() => reviewDemoRequest(data.email, 'direito', 'APPROVED', '', 1, reviewer)).toThrow(
+      /motivo/,
+    );
+    expect(() =>
+      reviewDemoRequest(data.email, 'direito', 'APPROVED', 'Aprovar', 1, {
+        email: data.email,
+        role: 'teacher',
+      }),
+    ).toThrow(/responsável/);
+    reviewDemoRequest(
+      data.email,
+      'direito',
+      'APPROVED',
+      'Entrada aprovada para este curso',
+      1,
+      reviewer,
+    );
     let profile = listDemoProfiles()[0];
     expect(profile.requests.map((request) => request.status)).toEqual(['APPROVED', 'PENDING']);
+    expect(() =>
+      reviewDemoRequest(
+        data.email,
+        'direito',
+        'REJECTED',
+        'Perfil não corresponde ao solicitado',
+        1,
+        reviewer,
+      ),
+    ).toThrow(/mudou/);
     expect(() =>
       reviewDemoRequest(
         data.email,
         'sistemas',
         'REJECTED',
         'Perfil não corresponde ao solicitado',
-        1,
+        2,
+        reviewer,
       ),
-    ).toThrow(/mudou/);
-    reviewDemoRequest(
-      data.email,
-      'sistemas',
-      'REJECTED',
-      'Perfil não corresponde ao solicitado',
-      2,
-    );
+    ).toThrow(/responsável/);
     profile = listDemoProfiles()[0];
-    expect(profile.requests.map((request) => request.status)).toEqual(['APPROVED', 'REJECTED']);
+    expect(profile.requests.map((request) => request.status)).toEqual(['APPROVED', 'PENDING']);
     const { unmount } = renderApp('/professores', { authenticated: true });
     await screen.findByText(data.name);
     expect(screen.queryByRole('button', { name: '+ Novo Professor' })).not.toBeInTheDocument();
@@ -135,12 +179,16 @@ describe('cadastro proprio e analise independente', () => {
     await user.click(screen.getByRole('button', { name: 'Voltar' }));
     expect(screen.getByLabelText('E-mail', { exact: true })).toHaveValue('professor@profly.test');
     await user.click(screen.getByRole('button', { name: 'Continuar' }));
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: 'Titulação 1' }),
-      'Mestrado',
-    );
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Titulação 1' }), 'Mestrado');
     fill('Curso ou área de formação 1', 'Direito');
     fill('Instituição 1', 'Instituição de Teste');
+    fill('Ano de conclusão 1', String(new Date().getFullYear() + 2));
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    const year = screen.getByLabelText('Ano de conclusão 1');
+    expect(year).toHaveAttribute('aria-invalid', 'true');
+    await waitFor(() => expect(year).toHaveFocus());
+    expect(year).toHaveAccessibleDescription(/ainda não chegou/);
+    expect(screen.getByLabelText('Instituição 1')).toHaveAttribute('aria-invalid', 'false');
     fill('Ano de conclusão 1', '2020');
     await user.selectOptions(
       screen.getByRole('combobox', { name: 'Conhecimento' }),
@@ -156,7 +204,7 @@ describe('cadastro proprio e analise independente', () => {
     await user.click(screen.getByRole('checkbox', { name: 'Direito' }));
     await user.click(screen.getByRole('checkbox', { name: 'Direito Civil I' }));
     await user.click(screen.getByRole('button', { name: 'Adicionar horário' }));
-    fill('Dedicação pretendida (horas por semana)', '20');
+    // A weekly target is optional; leaving it empty must not block the application.
     await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Criar conta e solicitar acesso' }));
     expect(screen.getByText('Aceite os Termos de uso para continuar.')).toBeInTheDocument();
@@ -170,9 +218,11 @@ describe('cadastro proprio e analise independente', () => {
     await user.click(screen.getByRole('button', { name: 'Criar conta e solicitar acesso' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/inicio'), { timeout: 5000 });
     expect(JSON.parse(sessionStorage.getItem(SESSION_KEY)!).role).toBe('teacher');
+    expect(listDemoProfiles()[0].weeklyHours).toBe('');
+    expect(listDemoProfiles()[0].requests.every((request) => request.status === 'PENDING')).toBe(
+      true,
+    );
     expect(await screen.findByText('Aguardando análise')).toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', { name: 'Professores' }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Professores' })).not.toBeInTheDocument();
   }, 15000);
 });

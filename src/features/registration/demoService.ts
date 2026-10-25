@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
+import { parseStoredAccounts, profileReadError, type StoredAccount } from './profileStorage';
 import { demoCoordinator } from '../../mocks/coordinator';
 import { teachersSeed } from '../../mocks/teachers';
 import type { TeacherProfile, RegistrationData, CourseRequest } from './model';
@@ -6,32 +7,13 @@ import type { Availability } from './model';
 import { validateRegistration } from './validation';
 import { LEGAL_VERSION } from '../legal/content';
 import { coordinatorLoginEmail } from '../account/services/coordinatorIdentity';
+import { demoCoordinatorCourses } from '../auth/demoCourseScope';
+import type { Session } from '../auth/session/types';
 
 export const REGISTRATION_KEY = 'profly:demo:registrations:v1';
 export const changedEvent = 'profly:profile-changed';
-interface StoredAccount {
-  profile: TeacherProfile;
-  salt: number[];
-  proof: number[];
-}
 function accounts(): StoredAccount[] {
-  const value = localStorage.getItem(REGISTRATION_KEY);
-  if (!value) return [];
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (
-      Array.isArray(parsed) &&
-      parsed.every(
-        (item) => item?.profile?.email && Array.isArray(item.salt) && Array.isArray(item.proof),
-      )
-    )
-      return parsed;
-  } catch {
-    /* Corrupted personal data must not be overwritten by a new registration. */
-  }
-  throw new Error(
-    'Não foi possível ler os cadastros deste navegador. Seus dados foram preservados.',
-  );
+  return parseStoredAccounts(localStorage.getItem(REGISTRATION_KEY));
 }
 function persist(value: StoredAccount[]) {
   try {
@@ -158,7 +140,12 @@ export function reviewDemoRequest(
   decision: Exclude<CourseRequest['status'], 'PENDING'>,
   reason: string,
   expectedVersion: number,
+  actor: Pick<Session, 'email' | 'role'> | null,
 ) {
+  if (!actor || !demoCoordinatorCourses(actor).includes(courseId))
+    throw new Error(
+      'Somente a coordenação responsável por este curso pode analisar a solicitação.',
+    );
   if (reason.trim().length < 3) throw new Error('Informe o motivo da decisão.');
   const current = accounts();
   const account = current.find((item) => item.profile.email === email);
@@ -168,31 +155,38 @@ export function reviewDemoRequest(
     throw new Error('A solicitação mudou. Atualize a tela antes de decidir.');
   request.status = decision;
   request.reason = reason.trim();
-  request.reviewer = demoCoordinator.email;
+  request.reviewer = actor.email;
   request.reviewedAt = new Date().toISOString();
   account.profile.version++;
   persist(current);
 }
 export function useDemoProfiles() {
-  const read = () => {
+  // Subscribe to a stable raw snapshot, rather than retaining a mutable profile shape in state.
+  const raw = useSyncExternalStore(subscribeProfiles, profileSnapshot);
+  return useMemo(() => {
     try {
-      return { profiles: listDemoProfiles(), error: '' };
+      if (raw === undefined) throw new Error(profileReadError);
+      return { profiles: parseStoredAccounts(raw).map((item) => item.profile), error: '' };
     } catch (error) {
       return {
         profiles: [] as TeacherProfile[],
         error: error instanceof Error ? error.message : 'Não foi possível carregar os perfis.',
       };
     }
+  }, [raw]);
+}
+function profileSnapshot() {
+  try {
+    return localStorage.getItem(REGISTRATION_KEY);
+  } catch {
+    return undefined;
+  }
+}
+function subscribeProfiles(refresh: () => void) {
+  window.addEventListener(changedEvent, refresh);
+  window.addEventListener('storage', refresh);
+  return () => {
+    window.removeEventListener(changedEvent, refresh);
+    window.removeEventListener('storage', refresh);
   };
-  const [value, setValue] = useState(read);
-  useEffect(() => {
-    const refresh = () => setValue(read());
-    window.addEventListener(changedEvent, refresh);
-    window.addEventListener('storage', refresh);
-    return () => {
-      window.removeEventListener(changedEvent, refresh);
-      window.removeEventListener('storage', refresh);
-    };
-  }, []);
-  return value;
 }

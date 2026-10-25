@@ -87,8 +87,13 @@
   margin-bottom: 28px;
 }
 .split .logo {
-  width: 55px;
-  height: 62px;
+  width: min(260px, 100%);
+  height: 92px;
+}
+:global([data-theme='dark']) .split .logo {
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
 }
 .split .brand strong {
   font-size: 2rem;

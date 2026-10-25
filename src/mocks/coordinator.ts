@@ -7,4 +7,5 @@ export const demoCoordinator = {
   role: 'Coordenador',
   email: 'felipe.araujo@profly.test',
   password: 'profly123',
+  courseIds: ['direito'],
 } as const;

@@ -25,7 +25,7 @@ function toValues(teacher?: Teacher): TeacherFormValues {
     email: teacher?.email ?? '',
     phone: teacher ? formatPhone(teacher.phone) : '',
     area: teacher?.area ?? '',
-    weeklyHours: teacher ? String(teacher.weeklyHours) : '',
+    weeklyHours: teacher ? String(teacher.weeklyHours ?? '') : '',
   };
 }
 

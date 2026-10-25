@@ -1,4 +1,5 @@
 import type { AccountInput } from './types';
+import { isValidPhone } from '../../utils/phone';
 
 export type AccountFormErrors = Partial<Record<keyof AccountInput, string>>;
 
@@ -13,7 +14,7 @@ export function validateAccount(values: AccountInput): AccountFormErrors {
     (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim()) || values.email.length > 254)
   )
     errors.email = 'Informe um e-mail válido.';
-  if (values.phone && !/^\d{10,11}$/.test(values.phone.replace(/\D/g, '')))
+  if (values.phone && !isValidPhone(values.phone))
     errors.phone = 'Informe um telefone com DDD, de 10 ou 11 dígitos.';
   return errors;
 }

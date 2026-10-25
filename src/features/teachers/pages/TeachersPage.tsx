@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { DataTable, type Column } from '../../../components/ui/DataTable/DataTable';
 import { StatusBadge } from '../../../components/ui/StatusBadge/StatusBadge';
 import { ActionsMenu } from '../../../components/ui/ActionsMenu/ActionsMenu';
@@ -15,13 +15,20 @@ import type { TeacherProfile, CourseRequest } from '../../registration/model';
 import { ProfileAvatar } from '../../account/components/ProfileAvatar';
 import type { Teacher } from '../types';
 import styles from './TeachersPage.module.css';
+import { useAuth } from '../../auth/session/useAuth';
+import { demoCoordinatorCourses } from '../../auth/demoCourseScope';
 
 export function TeachersPage() {
+  const { session } = useAuth();
+  const assignedCourses = demoCoordinatorCourses(session);
   const { teachers, loading, setStatus } = useTeachers();
   const { profiles, error: profileError } = useDemoProfiles();
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState<'teachers' | 'requests'>('teachers');
-  const [courseId, setCourseId] = useState('direito');
+  const [selectedCourse, setCourseId] = useState(assignedCourses[0] ?? '');
+  const courseId = assignedCourses.includes(selectedCourse)
+    ? selectedCourse
+    : (assignedCourses[0] ?? '');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [viewing, setViewing] = useState<TeacherProfile | Teacher | null>(null);
@@ -31,24 +38,22 @@ export function TeachersPage() {
       (request) => request.courseId === courseId && request.status === 'PENDING',
     ),
   );
-  const visible = useMemo(() => {
-    const registered: Teacher[] = profiles
-      .filter((profile) =>
-        profile.requests.some((r) => r.courseId === courseId && r.status === 'APPROVED'),
-      )
-      .map((profile) => ({
-        id: profile.id,
-        name: profile.name,
-        email: profile.email,
-        phone: profile.phone,
-        area: profile.knowledge.map((k) => k.name).join(', '),
-        weeklyHours: +profile.weeklyHours,
-        status: 'active',
-      }));
-    return [...(courseId === 'direito' ? teachers : []), ...registered]
-      .filter((teacher) => matchesSearch(teacher.name, query))
-      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-  }, [profiles, teachers, courseId, query]);
+  const registered: Teacher[] = profiles
+    .filter((profile) =>
+      profile.requests.some((r) => r.courseId === courseId && r.status === 'APPROVED'),
+    )
+    .map((profile) => ({
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
+      phone: profile.phone,
+      area: profile.knowledge.map((k) => k.name).join(', '),
+      weeklyHours: profile.weeklyHours ? +profile.weeklyHours : undefined,
+      status: 'active',
+    }));
+  const visible = [...(courseId === 'direito' ? teachers : []), ...registered]
+    .filter((teacher) => matchesSearch(teacher.name, query))
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
   async function toggleStatus(teacher: Teacher) {
     try {
       const next = teacher.status === 'active' ? 'inactive' : 'active';
@@ -70,7 +75,7 @@ export function TeachersPage() {
   async function decide(decision: Exclude<CourseRequest['status'], 'PENDING'>) {
     if (!viewing || !('requests' in viewing)) return;
     try {
-      reviewDemoRequest(viewing.email, courseId, decision, reason, viewing.version);
+      reviewDemoRequest(viewing.email, courseId, decision, reason, viewing.version, session);
       setMessage(
         `Solicitação de ${viewing.name} ${decision === 'APPROVED' ? 'aprovada' : decision === 'REJECTED' ? 'recusada' : 'devolvida para ajustes'} neste curso.`,
       );
@@ -96,7 +101,10 @@ export function TeachersPage() {
       key: 'hours',
       header: 'Carga Horária',
       nowrap: true,
-      render: (teacher) => `${teacher.weeklyHours} Horas/Semanais`,
+      render: (teacher) =>
+        teacher.weeklyHours === undefined
+          ? 'Não informada'
+          : `${teacher.weeklyHours} Horas/Semanais`,
     },
     {
       key: 'status',
@@ -146,11 +154,13 @@ export function TeachersPage() {
                 setMessage('');
               }}
             >
-              {courses.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.name}
-                </option>
-              ))}
+              {courses
+                .filter((course) => assignedCourses.includes(course.id))
+                .map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.name}
+                  </option>
+                ))}
             </select>
           </label>
         }
@@ -288,8 +298,11 @@ export function TeachersPage() {
                   ))}
                 </ul>
                 <p>
-                  Dedicação pretendida: {viewing.weeklyHours} h/semana. O limite institucional será
-                  definido separadamente.
+                  Dedicação pretendida:{' '}
+                  {viewing.weeklyHours
+                    ? `${viewing.weeklyHours} h/semana`
+                    : 'não informada (opcional)'}
+                  . O limite institucional será definido separadamente.
                 </p>
               </>
             ) : (

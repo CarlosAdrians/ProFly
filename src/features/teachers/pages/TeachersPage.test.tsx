@@ -48,13 +48,14 @@ describe('Professores e solicitacoes', () => {
     const rows = JSON.parse(localStorage.getItem(TEACHERS_STORAGE_KEY)!);
     expect(rows.find((item: { id: string }) => item.id === 't03').status).toBe('inactive');
   });
-  it('troca o contexto de curso sem exibir vinculos de outro curso', async () => {
-    const { user } = await setup();
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Curso' }), 'sistemas');
-    expect(screen.queryByText('Ana Beatriz Lima')).not.toBeInTheDocument();
-    expect(screen.getByText(/Nenhum vínculo aprovado neste curso/)).toBeInTheDocument();
-    await user.click(screen.getByRole('tab', { name: /Solicitações/ }));
-    expect(screen.getByText('Nenhuma solicitação pendente')).toBeInTheDocument();
+  it('oferece somente o curso sob responsabilidade desta coordenacao', async () => {
+    await setup();
+    const course = screen.getByRole('combobox', { name: 'Curso' });
+    expect(within(course).getAllByRole('option')).toHaveLength(1);
+    expect(within(course).getByRole('option', { name: 'Direito' })).toBeInTheDocument();
+    expect(
+      within(course).queryByRole('option', { name: 'Sistemas de Informação' }),
+    ).not.toBeInTheDocument();
   });
   it('preserva a protecao da rota sem sessao', () => {
     expect(renderApp('/professores').router.state.location.pathname).toBe('/login');

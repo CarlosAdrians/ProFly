@@ -25,27 +25,51 @@
   box-shadow: var(--shadow-sm);
 }
 .track {
-  width: 40px;
-  height: 25px;
+  position: relative;
+  flex-shrink: 0;
+  width: 58px;
+  height: 30px;
   border-radius: 20px;
-  background: #747982;
-  padding: 3px;
+  background: #dce7f7;
+  color: #2a538b;
+  padding: 4px 7px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  box-shadow: inset 0 0 0 1px #193b7426;
 }
-.track span {
+.thumb {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  display: grid;
+  place-items: center;
+  color: #234c86;
   background: white;
   border-radius: 50%;
-  width: 19px;
-  height: 19px;
+  width: 24px;
+  height: 24px;
   box-shadow: 0 1px 3px #0003;
   transition: transform 0.15s;
 }
 .button[aria-checked='true'] .track {
-  background: #24864a;
+  background: #15284b;
+  color: #e1ebff;
 }
-.button[aria-checked='true'] .track span {
-  transform: translateX(15px);
+.button[aria-checked='true'] .thumb {
+  transform: translateX(28px);
+}
+.button:focus-visible {
+  outline: 3px solid var(--color-link);
+  outline-offset: 3px;
+}
+.wrap[data-sidebar='true'] .button:focus-visible {
+  outline-color: white;
+}
+@media (prefers-reduced-motion: reduce) {
+  .thumb {
+    transition: none;
+  }
 }
 
 .wrap[data-sidebar='true'] {

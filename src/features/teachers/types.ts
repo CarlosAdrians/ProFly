@@ -8,7 +8,7 @@ export interface Teacher {
   /** Telefone de contato, apenas dígitos (com DDD). */
   phone: string;
   area: string;
-  weeklyHours: number;
+  weeklyHours?: number;
   status: EntityStatus;
 }
 

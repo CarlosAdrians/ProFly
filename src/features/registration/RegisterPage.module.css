@@ -14,7 +14,7 @@
   color: white;
   background:
     linear-gradient(180deg, rgba(24, 54, 117, 0.86), rgba(24, 54, 117, 0.97)),
-    url('/images/campus.jpg') center/cover;
+    url('/images/campus-hd.webp') center/cover;
 }
 .brand {
   display: flex;
@@ -141,11 +141,8 @@
   background: var(--color-success-bg);
   color: var(--color-success-text);
 }
-.demo {
-  font-size: 0.76rem;
-  line-height: 1.5;
-  margin: 14px 0 28px;
-  color: var(--color-text-muted);
+.card form {
+  padding-top: 28px;
 }
 .card h2 {
   font-size: 1.2rem;
@@ -197,16 +194,62 @@
   font-weight: 500;
 }
 .selectLabel select {
+  appearance: none;
   width: 100%;
   min-height: 48px;
   border: 1px solid var(--color-border-strong);
-  border-left: 5px solid var(--color-navbar);
-  border-radius: 8px;
-  background: var(--color-bg-subtle);
-  padding: 10px;
+  border-radius: var(--control-radius);
+  background-color: var(--color-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23657891' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 8 5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding: 12px 42px 12px 14px;
   font: inherit;
   font-size: 1rem;
   color: inherit;
+}
+.selectLabel select:focus-visible {
+  outline: 3px solid var(--color-link);
+  outline-offset: 2px;
+}
+.selectLabel select[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+.selectLabel .error {
+  margin: 0;
+  font-weight: 400;
+}
+.passwordRules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+  list-style: none;
+  padding: 16px;
+  border-radius: 12px;
+  margin: 18px 0;
+  background: var(--color-bg-subtle);
+}
+.passwordRules li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+.passwordRules svg {
+  flex-shrink: 0;
+}
+.passwordRules li[data-met='true'] {
+  color: var(--color-success-text);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .addRow {
   display: flex;
@@ -247,8 +290,10 @@
   padding-left: 8px;
 }
 .chips button {
-  min-width: 36px;
-  min-height: 40px;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -432,6 +477,17 @@
   }
 }
 @media (max-width: 560px) {
+  .passwordRules {
+    grid-template-columns: 1fr;
+  }
+  .addRow > button {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .repeatBlock > button {
+    width: 100%;
+    min-width: 0;
+  }
   .grid,
   .courseGrid,
   .reviewGrid {
