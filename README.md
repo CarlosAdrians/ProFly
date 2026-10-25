@@ -151,7 +151,7 @@ Atualizado em **24/10/2026**. Repositório: [CarlosAdrians/ProFly](https://githu
 | Administrador e acesso por curso | API de cursos, convites de coordenadores, sessões e revogação implementada; telas administrativas pendentes. |
 | Perfil docente e aprovação de entrada | API de rascunho, versões, solicitação e análise independente por curso implementada; cadastro detalhado e análise disponíveis em demonstração local, ainda sem integração com a API. |
 | Dashboard de professor | Início com resumo do perfil, solicitações por curso, calendário e edição de disponibilidade. Aulas publicadas e histórico ainda pendentes. |
-| Servidor Node.js e MongoDB | Base HTTP, identidade e cadastro/aprovação implementados. Adaptador de e-mail e demais módulos pendentes. Veja [backend/README.md](backend/README.md). |
+| Servidor Node.js e MongoDB | Base HTTP, identidade e cadastro/aprovação implementados. SMTP de verificação/reset com captura local fictícia; entrega institucional e integração das telas pendentes. Veja [backend/README.md](backend/README.md) e [e-mail no backend](docs/EMAIL_BACKEND.md). |
 | Catálogo acadêmico | API de competências, disciplinas, períodos, turmas e ofertas, com referências, versões e grade configurável. Revisão de planejamento publicado ainda pendente. |
 | Motor de elegibilidade e score | Especificado; implementação e validação institucional pendentes. |
 | Calendário, alocações e publicação | Calendário e rascunhos no navegador, com conflitos e edição; publicação e persistência pela API pendentes. Feriados por BrasilAPI e referência estadual da Paraíba. |

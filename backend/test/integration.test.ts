@@ -9,6 +9,7 @@ import { buildApp } from '../src/app.js';
 import { IdentityService } from '../src/identity/service.js';
 import type { AccessToken, Notifications, Session, User } from '../src/identity/models.js';
 import type { ProfileData } from '../src/teachers/contracts.js';
+import { smtpFixture } from './smtpFixture.js';
 
 if (process.env.PROFLY_RUN_INTEGRATION !== '1') {
   throw new Error('Integracao exige PROFLY_RUN_INTEGRATION=1; usa somente MongoDB efemero local.');
@@ -483,6 +484,117 @@ test('logout e expiracao nao dependem da limpeza assincrona do indice TTL', asyn
     (await app.inject({ url: '/api/v1/auth/session', headers: expired })).statusCode,
     401,
   );
+});
+
+test('CASE-001/004/009/051: HTTP e SMTP local verificam e-mail e redefinem senha sem aprovar curso', async () => {
+  const smtp = await smtpFixture();
+  const mailApp = await buildApp(
+    {
+      ...config,
+      mail: {
+        host: '127.0.0.1',
+        port: smtp.port,
+        security: 'plain',
+        from: 'profly@profly.test',
+        appOrigin: config.origins[0]!,
+      },
+    },
+    database,
+  );
+  const address = 'smtp-flow@profly.test';
+  const extractToken = (index: number) => {
+    const content = smtp.messages[index]!.replace(/=\r\n/g, '').replace(/=3D/g, '=');
+    const value = content.match(/#token=([a-f0-9]{64})/)?.[1];
+    assert.ok(value);
+    return value;
+  };
+  try {
+    const registration = await mailApp.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: { name: 'Professor SMTP Teste', email: address, password: 'ExampleTest2026' },
+    });
+    assert.equal(registration.statusCode, 201, registration.body);
+    assert.equal(registration.json().user.state, 'PENDING_EMAIL');
+    const verification = extractToken(0);
+    assert.equal(
+      (
+        await mailApp.inject({
+          method: 'POST',
+          url: '/api/v1/auth/verify-email',
+          payload: { token: verification },
+        })
+      ).statusCode,
+      200,
+    );
+    const login = await mailApp.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { email: address, password: 'ExampleTest2026' },
+    });
+    assert.equal(login.statusCode, 200, login.body);
+    const userId = registration.json().user.id;
+    assert.equal(
+      await database.db
+        .collection('memberships')
+        .countDocuments({ userId, role: 'teacher', active: true }),
+      0,
+    );
+    const rawCookie = login.headers['set-cookie'];
+    const cookie = (Array.isArray(rawCookie) ? rawCookie[0] : rawCookie)!.split(';')[0]!;
+    const forgotten = await mailApp.inject({
+      method: 'POST',
+      url: '/api/v1/auth/forgot-password',
+      payload: { email: address },
+    });
+    assert.equal(forgotten.statusCode, 202, forgotten.body);
+    const reset = extractToken(1);
+    const changed = await mailApp.inject({
+      method: 'POST',
+      url: '/api/v1/auth/reset-password',
+      payload: { token: reset, password: 'ChangedSmtp2026' },
+    });
+    assert.equal(changed.statusCode, 200, changed.body);
+    assert.equal(
+      (await mailApp.inject({ url: '/api/v1/auth/session', headers: { cookie } })).statusCode,
+      401,
+    );
+    assert.equal(
+      (
+        await mailApp.inject({
+          method: 'POST',
+          url: '/api/v1/auth/reset-password',
+          payload: { token: reset, password: 'OtherSmtp2026' },
+        })
+      ).statusCode,
+      410,
+    );
+    const before = smtp.messages.length;
+    assert.equal(
+      (
+        await mailApp.inject({
+          method: 'POST',
+          url: '/api/v1/auth/forgot-password',
+          payload: { email: 'absent-smtp@profly.test' },
+        })
+      ).statusCode,
+      202,
+    );
+    assert.equal(smtp.messages.length, before);
+    smtp.state.rejectRecipients = true;
+    const failed = await mailApp.inject({
+      method: 'POST',
+      url: '/api/v1/auth/forgot-password',
+      payload: { email: address },
+    });
+    assert.equal(failed.statusCode, 503);
+    assert.equal(failed.json().error.code, 'EMAIL_UNAVAILABLE');
+    assert.ok(!failed.body.includes(reset));
+    assert.ok(!failed.body.includes('synthetic-private-detail'));
+  } finally {
+    await mailApp.close();
+    await smtp.close();
+  }
 });
 
 test('CASE-051: e-mail nao configurado nao simula envio nem cria conta ativa', async () => {

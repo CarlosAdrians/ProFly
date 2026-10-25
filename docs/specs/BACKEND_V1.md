@@ -41,6 +41,8 @@ Aprovacao para um curso nao aprova outro. A alteracao do identificador de recurs
 
 Convite e recuperacao de senha exigem validade, uso unico e consumo consistente. Ativacao da identidade e aprovacao academica sao estados independentes. Nao devolver senha, hash, token privado ou dados de outros professores em respostas de consulta.
 
+E-mail (decisao de 24/10/2026): iniciar com SMTP e captura local ficticia Mailpit, mantendo o frontend para etapa posterior. Remetente institucional depende da faculdade; nao usar conta pessoal nesta fase. EMAIL_TRANSPORT e desativado por padrao; SMTP externo exige TLS com certificado valido. Origem dos links e remetente pertencem a configuracao do servidor. Links de verificacao/reset reservam fragmento com token para futuras telas, sem token na query da requisicao HTTP. Implementacao, limites e evidencia: [E-mail no backend](../EMAIL_BACKEND.md), REQ-01/03/12/13 e CASE-004/009/051/053.
+
 ## 4. Cadastro e qualidade dos dados
 
 Seccionar o perfil em identificacao, formacao, conhecimentos, experiencia docente/profissional e disponibilidade. Dados de experiencia e competencia devem ter origem, situacao de analise e versao. Regras ilustrativas do documento de compatibilidade so serao tratadas como configuracao real depois de revisao institucional.

@@ -14,6 +14,7 @@ import { identityRoutes } from './identity/routes.js';
 import type { Notifications } from './identity/models.js';
 import { teacherRoutes } from './teachers/routes.js';
 import { academicRoutes } from './academics/routes.js';
+import { createSmtpNotifications } from './notifications/smtp.js';
 
 export async function buildApp(
   config: Config,
@@ -64,7 +65,11 @@ export async function buildApp(
     return { status: 'ready' };
   });
   app.get('/openapi.json', { schema: { hide: true } }, async () => app.swagger());
-  const identity = new IdentityService(database, config, options.notifications);
+  const identity = new IdentityService(
+    database,
+    config,
+    options.notifications ?? createSmtpNotifications(config.mail),
+  );
   identityRoutes(app, identity);
   teacherRoutes(app, identity);
   academicRoutes(app, identity);

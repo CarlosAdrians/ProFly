@@ -11,6 +11,7 @@ src/app.ts             Composicao HTTP, protecoes, erros e health checks
 src/server.ts          Inicializacao e encerramento
 src/shared/            Erros e validacao de contratos
 src/identity/          Contas, sessoes, convites, cursos e responsabilidades
+src/notifications/     Configuracao e adaptador SMTP para verificacao/reset
 src/teachers/          Perfil versionado, solicitacoes e analise por curso
 src/academics/         Competencias, disciplinas, periodos, turmas e ofertas
 test/                  Testes unitarios e integracao explicitamente habilitada
@@ -68,7 +69,7 @@ O administrador cadastra cursos e convida coordenadores para cursos especificos.
 
 Sessoes usam cookie HttpOnly/SameSite Strict (Secure em producao), token aleatorio com hash no banco e CSRF nas alteracoes autenticadas. Senhas usam scrypt; desativacao da conta e redefinicao de senha revogam sessoes. As permissoes e os vinculos ativos sao consultados no servidor. Atualizacoes administrativas exigem expectedVersion e rejeitam versoes antigas.
 
-**Dependencia ainda pendente:** o servidor principal nao possui adaptador de envio de e-mail configurado. Cadastro publico, reenvio de verificacao e recuperacao de senha retornam 503 EMAIL_UNAVAILABLE nessa situacao. A porta Notifications existe e foi exercitada com mensagens sinteticas capturadas apenas pelos testes; nenhum e-mail real foi enviado. A verificacao de e-mail ativa somente a identidade, sem aprovar participacao em cursos.
+O adaptador SMTP com Nodemailer esta implementado e integrado ao servidor. EMAIL_TRANSPORT=disabled e o padrao: cadastro publico, reenvio e recuperacao retornam 503 EMAIL_UNAVAILABLE quando o envio nao foi configurado. Para desenvolvimento foi preparada uma captura Mailpit local, com remetente ficticio profly@profly.test e caixa em http://127.0.0.1:8025, sem entrega externa. As credenciais institucionais ainda dependem da faculdade. A verificacao ativa somente a identidade, sem aprovar participacao em cursos. Configuracao, testes, contrato dos links e limites em [E-mail no backend](../docs/EMAIL_BACKEND.md); as telas e a integracao do frontend continuam pendentes.
 
 ## Rotas implementadas
 

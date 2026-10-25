@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { z } from 'zod';
+import { loadMailConfig, type MailConfig } from './notifications/config.js';
 
 const environment = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -29,6 +30,7 @@ export interface Config {
   uploadMaxBytes: number;
   uploadDirectory: string;
   secureCookies: boolean;
+  mail?: MailConfig;
 }
 
 export function loadConfig(input: Record<string, string | undefined> = process.env): Config {
@@ -70,5 +72,6 @@ export function loadConfig(input: Record<string, string | undefined> = process.e
     uploadMaxBytes: env.UPLOAD_MAX_BYTES,
     uploadDirectory: path.resolve(env.UPLOAD_DIRECTORY),
     secureCookies: env.NODE_ENV === 'production',
+    mail: loadMailConfig(input, env.NODE_ENV, origins),
   };
 }
