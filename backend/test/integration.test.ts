@@ -33,6 +33,47 @@ const notifications: Notifications = {
 };
 const clientAddresses = new Map<string, string>();
 
+test('CASE-004/001: validade exata de uma hora e consumo concorrente', async () => {
+  const base = Date.now();
+  let time = base;
+  const clocked = new IdentityService(database, config, notifications, () => new Date(time));
+  const { tokenHash, hashPassword } = await import('../src/shared/crypto.js');
+  for (const purpose of ['VERIFY_EMAIL', 'RESET'] as const) {
+    for (const elapsed of [3599999, 3600000, 3600001]) {
+      time = base;
+      const email = `expiry-${purpose.toLowerCase()}-${elapsed}@profly.test`;
+      const result = await clocked.register({ name: 'Limite Temporal', email, password: 'ExampleTest2026' });
+      const verification = messages.findLast(m => m.email === email)!;
+      if (purpose === 'RESET') await clocked.activate(verification.token, 'VERIFY_EMAIL');
+      const raw = purpose === 'VERIFY_EMAIL' ? verification.token : await database.transaction(s => clocked.createToken(result.user.id, 'RESET', s));
+      const stored = await database.db.collection<AccessToken>('tokens').findOne({ tokenHash: tokenHash(raw) });
+      assert.equal(stored!.expiresAt.getTime(), base + 3600000);
+      const before = await identity.users.findOne({ _id: result.user.id });
+      const sessions = purpose === 'RESET' ? await loginClient(email) : null;
+      time = base + elapsed;
+      const action = () => purpose === 'RESET' ? clocked.resetPassword(raw, 'synthetic-hash') : clocked.activate(raw, 'VERIFY_EMAIL');
+      if (elapsed < 3600000) {
+        await action();
+        await assert.rejects(action(), { code: 'TOKEN_UNAVAILABLE' });
+        if (sessions) assert.equal((await app.inject({ url: '/api/v1/auth/session', headers: sessions })).statusCode, 401);
+      } else {
+        await assert.rejects(action(), { code: 'TOKEN_UNAVAILABLE' });
+        const after = await identity.users.findOne({ _id: result.user.id });
+        assert.equal(after!.passwordHash, before!.passwordHash);
+        assert.equal(after!.state, before!.state);
+        assert.equal((await database.db.collection<AccessToken>('tokens').findOne({ _id: stored!._id }))!.consumedAt, null);
+        if (sessions) assert.equal((await app.inject({ url: '/api/v1/auth/session', headers: sessions })).statusCode, 200);
+      }
+    }
+  }
+  const teacher = await registerTeacher('reset-race@profly.test');
+  const raw = await database.transaction(s => identity.createToken(teacher.id, 'RESET', s));
+  const hash = await hashPassword('AnotherTest2026');
+  const results = await Promise.allSettled([identity.resetPassword(raw, hash), identity.resetPassword(raw, hash)]);
+  assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
+  assert.equal((await app.inject({ url: '/api/v1/auth/session', headers: teacher.headers })).statusCode, 401);
+});
+
 async function loginClient(email: string, password = 'ExampleTest2026') {
   // Separate synthetic people have separate clients. Dedicated abuse tests keep one IP.
   if (!clientAddresses.has(email)) clientAddresses.set(email, `10.0.0.${clientAddresses.size + 1}`);

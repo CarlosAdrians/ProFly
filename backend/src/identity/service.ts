@@ -27,6 +27,7 @@ export class IdentityService {
     readonly database: Database,
     readonly config: Config,
     readonly notifications?: Notifications,
+    readonly now: () => Date = () => new Date(),
   ) {}
   get users() {
     return this.database.db.collection<User>('users');
@@ -124,7 +125,7 @@ export class IdentityService {
         userId,
         purpose,
         tokenHash: tokenHash(raw),
-        expiresAt: new Date(Date.now() + (purpose === 'INVITE' ? 48 * 3600000 : 3600000)),
+        expiresAt: new Date(this.now().getTime() + (purpose === 'INVITE' ? 48 * 3600000 : 3600000)),
         consumedAt: null,
       },
       { session },
@@ -142,7 +143,7 @@ export class IdentityService {
       const proof = await this.database.db
         .collection<AccessToken>('tokens')
         .findOne(
-          { _id: candidate._id, purpose, consumedAt: null, expiresAt: { $gt: new Date() } },
+          { _id: candidate._id, purpose, consumedAt: null, expiresAt: { $gt: this.now() } },
           { session },
         );
       const user = await this.users.findOne(
@@ -242,7 +243,7 @@ export class IdentityService {
       await lock(this.database, session, `user:${proof.userId}`);
       const current = await this.database.db
         .collection<AccessToken>('tokens')
-        .findOne({ _id: proof._id, consumedAt: null, expiresAt: { $gt: new Date() } }, { session });
+        .findOne({ _id: proof._id, consumedAt: null, expiresAt: { $gt: this.now() } }, { session });
       const user = await this.users.findOne({ _id: proof.userId, state: 'ACTIVE' }, { session });
       if (!current || !user)
         throw new AppError(410, 'TOKEN_UNAVAILABLE', 'Link invalido ou indisponivel.');
