@@ -14,6 +14,7 @@ src/identity/          Contas, sessoes, convites, cursos e responsabilidades
 src/notifications/     Configuracao e adaptador SMTP para verificacao/reset
 src/teachers/          Perfil versionado, solicitacoes e analise por curso
 src/academics/         Competencias, disciplinas, periodos, turmas e ofertas
+src/scheduling/        Elegibilidade, reservas, publicacao, historico e ausencias
 test/                  Testes unitarios e integracao explicitamente habilitada
 scripts/               Exportacao do contrato OpenAPI e administrador inicial
 docs/openapi.json      Contrato gerado das rotas implementadas
@@ -39,7 +40,7 @@ O servidor recusa configuracao incompleta e MongoDB standalone sem suporte a tra
 
 A URI deve ficar somente em `backend/.env`, arquivo ignorado pelo Git. Nao coloque a conexao em variaveis `VITE_*` nem no codigo da interface. O arquivo local pode ser preenchido no editor sem compartilhar senha em mensagens. `ALLOWED_ORIGINS` precisa conter a origem exata informada pelo Vite; o exemplo inclui localhost:5173 e 127.0.0.1:5174.
 
-Com o servidor iniciado, `GET http://127.0.0.1:3333/health/ready` deve responder `{"status":"ready"}`. Isso confirma acesso da API ao MongoDB, mas nao confirma que os formularios da interface estejam integrados: o adaptador demonstrativo continua independente. Nao execute suites de integracao contra esse banco; elas criam seu proprio replica set efemero.
+Com o servidor iniciado, `GET http://127.0.0.1:3333/health/ready` deve responder `{"status":"ready"}`. Isso confirma acesso da API ao MongoDB. A interface usa a API por padrao, com proxy /api pelo Vite; uma resposta de health nao substitui a validacao de cada fluxo. Nao execute suites de integracao contra esse banco; elas criam seu proprio replica set efemero.
 
 ## Verificacoes
 
@@ -69,7 +70,7 @@ O administrador cadastra cursos e convida coordenadores para cursos especificos.
 
 Sessoes usam cookie HttpOnly/SameSite Strict (Secure em producao), token aleatorio com hash no banco e CSRF nas alteracoes autenticadas. Senhas usam scrypt; desativacao da conta e redefinicao de senha revogam sessoes. As permissoes e os vinculos ativos sao consultados no servidor. Atualizacoes administrativas exigem expectedVersion e rejeitam versoes antigas.
 
-O adaptador SMTP com Nodemailer esta implementado e integrado ao servidor. EMAIL_TRANSPORT=disabled e o padrao: cadastro publico, reenvio e recuperacao retornam 503 EMAIL_UNAVAILABLE quando o envio nao foi configurado. Para desenvolvimento foi preparada uma captura Mailpit local, com remetente ficticio profly@profly.test e caixa em http://127.0.0.1:8025, sem entrega externa. As credenciais institucionais ainda dependem da faculdade. A verificacao ativa somente a identidade, sem aprovar participacao em cursos. Configuracao, testes, contrato dos links e limites em [E-mail no backend](../docs/EMAIL_BACKEND.md); as telas e a integracao do frontend continuam pendentes.
+O adaptador SMTP com Nodemailer esta implementado e integrado ao servidor. EMAIL_TRANSPORT=disabled e o padrao: cadastro publico, reenvio e recuperacao retornam 503 EMAIL_UNAVAILABLE quando o envio nao foi configurado. Para desenvolvimento foi preparada uma captura Mailpit local, com remetente ficticio profly@profly.test e caixa em http://127.0.0.1:8025, sem entrega externa. As credenciais institucionais ainda dependem da faculdade. A verificacao ativa somente a identidade, sem aprovar participacao em cursos. Configuracao, testes, contrato dos links e limites em [E-mail no backend](../docs/EMAIL_BACKEND.md); as telas conectadas e seus limites estao em [INTERFACE_API.md](../docs/INTERFACE_API.md).
 
 ## Rotas implementadas
 
@@ -100,7 +101,7 @@ O adaptador SMTP com Nodemailer esta implementado e integrado ao servidor. EMAIL
 | GET /api/v1/courses/:courseId/applications/:applicationId | Perfil submetido e resultado da analise. |
 | POST /api/v1/courses/:courseId/applications/:applicationId/review | Aprova, pede ajustes ou recusa, com motivo e autoria real. |
 
-Os prefixos /api/v1 se aplicam aos caminhos abreviados na tabela. Contratos completos de entrada estao em [openapi.json](docs/openapi.json). A interface existente continua demonstrativa e ainda nao usa estas rotas.
+Os prefixos /api/v1 se aplicam aos caminhos abreviados na tabela. Contratos completos de entrada estao em [openapi.json](docs/openapi.json). A interface conectada usa estas rotas; a demonstracao anterior exige opt-in explicito.
 
 ## Perfil e aprovacao docente
 
@@ -108,7 +109,7 @@ PUT /me/profile substitui os dados editaveis do proprio perfil; exige expectedVe
 
 O perfil recebe contato, formacao, conhecimentos por competencia/nivel 1 a 5, experiencias docente e profissional, disponibilidade e dedicacao pretendida. Cada item tem UUID estavel. Experiencia usa UNKNOWN, NONE ou PROVIDED; completedUnits representa **semestres completos** na experiencia docente e **meses completos** na profissional, sempre declarados, sujeitos a analise. Nao e carga contratual. Janelas de disponibilidade incluem fuso IANA, dia ISO 1 a 7, horario HH:MM e vigencia. Sobreposicao, horario invertido, meia-noite e datas invalidas sao recusados; adjacencia e permitida.
 
-A submissao exige contato, formacao, conhecimentos, situacao conhecida de experiencia/disponibilidade e dedicacao pretendida positiva. Esses campos sao o contrato do formulario; exigencias de habilitacao de cada disciplina ainda dependem de configuracao institucional. Referencias de competencia e disciplina precisam existir e estar ativas; disciplinas devem pertencer ao curso. Os testes criam suas referencias sinteticas pelas rotas reais do catalogo academico.
+A submissao exige contato, formacao, conhecimentos, situacao conhecida de experiencia/disponibilidade e disponibilidade conhecida. A dedicacao semanal pretendida e opcional e nao equivale ao limite institucional de carga. Esses campos sao o contrato do formulario; exigencias de habilitacao de cada disciplina ainda dependem de configuracao institucional. Referencias de competencia e disciplina precisam existir e estar ativas; disciplinas devem pertencer ao curso. Os testes criam suas referencias sinteticas pelas rotas reais do catalogo academico.
 
 A coordenacao analisa somente seus cursos, recebe a copia submetida e confirma/rejeita itens de formacao, conhecimento ou experiencia individualmente. Itens omitidos continuam sem confirmacao. Declaracoes de ausencia de experiencia ficam registradas na revisao aprovada. Aprovacao cria vinculo docente apenas naquele curso, sem criar aulas. Alterar o perfil exige nova submissao antes de uma nova analise; revisao obsoleta retorna 409. O vinculo de participacao existente e preservado, mas a confirmacao academica antiga nao se aplica a outra versao do perfil.
 
@@ -130,15 +131,15 @@ Os catalogos publicos GET /api/v1/catalog/competencies e GET /api/v1/catalog/cou
 
 Periodo possui blocos por dia ISO, inicio/fim e turno MORNING/AFTERNOON/NIGHT. Espacos entre blocos representam intervalos configurados; nenhum horario ou intervalo de 15 minutos e presumido como regra oficial. Oferta valida cada encontro contra um bloco exato da grade e dentro da vigencia, sem sobreposicao ou intervalo vazio de datas para o dia escolhido. Encontros vazios podem ser salvos para planejamento incompleto; nao comprovam disponibilidade nem elegibilidade.
 
-Criterios da disciplina podem ficar null ou DRAFT. A estrutura permite conhecimentos obrigatorios/desejaveis, formacao minima, pertinencia de experiencia, minimos e politica de score. Pesos precisam somar 100 e ter criterios correspondentes. REVIEWED registra uma configuracao explicitamente marcada pelo responsavel autenticado, sem aplicar pesos oficiais automaticamente. O **motor de avaliacao ainda nao executa esses criterios**.
+Criterios da disciplina podem ficar null ou DRAFT. A estrutura permite conhecimentos obrigatorios/desejaveis, formacao minima, pertinencia de experiencia, minimos e politica de score. Pesos precisam somar 100 e ter criterios correspondentes. REVIEWED registra uma configuracao explicitamente marcada pelo responsavel autenticado, sem aplicar pesos oficiais automaticamente. O motor executa os criterios atuais, com versoes, motivos e pendencias explicitas; configuracao REVIEWED nao significa homologacao institucional dos pesos.
 
-Cada alteracao preserva copia em academicVersions e autoria na auditoria. Escritas do catalogo e validacoes de referencia do perfil usam a mesma guarda transacional. A API recusa inativar recursos com dependencias ativas e bloqueia alteracoes de periodo/turma com ofertas ativas ou de oferta com alocacoes em rascunho/publicadas. Esse bloqueio conservador preserva o planejamento existente; fluxo de revisao/publicacao e reconciliacao de dependencias ainda sera implementado.
+Cada alteracao preserva copia em academicVersions e autoria na auditoria. Escritas do catalogo e validacoes de referencia do perfil usam a mesma guarda transacional. A API recusa inativar recursos com dependencias ativas e bloqueia alteracoes de periodo/turma com ofertas ativas ou de oferta com alocacoes em rascunho/publicadas. Esse bloqueio conservador preserva o planejamento existente; alteracoes de estruturas com dependencias exigem revisar/liberar o planejamento, preservando a escala anterior ate republicacao.
 
 ## Decisoes tecnicas
 
 As validacoes rejeitam campos extras e tipos incorretos, sem remover silenciosamente dados enviados pelo cliente. Essa configuracao foi conferida na [documentacao do Fastify](https://fastify.dev/docs/latest/Reference/Validation-and-Serialization/).
 
-As operacoes consistentes entre documentos usam a fronteira de transacao do [driver oficial do MongoDB](https://www.mongodb.com/docs/drivers/node/current/crud/transactions/). Ativacao de token, estado da identidade e vinculos usam guardas transacionais. As regras de concorrencia das alocacoes ainda precisam de implementacao e testes especificos.
+As operacoes consistentes entre documentos usam a fronteira de transacao do [driver oficial do MongoDB](https://www.mongodb.com/docs/drivers/node/current/crud/transactions/). Ativacao de token, estado da identidade e vinculos usam guardas transacionais. Reservas de professor/turma/carga usam guarda transacional e foram exercitadas sob concorrencia real em MongoDB efemero.
 
 Scripts de dependencias sao permitidos individualmente em pnpm-workspace.yaml: esbuild para a ferramenta TypeScript; o download automatico do MongoDB no postinstall fica desabilitado, sendo feito somente na integracao explicita. A politica segue o [controle de builds do pnpm](https://github.com/pnpm/pnpm.io/blob/main/docs/settings/build.md).
 
@@ -147,3 +148,15 @@ O estado do projeto e dos testes esta em [STATUS.md](../docs/validation/STATUS.m
 ## Proteção das respostas privadas
 
 Respostas de /api/ recebem Cache-Control: no-store, incluindo erros. Origem fora de ALLOWED_ORIGINS é recusada; comandos com sec-fetch-site cross-site sem Origin também são rejeitados. A proteção CSRF continua obrigatória nas alterações autenticadas. Permissions-Policy desabilita câmera, microfone e geolocalização nesta API. Esses controles complementam cookie, validação e autorização existentes. Evidências e limites de implantação: [Segurança do ambiente](../docs/SEGURANCA.md).
+
+## Cadastro e conta conectados
+
+POST `/api/v1/auth/enroll` recebe identidade, perfil, aceites legais versionados e cursos/disciplinas solicitados. Tudo e validado e persistido atomicamente; confirmacao de e-mail encaminha SUBMITTED, sem vinculo aprovado. POST `/auth/register` permanece como contrato minimo de identidade.
+
+PUT `/me/account` exige expectedVersion. POST `/me/email-change` exige senha atual, versao e novo endereco; somente confirmar prova altera o acesso. POST `/me/password` exige senha atual e revoga todas as sessoes. POST/GET/DELETE `/me/photo` usa autorizacao, validacao de imagem e foto normalizada privada. Telefone valida DDD brasileiro e formato; senha nova exige letra, numero e 8 a 72 caracteres.
+
+Planejamento, recomendacoes em snapshot unico, historico e atestados estao em [PLANEJAMENTO_API.md](../docs/PLANEJAMENTO_API.md). Recomendar nao reserva; salvar e publicar revalidam dados atuais. Nao ha PDF neste fluxo de atestados.
+
+## Previa isolada opcional
+
+`scripts/dev-isolated.ts` exige PROFLY_RUN_INTEGRATION=1 e cria um MongoDB efemero `_test`, sem carregar .env. Usa exclusivamente contas ficticias de `test/ui-fixture.ts`; nao e comando de populacao do banco institucional. Porta 3334, frontend separado 5175 com PROFLY_API_TARGET correspondente. A captura Mailpit local precisa estar disponivel. Encerrar a previa remove seu banco efemero; nenhuma identidade real e criada por esse script.

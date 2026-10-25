@@ -2,7 +2,7 @@ import type { Criteria, PeriodData } from '../academics/contracts.js';
 import type { ProfileData } from '../teachers/contracts.js';
 import type { Review } from '../teachers/models.js';
 import type { Absence, Occurrence, Slot, Workload } from './models.js';
-import { localParts, minutes, overlaps, unionMinutes } from './temporal.js';
+import { localParts, minutes, overlaps, unionMinutes, weekKey } from './temporal.js';
 
 export interface Check {
   id: string;
@@ -23,6 +23,7 @@ export interface EvaluationInput {
   member: boolean;
   slots: Slot[];
   occupied: Slot[];
+  groupConflict?: boolean;
   reservedLoad?: Slot[];
   workload: Workload | null;
   absences: Absence[];
@@ -43,9 +44,8 @@ export function evaluate(input: EvaluationInput) {
   const confirmed = new Set(
     input.review?.items.filter((i) => i.status === 'CONFIRMED').map((i) => i.id),
   );
-  const rejected = new Set(
-    input.review?.items.filter((i) => i.status === 'REJECTED').map((i) => i.id),
-  );
+  const absent = new Set(input.review?.items.filter((i) => i.status === 'ABSENT').map((i) => i.id));
+
   const profile = input.profile;
   add(
     'membership',
@@ -82,7 +82,7 @@ export function evaluate(input: EvaluationInput) {
       'education',
       relevant.some((e) => confirmed.has(e.id))
         ? 'PASS'
-        : relevant.length && relevant.every((e) => rejected.has(e.id))
+        : profile?.education?.length && profile.education.every((e) => confirmed.has(e.id))
           ? 'FAIL'
           : 'PENDING',
       'Formacao minima confirmada para a disciplina.',
@@ -90,7 +90,7 @@ export function evaluate(input: EvaluationInput) {
   }
   const knowledgeValue = (competencyId: string): number | null => {
     const item = profile?.knowledge?.find((k) => k.competencyId === competencyId);
-    return item && confirmed.has(item.id) ? item.level : item && rejected.has(item.id) ? 0 : null;
+    return item && confirmed.has(item.id) ? item.level : item && absent.has(item.id) ? 0 : null;
   };
   for (const item of criteria?.mandatoryKnowledge ?? []) {
     const value = knowledgeValue(item.competencyId);
@@ -116,7 +116,7 @@ export function evaluate(input: EvaluationInput) {
     const relevant = section.entries.filter((e) =>
       e.competencyIds.some((c) => criteria?.relevantCompetencyIds.includes(c)),
     );
-    if (relevant.some((e) => !confirmed.has(e.id) && !rejected.has(e.id))) return null;
+    if (relevant.some((e) => !confirmed.has(e.id))) return null;
     const entries = relevant
       .filter((e) => confirmed.has(e.id))
       .sort((a, b) => a.startsOn.localeCompare(b.startsOn));
@@ -204,7 +204,15 @@ export function evaluate(input: EvaluationInput) {
     else if (decisions.some((d) => d.status === 'SUBMITTED'))
       add(`absence:${absence._id}`, 'PENDING', 'Indisponibilidade temporaria em analise.');
   }
+  add(
+    'group',
+    input.groupConflict ? 'FAIL' : 'PASS',
+    input.groupConflict ? 'Turma ocupada neste intervalo.' : 'Turma livre em todos os encontros.',
+  );
   const limit = input.workload;
+  const targetWeeks = new Set(
+    input.slots.map((slot) => weekKey(slot.startsAt, limit?.timeZone ?? input.period.timeZone)),
+  );
   if (
     !limit ||
     input.slots.some((s) => {
@@ -216,10 +224,9 @@ export function evaluate(input: EvaluationInput) {
   else
     add(
       'workload',
-      unionMinutes(
-        [...(input.reservedLoad ?? input.occupied), ...input.slots],
-        limit.timeZone,
-      ).some((w) => w.minutes > limit.weeklyMinutes)
+      unionMinutes([...(input.reservedLoad ?? input.occupied), ...input.slots], limit.timeZone)
+        .filter((w) => targetWeeks.has(w.week))
+        .some((w) => w.minutes > limit.weeklyMinutes)
         ? 'FAIL'
         : 'PASS',
       `Limite semanal institucional: ${limit.weeklyMinutes} minutos.`,
@@ -281,12 +288,23 @@ export function evaluate(input: EvaluationInput) {
     policy: 'PROPOSAL_CONFIGURABLE',
     eligibility,
     checks,
+    tree: checks.map((check, index) => ({
+      id: check.id,
+      question: check.reason,
+      answer: check.state === 'PASS' ? true : check.state === 'FAIL' ? false : null,
+      ifYes: checks[index + 1]?.id ?? 'ELIGIBLE',
+      ifNo: 'INELIGIBLE',
+      ifUnknown: check.state === 'CONFIGURATION_PENDING' ? 'CONFIGURATION_PENDING' : 'PENDING',
+    })),
     pending: checks
       .filter((c) => c.state === 'PENDING' || c.state === 'CONFIGURATION_PENDING')
       .map((c) => c.id),
     score: {
       state: scoreState,
-      value: scoreState === 'CALCULATED' ? round(factors.reduce((n, f) => n + f.points!, 0)) : null,
+      value:
+        scoreState === 'CALCULATED'
+          ? Math.min(100, Math.max(0, round(factors.reduce((n, f) => n + f.points!, 0))))
+          : null,
       factors,
     },
     history: {

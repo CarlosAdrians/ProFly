@@ -94,7 +94,7 @@ O mesmo contrato de alteracao atende formulario e arraste de cartao. Em erro, pr
 
 Usar versao esperada para impedir sobrescrita silenciosa. Duas requisicoes simultaneas nao podem produzir sobreposicao invalida de professor/turma nem ultrapassar carga. A estrategia de persistencia deve coordenar alteracoes dos recursos compartilhados, revalidar e gravar de forma consistente. Testes simultaneos precisam executar em MongoDB de teste real, usando transacoes/controle de versao conforme a implementacao escolhida.
 
-Publicacao e republicacao devem ser consistentes, sem metade da revisao aplicada. A proposta atual e manter versao publicada estavel e rascunho editavel. Ainda depende de definicao a reserva de horarios em rascunho e o fluxo de publicacao/aviso; ate isso ser fechado, nao declarar esse requisito concluido.
+Publicacao e republicacao devem ser consistentes, sem metade da revisao aplicada. A proposta atual e manter versao publicada estavel e rascunho editavel. Proposta tecnica implementada: rascunhos salvos e ultima publicacao reservam horarios/carga; publicar revalida e troca a revisao atomicamente, com avisos internos opcionais. Encontros passados sao preservados e a reavaliacao usa somente o futuro. Esta politica permanece sujeita a homologacao institucional, sem alterar o status proposto dos pesos e requisitos.
 
 ## 8. Ausencias, anexos e historico
 

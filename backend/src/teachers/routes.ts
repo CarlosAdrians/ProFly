@@ -350,6 +350,17 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
         );
         if (body.items.some((item) => !ids.has(item.id)))
           throw new AppError(422, 'INVALID_REVIEW_ITEM', 'Item nao pertence ao perfil submetido.');
+        if (
+          body.items.some(
+            (item) =>
+              item.status === 'ABSENT' && !current.data.knowledge?.some((k) => k.id === item.id),
+          )
+        )
+          throw new AppError(
+            422,
+            'INVALID_REVIEW_ITEM',
+            'Ausencia confirmada se aplica somente a conhecimento.',
+          );
         if (body.decision !== 'APPROVED' && body.items.length)
           throw new AppError(422, 'INVALID_REVIEW', 'Confirmacao de dados exige aprovacao.');
         if (body.decision === 'APPROVED') {

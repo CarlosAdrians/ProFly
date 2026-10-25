@@ -203,6 +203,9 @@ export function identityRoutes(app: FastifyInstance, service: IdentityService) {
     { preHandler: authenticated, schema: { tags: ['courses'] } },
     async (request) => {
       const actor = service.actor(request);
+      const assignments = await service.memberships
+        .find({ userId: actor.user._id, active: true })
+        .toArray();
       const ids = actor.user.roles.includes('admin')
         ? null
         : (await service.memberships.find({ userId: actor.user._id, active: true }).toArray()).map(
@@ -215,7 +218,12 @@ export function identityRoutes(app: FastifyInstance, service: IdentityService) {
             .sort({ name: 1, _id: 1 })
             .limit(200)
             .toArray()
-        ).map(view),
+        ).map((record) => ({
+          ...view(record),
+          roles: actor.user.roles.includes('admin')
+            ? ['coordinator']
+            : assignments.filter((m) => m.courseId === record._id).map((m) => m.role),
+        })),
       };
     },
   );
@@ -458,6 +466,10 @@ export function identityRoutes(app: FastifyInstance, service: IdentityService) {
     admin,
     'admin',
   );
+
+  app.get('/api/v1/admin/courses', { preHandler: admin }, async () => ({
+    items: (await service.courses.find().sort({ name: 1, _id: 1 }).limit(200).toArray()).map(view),
+  }));
 
   app.get(
     '/api/v1/admin/users',

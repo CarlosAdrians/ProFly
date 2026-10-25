@@ -23,3 +23,11 @@ Preferencia no servidor para avisos dentro do sistema. Decisoes de solicitacao, 
 ## Evidencia
 
 Ver docs/validation/STATUS.md. Suites com MongoDB efemero e SMTP local; nenhum dado sintetico no banco institucional. Contratos e rotas reais aparecem em /openapi.json. A integracao das telas e registrada em etapa propria; existencia dos endpoints nao prova fluxo completo de navegador.
+
+## Revisao de integracao em 25/10/2026
+
+A resposta inclui a arvore com ramos sim/nao/desconhecido por verificacao. Conhecimento REJECTED permanece desconhecido para pontuacao; ABSENT e uma ausencia conhecida explicitamente confirmada pela coordenacao e pode valer zero. Formacao confirmada abaixo do minimo e falha; formacao ainda sem analise fica pendente.
+
+POST `/api/v1/courses/:courseId/recommendations` avalia os candidatos aprovados em uma unica transacao/snapshot. Empates recebem a mesma posicao; somente elegiveis com score calculado entram na classificacao. Mais de 200 candidatos exige refinar o fluxo, com erro explicito, sem truncar classificacao silenciosamente.
+
+Publicar incrementa tambem a versao da alocacao. Revisoes imutaveis preservam avaliacoes e referencias historicas. A reavaliacao considera somente encontros ainda vigentes, identificando evaluatedSlotCount/excludedPastCount: afastamento passado nao bloqueia encontros futuros. Edicoes nao podem remover/alterar encontros ja passados nem introduzir encontro retroativo; aulas anteriores continuam no historico. Reservas de outra semana nao contaminam a carga da semana avaliada. A reposicao exige encontro publicado posterior, do mesmo professor, disciplina, turma e curso.

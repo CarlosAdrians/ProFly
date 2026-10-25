@@ -40,11 +40,15 @@ Nesta maquina foi usada a [release oficial v1.32.0](https://github.com/axllent/m
 
 Abrir [caixa de teste](http://127.0.0.1:8025). O servidor fica restrito ao proprio computador; a execucao preparada aceita somente destinatarios @profly.test. Foram capturadas duas previas para apresentacao@profly.test. Seus tokens sao ficticios, nao foram persistidos e nao ativam contas. Nao substituir esse endereco por uma pessoa real durante os testes.
 
-## Contrato reservado para a proxima etapa de frontend
+## Interface conectada
 
-Os links usam /verificar-email#token=... e /redefinir-senha#token=..., sempre na PUBLIC_APP_URL validada. O fragmento evita incluir o token na URL de requisicao HTTP e no Referer. A futura interface deve ler o fragmento, manter o token apenas em memoria, remove-lo da barra e envia-lo por POST a API, sem analytics/logs ou consumo automatico por GET.
+As telas `/verificar-email#token=...`, `/redefinir-senha#token=...` e `/ativar-acesso#token=...` estão implementadas. O token permanece em memória, é removido da barra e só é enviado por POST após ação explícita; abrir o link por GET não o consome. A recuperação consulta a API com resposta genérica e não promete entrega na caixa externa.
 
-As telas desses dois caminhos ainda nao foram implementadas. O botao de recuperacao atual continua no adaptador demonstrativo. A verificacao atual cobre API -> SMTP -> captura -> POST de verificacao/reset; nao representa um fluxo clicavel completo no navegador.
+O cadastro completo persiste o perfil e os aceites no servidor, mas as solicitações acadêmicas ficam aguardando a confirmação do e-mail. Verificar cria solicitações SUBMITTED; somente a coordenação responsável pode aprovar cada curso. Troca de e-mail exige senha atual e confirmação do novo endereço; até lá o acesso anterior permanece. Confirmar a troca ou redefinir a senha revoga sessões e tokens pendentes.
+
+A validade de recuperação foi verificada com relógio controlado: 3.599.999 ms aceita, 3.600.000 ms e posteriores recusam. Uso único e duas redefinições simultâneas também foram testados em MongoDB efêmero. A suíte da interface percorre o link, redefine e verifica a revogação, sem enviar a um provedor externo.
+
+Foi feito o pedido autorizado para um destinatário Gmail, com resposta HTTP 202 genérica. Isso não comprova existência de conta nem envio. O transporte continua restrito à captura `@profly.test`, sem relay e sem remetente real autenticado; nenhuma entrega ao Gmail foi confirmada. Não registrar endereço pessoal ou credenciais nos documentos de teste.
 
 ## Envio institucional futuro
 

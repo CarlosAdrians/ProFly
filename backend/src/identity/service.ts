@@ -7,6 +7,10 @@ import { AppError, conflict, missing } from '../shared/errors.js';
 import { equalSecret, hashPassword, token, tokenHash, verifyPassword } from '../shared/crypto.js';
 import { audit, entity, lock, type Guard } from '../shared/model.js';
 import type { GuardHook } from '../shared/http.js';
+import type { Enrollment } from './account.js';
+import type { TeacherProfile, ProfileSnapshot, Application } from '../teachers/models.js';
+import { missingFields } from '../teachers/contracts.js';
+import { notify } from '../scheduling/service.js';
 import {
   type AccessToken,
   type Actor,
@@ -134,12 +138,54 @@ export class IdentityService {
   }
 
   async activate(raw: string, purpose: 'INVITE' | 'VERIFY_EMAIL', passwordHash?: string) {
-    const candidate = await this.database.db
-      .collection<AccessToken>('tokens')
-      .findOne({ tokenHash: tokenHash(raw), purpose });
+    const candidate = await this.database.db.collection<AccessToken>('tokens').findOne({
+      tokenHash: tokenHash(raw),
+      purpose: purpose === 'VERIFY_EMAIL' ? { $in: ['VERIFY_EMAIL', 'CHANGE_EMAIL'] } : purpose,
+    });
     if (!candidate) throw new AppError(410, 'TOKEN_UNAVAILABLE', 'Link invalido ou indisponivel.');
     return this.database.transaction(async (session) => {
-      await lock(this.database, session, `user:${candidate.userId}`);
+      await lock(this.database, session, 'academics', `user:${candidate.userId}`);
+      if (candidate.purpose === 'CHANGE_EMAIL') {
+        const proof = await this.database.db.collection<AccessToken>('tokens').findOne(
+          {
+            _id: candidate._id,
+            purpose: 'CHANGE_EMAIL',
+            consumedAt: null,
+            expiresAt: { $gt: this.now() },
+          },
+          { session },
+        );
+        const user = await this.users.findOne(
+          { _id: candidate.userId, state: 'ACTIVE' },
+          { session },
+        );
+        if (!proof?.email || !user)
+          throw new AppError(410, 'TOKEN_UNAVAILABLE', 'Link invalido ou indisponivel.');
+        await this.users.updateOne(
+          { _id: user._id },
+          {
+            $set: {
+              email: proof.email,
+              verifiedAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            $inc: { version: 1 },
+          },
+          { session },
+        );
+        await this.database.db
+          .collection<AccessToken>('tokens')
+          .updateMany(
+            { userId: user._id, consumedAt: null },
+            { $set: { consumedAt: new Date() } },
+            { session },
+          );
+        await this.database.db
+          .collection<Session>('sessions')
+          .deleteMany({ userId: user._id }, { session });
+        await audit(this.database, session, user._id, 'EMAIL_CHANGED', user._id);
+        return { activated: true, loginRequired: true };
+      }
       const proof = await this.database.db
         .collection<AccessToken>('tokens')
         .findOne(
@@ -169,11 +215,58 @@ export class IdentityService {
         .collection<AccessToken>('tokens')
         .updateOne({ _id: proof._id }, { $set: { consumedAt: new Date() } }, { session });
       await audit(this.database, session, user._id, 'IDENTITY_ACTIVATED', user._id);
+      if (purpose === 'VERIFY_EMAIL') {
+        const intent = await this.database.db
+          .collection<{ _id: string; requests: NonNullable<Enrollment['requests']> }>(
+            'registrationIntents',
+          )
+          .findOne({ _id: user._id }, { session });
+        for (const request of intent?.requests ?? []) {
+          const application: Application = {
+            ...entity(),
+            teacherId: user._id,
+            courseId: request.courseId,
+            profileVersion: 1,
+            subjectIds: request.subjectIds,
+            status: 'SUBMITTED',
+          };
+          await this.database.db
+            .collection<Application>('applications')
+            .insertOne(application, { session });
+          await audit(
+            this.database,
+            session,
+            user._id,
+            'APPLICATION_SUBMITTED',
+            application._id,
+            request.courseId,
+          );
+          const members = await this.memberships
+            .find({ courseId: request.courseId, role: 'coordinator', active: true }, { session })
+            .toArray();
+          for (const member of members)
+            await notify(
+              this,
+              session,
+              member.userId,
+              'APPLICATION',
+              application._id,
+              'Uma solicitacao docente aguarda analise.',
+            );
+        }
+        if (intent)
+          await this.database.db
+            .collection<{ _id: string }>('registrationIntents')
+            .deleteOne({ _id: user._id }, { session });
+      }
       return { activated: true };
     });
   }
 
-  async register(input: { name: string; email: string; password: string }) {
+  async register(
+    input: { name: string; email: string; password: string },
+    enrollment?: Enrollment,
+  ) {
     if (!this.notifications)
       throw new AppError(503, 'EMAIL_UNAVAILABLE', 'Envio de verificacao ainda nao configurado.');
     const passwordHash = await hashPassword(input.password);
@@ -184,8 +277,82 @@ export class IdentityService {
       passwordHash,
       roles: ['teacher'],
       state: 'PENDING_EMAIL',
+      ...(enrollment?.profile.contact ? { phone: enrollment.profile.contact.phone } : {}),
     };
     const raw = await this.database.transaction(async (session) => {
+      await lock(this.database, session, 'academics');
+      if (enrollment) {
+        if (enrollment.requests?.length) {
+          const missing = missingFields(enrollment.profile);
+          if (Object.keys(missing).length)
+            throw new AppError(
+              422,
+              'PROFILE_INCOMPLETE',
+              'Complete o perfil antes de solicitar entrada.',
+              missing,
+            );
+          for (const request of enrollment.requests) {
+            if (
+              !(await this.courses.findOne({ _id: request.courseId, active: true }, { session })) ||
+              (await this.database.db
+                .collection<{ _id: string; courseId: string; active: boolean }>('subjects')
+                .countDocuments(
+                  { _id: { $in: request.subjectIds }, courseId: request.courseId, active: true },
+                  { session },
+                )) !== request.subjectIds.length
+            )
+              throw new AppError(
+                422,
+                'INVALID_REFERENCE',
+                'Confira os cursos e disciplinas selecionados.',
+              );
+          }
+          await this.database.db
+            .collection<{ _id: string; requests: NonNullable<Enrollment['requests']> }>(
+              'registrationIntents',
+            )
+            .insertOne({ _id: user._id, requests: enrollment.requests }, { session });
+        }
+        const ids = [
+          ...new Set([
+            ...(enrollment.profile.knowledge ?? []).map((i) => i.competencyId),
+            ...(enrollment.profile.teaching?.entries ?? []).flatMap((i) => i.competencyIds),
+            ...(enrollment.profile.professional?.entries ?? []).flatMap((i) => i.competencyIds),
+          ]),
+        ];
+        if (
+          ids.length &&
+          (await this.database.db
+            .collection<{ _id: string; active: boolean }>('competencies')
+            .countDocuments({ _id: { $in: ids }, active: true }, { session })) !== ids.length
+        )
+          throw new AppError(422, 'INVALID_REFERENCE', 'Confira as competencias selecionadas.');
+        const profile: TeacherProfile = { ...entity(user._id), data: enrollment.profile };
+        await this.database.db
+          .collection<TeacherProfile>('profiles')
+          .insertOne(profile, { session });
+        await this.database.db.collection<ProfileSnapshot>('profileVersions').insertOne(
+          {
+            ...entity(`${user._id}:1`),
+            teacherId: user._id,
+            profileVersion: 1,
+            source: 'TEACHER_DECLARED',
+            data: profile.data,
+          },
+          { session },
+        );
+        await this.database.db
+          .collection<{ _id: string } & Record<string, unknown>>('legalAcceptances')
+          .insertOne(
+            {
+              ...entity(),
+              userId: user._id,
+              ...enrollment.legal,
+              acceptedAt: new Date().toISOString(),
+            },
+            { session },
+          );
+      }
       await this.users.insertOne(user, { session });
       await this.database.db
         .collection<Guard>('guards')
@@ -258,6 +425,13 @@ export class IdentityService {
       await this.database.db
         .collection<Session>('sessions')
         .deleteMany({ userId: user._id }, { session });
+      await this.database.db
+        .collection<AccessToken>('tokens')
+        .updateMany(
+          { userId: user._id, consumedAt: null },
+          { $set: { consumedAt: new Date() } },
+          { session },
+        );
       await audit(this.database, session, user._id, 'PASSWORD_RESET', user._id);
     });
   }

@@ -8,6 +8,8 @@ export interface User extends Entity {
   state: 'INVITED' | 'PENDING_EMAIL' | 'ACTIVE' | 'DISABLED';
   passwordHash?: string;
   verifiedAt?: string;
+  phone?: string;
+  photoVersion?: number;
 }
 export interface Session {
   _id: string;
@@ -20,7 +22,8 @@ export interface AccessToken {
   _id: string;
   userId: string;
   tokenHash: string;
-  purpose: 'INVITE' | 'VERIFY_EMAIL' | 'RESET';
+  purpose: 'INVITE' | 'VERIFY_EMAIL' | 'RESET' | 'CHANGE_EMAIL';
+  email?: string;
   expiresAt: Date;
   consumedAt: Date | null;
 }
@@ -58,5 +61,7 @@ export function userView(user: User) {
     roles: user.roles,
     state: user.state,
     version: user.version,
+    phone: user.phone ?? null,
+    photoVersion: user.photoVersion ?? 0,
   };
 }

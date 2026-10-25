@@ -287,6 +287,21 @@ export function academicRoutes(app: FastifyInstance, identity: IdentityService) 
       conflict('RESOURCE_IN_USE');
   });
 
+  app.get(
+    '/api/v1/periods',
+    { preHandler: identity.guard(['coordinator', 'admin']) },
+    async () => ({
+      items: (
+        await db.db
+          .collection<Academic<PeriodData>>('periods')
+          .find({ active: true })
+          .sort({ startsOn: -1, _id: 1 })
+          .limit(100)
+          .toArray()
+      ).map(view),
+    }),
+  );
+
   app.get('/api/v1/catalog/competencies', { schema: { tags: ['catalog'] } }, async (request) => {
     const query = parse(pagination, request.query);
     const items = await db.db

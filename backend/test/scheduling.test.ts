@@ -255,3 +255,43 @@ test('CASE-047/048: historico completo, equivalencia explicita e deduplicacao de
   input.history.push({ ...input.history[0]!, _id: randomUUID() });
   assert.equal(evaluate(input).score.value, result.score.value);
 });
+
+test('CASE-026/028/031: evidencia recusada permanece pendente, ausencia confirmada e zero conhecido', () => {
+  const input = fixture();
+  const item = input.review!.items.find((i) => i.id === knowledgeId)!;
+  item.status = 'REJECTED';
+  let result = evaluate(input);
+  assert.equal(result.eligibility, 'PENDING');
+  assert.equal(result.score.value, null);
+  item.status = 'ABSENT';
+  result = evaluate(input);
+  assert.equal(result.eligibility, 'INELIGIBLE');
+  assert.equal(result.score.factors.find((f) => f.id === 'knowledge')!.points, 0);
+  assert.equal(result.tree.find((n) => n.id === `knowledge:${competencyId}`)!.answer, false);
+  item.status = 'CONFIRMED';
+  input.profile!.knowledge![0]!.level = 4;
+  input.profile!.teaching!.entries[0]!.completedUnits = 4;
+  input.criteria!.score.knowledgeWeight = 33.33335;
+  input.criteria!.score.teachingWeight = 33.33335;
+  input.criteria!.score.professionalWeight = 33.3333;
+  result = evaluate(input);
+  assert.equal(result.score.value, 100);
+  assert.ok(result.score.factors.every((f) => Number.isFinite(f.points)));
+});
+
+test('CASE-024/026: carga de outra semana nao contamina a proposta e formacao inferior confirmada falha', () => {
+  const input = fixture();
+  input.occupied = [
+    {
+      date: '2029-12-03',
+      startsAt: '2029-12-03T21:00:00.000Z',
+      endsAt: '2029-12-03T23:00:00.000Z',
+      minutes: 120,
+    },
+  ];
+  assert.equal(evaluate(input).eligibility, 'ELIGIBLE');
+  input.criteria!.minimumEducation = { level: 'DOCTORATE', field: 'Direito' };
+  assert.equal(evaluate(input).eligibility, 'INELIGIBLE');
+  input.review!.items = input.review!.items.filter((i) => i.id !== educationId);
+  assert.equal(evaluate(input).eligibility, 'PENDING');
+});

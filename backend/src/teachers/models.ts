@@ -27,7 +27,7 @@ export interface Review extends Entity {
   reviewerId: string;
   applicationId: string;
   subjectIds: string[];
-  items: { id: string; status: 'CONFIRMED' | 'REJECTED' }[];
+  items: { id: string; status: 'CONFIRMED' | 'REJECTED' | 'ABSENT' }[];
   experienceDeclarations: {
     teaching: 'UNKNOWN' | 'NONE' | 'PROVIDED';
     professional: 'UNKNOWN' | 'NONE' | 'PROVIDED';

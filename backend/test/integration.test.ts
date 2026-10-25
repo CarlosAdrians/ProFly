@@ -123,9 +123,11 @@ async function loginClient(email: string, password = 'ExampleTest2026') {
 }
 
 async function registerTeacher(email: string) {
+  if (!clientAddresses.has(email)) clientAddresses.set(email, `10.0.0.${clientAddresses.size + 1}`);
   const registration = await app.inject({
     method: 'POST',
     url: '/api/v1/auth/register',
+    remoteAddress: clientAddresses.get(email),
     payload: { name: 'Professor de Teste', email, password: 'ExampleTest2026' },
   });
   assert.equal(registration.statusCode, 201, registration.body);
@@ -138,6 +140,7 @@ async function registerTeacher(email: string) {
       await app.inject({
         method: 'POST',
         url: '/api/v1/auth/verify-email',
+        remoteAddress: clientAddresses.get(email),
         payload: { token: proof.token },
       })
     ).statusCode,
@@ -1500,7 +1503,7 @@ test('CASE-020..040/056: elegibilidade, reservas globais concorrentes, versoes e
     method: 'PUT',
     url: `/api/v1/courses/${courseId}/allocations/${allocation.id}`,
     headers: adminHeaders,
-    payload: { expectedVersion: allocation.version, data: moved },
+    payload: { expectedVersion: allocation.version + 1, data: moved },
   });
   assert.equal(update.statusCode, 200, update.body);
   assert.deepEqual(
@@ -1798,6 +1801,35 @@ test('CASE-035/041..048: ausencia privada, arquivo validado, notificacoes e hist
   });
   assert.equal(confirm.statusCode, 200, confirm.body);
   assert.ok(confirm.json().confirmedBy);
+  const replacements = database.db.collection<{ _id: string } & Record<string, unknown>>(
+    'occurrences',
+  );
+  const wrongGroup = {
+    ...records[2]!,
+    _id: randomUUID(),
+    groupId: randomUUID(),
+    startsAt: '2020-01-13T21:30:00.000Z',
+    endsAt: '2020-01-13T22:20:00.000Z',
+    date: '2020-01-13',
+  };
+  await replacements.insertOne(wrongGroup);
+  const refused = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/occurrences/${records[1]!._id}/status`,
+    headers: coordinatorHeaders,
+    payload: { expectedVersion: 1, status: 'RESCHEDULED', replacementId: wrongGroup._id },
+  });
+  assert.equal(refused.statusCode, 422, refused.body);
+  assert.equal((await replacements.findOne({ _id: records[1]!._id }))?.status, 'PLANNED');
+  await replacements.updateOne({ _id: wrongGroup._id }, { $set: { groupId: records[1]!.groupId } });
+  const rescheduled = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/occurrences/${records[1]!._id}/status`,
+    headers: coordinatorHeaders,
+    payload: { expectedVersion: 1, status: 'RESCHEDULED', replacementId: wrongGroup._id },
+  });
+  assert.equal(rescheduled.statusCode, 200, rescheduled.body);
+  assert.equal(rescheduled.json().replacementId, wrongGroup._id);
 });
 
 test('CASE-038/005: dois professores disputam a turma e candidato de outro curso fica oculto', async () => {
@@ -1857,6 +1889,21 @@ test('CASE-038/005: dois professores disputam a turma e candidato de outro curso
   );
   assert.deepEqual(results.map((r) => r.statusCode).sort(), [201, 409]);
   assert.ok(results.find((r) => r.statusCode === 409)!.body.includes('Turma ocupada'));
+  const ranking = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/recommendations`,
+    headers: coordinatorHeaders,
+    payload: {
+      offeringId: f.offerings[0].id,
+      meetings: [f.meeting],
+      allocationId: results.find((r) => r.statusCode === 201)!.json().id,
+    },
+  });
+  assert.equal(ranking.statusCode, 200, ranking.body);
+  const ranked = ranking.json().items.filter((r: { rank: number | null }) => r.rank !== null);
+  assert.equal(ranked.length, 2);
+  assert.ok(ranked.every((r: { rank: number }) => r.rank === 1));
+  assert.equal(new Set(ranked.map((r: { rulesVersion: number }) => r.rulesVersion)).size, 1);
   const outsider = await registerTeacher('group-outsider@profly.test');
   assert.equal(
     (
@@ -1869,4 +1916,257 @@ test('CASE-038/005: dois professores disputam a turma e candidato de outro curso
     ).statusCode,
     404,
   );
+});
+
+test('CASE-003/004/012/014/016: cadastro conectado preserva perfil e aceite; troca de email exige senha e confirmacao', async () => {
+  const { LEGAL_VERSION } = await import('../src/identity/account.js');
+  const enroll = {
+    name: 'Professor Integrado',
+    email: 'enrolled@profly.test',
+    password: 'ExampleTest2026',
+    profile: { contact: { phone: '83999990000' } },
+    legal: { version: LEGAL_VERSION, termsAccepted: true, privacyAcknowledged: true },
+  };
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/enroll',
+        payload: { ...enroll, legal: { ...enroll.legal, termsAccepted: false } },
+      })
+    ).statusCode,
+    422,
+  );
+  assert.equal(await identity.users.countDocuments({ email: enroll.email }), 0);
+  const registered = await app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/enroll',
+    payload: enroll,
+  });
+  assert.equal(registered.statusCode, 201, registered.body);
+  const proof = messages.findLast((m) => m.email === enroll.email)!;
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/verify-email',
+        payload: { token: proof.token },
+      })
+    ).statusCode,
+    200,
+  );
+  const headers = await loginClient(enroll.email);
+  const profile = (await app.inject({ url: '/api/v1/me/profile', headers })).json();
+  assert.equal(profile.data.contact.phone, enroll.profile.contact.phone);
+  assert.equal(profile.version, 1);
+  assert.equal(
+    await database.db
+      .collection('legalAcceptances')
+      .countDocuments({ userId: registered.json().user.id }),
+    1,
+  );
+  const user = (await app.inject({ url: '/api/v1/auth/session', headers })).json().user;
+  const update = await app.inject({
+    method: 'PUT',
+    url: '/api/v1/me/account',
+    headers,
+    payload: { expectedVersion: user.version, name: 'Professor Alterado', phone: '83999990000' },
+  });
+  assert.equal(update.statusCode, 200, update.body);
+  const emailChange = {
+    expectedVersion: update.json().version,
+    email: 'changed-enrolled@profly.test',
+    password: 'WrongTest2026',
+  };
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/me/email-change',
+        headers,
+        payload: emailChange,
+      })
+    ).statusCode,
+    401,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/me/email-change',
+        headers,
+        payload: { ...emailChange, password: enroll.password },
+      })
+    ).statusCode,
+    202,
+  );
+  assert.equal(
+    (await app.inject({ url: '/api/v1/auth/session', headers })).json().user.email,
+    enroll.email,
+  );
+  const token = messages.findLast((m) => m.email === emailChange.email)!.token;
+  assert.equal(
+    (await app.inject({ method: 'POST', url: '/api/v1/auth/verify-email', payload: { token } }))
+      .statusCode,
+    200,
+  );
+  assert.equal((await app.inject({ url: '/api/v1/auth/session', headers })).statusCode, 401);
+  const fresh = await loginClient(emailChange.email);
+  const changed = (await app.inject({ url: '/api/v1/auth/session', headers: fresh })).json().user;
+  assert.equal(changed.email, emailChange.email);
+  assert.equal(changed.name, 'Professor Alterado');
+  assert.equal(
+    (await app.inject({ method: 'POST', url: '/api/v1/auth/verify-email', payload: { token } }))
+      .statusCode,
+    410,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        method: 'PUT',
+        url: '/api/v1/me/account',
+        headers: fresh,
+        payload: {
+          expectedVersion: changed.version,
+          name: 'Professor Alterado',
+          phone: '00999999999',
+        },
+      })
+    ).statusCode,
+    422,
+  );
+});
+
+test('CASE-009/010/013: cadastro completo so encaminha solicitacoes depois de confirmar email', async () => {
+  const f = await teacherFixture('enroll-requests-source');
+  const { LEGAL_VERSION } = await import('../src/identity/account.js');
+  const email = 'enroll-requests@profly.test';
+  const payload = {
+    name: 'Professor Cadastro Completo',
+    email,
+    password: 'ExampleTest2026',
+    profile: f.data,
+    legal: { version: LEGAL_VERSION, termsAccepted: true, privacyAcknowledged: true },
+    requests: [
+      { courseId: courseA, subjectIds: [f.subjectA] },
+      { courseId: courseB, subjectIds: [f.subjectB] },
+    ],
+  };
+  const created = await app.inject({ method: 'POST', url: '/api/v1/auth/enroll', payload });
+  assert.equal(created.statusCode, 201, created.body);
+  const teacherId = created.json().user.id;
+  assert.equal(await database.db.collection('applications').countDocuments({ teacherId }), 0);
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/verify-email',
+        remoteAddress: '10.3.0.20',
+        payload: { token: messages.findLast((m) => m.email === email)!.token },
+      })
+    ).statusCode,
+    200,
+  );
+  assert.equal(
+    await database.db.collection('applications').countDocuments({ teacherId, status: 'SUBMITTED' }),
+    2,
+  );
+  assert.equal(
+    await identity.memberships.countDocuments({ userId: teacherId, role: 'teacher' }),
+    0,
+  );
+  const before = await identity.users.countDocuments();
+  const rejected = await app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/enroll',
+    payload: {
+      ...payload,
+      email: 'bad-enroll@profly.test',
+      requests: [{ courseId: courseA, subjectIds: [f.subjectB] }],
+    },
+  });
+  assert.equal(rejected.statusCode, 422);
+  assert.equal(await identity.users.countDocuments(), before);
+});
+
+test('CASE-019/039/040/047: republicacao preserva passado e reavalia somente encontros ainda vigentes', async () => {
+  const f = await schedulingFixture('historical-revision');
+  const data = { offeringId: f.offerings[0].id, teacherId: f.teacher.id, meetings: [f.meeting] };
+  const saved = await f.write(`/api/v1/courses/${courseA}/allocations`, data);
+  let plan = (
+    await app.inject({ url: `/api/v1/courses/${courseA}/planning`, headers: adminHeaders })
+  )
+    .json()
+    .plans.find((p: { periodId: string }) => p.periodId === f.period.id);
+  const firstPublish = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/periods/${f.period.id}/publish`,
+    headers: adminHeaders,
+    payload: { expectedVersion: plan.version },
+  });
+  assert.equal(firstPublish.statusCode, 200, firstPublish.body);
+  const { SchedulingService } = await import('../src/scheduling/service.js');
+  const old = await database.db
+    .collection<import('../src/scheduling/models.js').Allocation>('allocations')
+    .findOne({ _id: saved.id });
+  assert.ok(old);
+  assert.equal(old.version, 2);
+  const first = old.slots[0]!;
+  const now = new Date(Date.parse(first.endsAt) + 1000);
+  const service = new SchedulingService(identity, () => now);
+  const user = await identity.users.findOne({ email: 'admin@profly.test' });
+  assert.ok(user);
+  const session = await database.db.collection<Session>('sessions').findOne({ userId: user._id });
+  assert.ok(session);
+  const actor = { user, session };
+  const absence = await f.write(
+    '/api/v1/me/absences',
+    { startsOn: first.date, endsOn: first.date, courseIds: [courseA] },
+    f.teacher.headers,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: `/api/v1/courses/${courseA}/absences/${absence.id}/review`,
+        headers: coordinatorHeaders,
+        payload: { expectedVersion: 1, decision: 'ACCEPTED' },
+      })
+    ).statusCode,
+    200,
+  );
+  const after = new Date(`${first.date}T12:00:00Z`);
+  after.setUTCDate(after.getUTCDate() + 1);
+  const next = {
+    ...data,
+    meetings: [
+      { ...f.meeting, id: randomUUID(), validFrom: first.date, validUntil: first.date },
+      {
+        ...f.meeting,
+        id: randomUUID(),
+        validFrom: after.toISOString().slice(0, 10),
+        startsAt: '19:20',
+        endsAt: '20:10',
+      },
+    ],
+  };
+  const updated = await service.save(actor, courseA, next, old.version, old._id);
+  assert.equal(updated.version, 3);
+  await assert.rejects(
+    service.save(actor, courseA, { ...next, meetings: next.meetings.slice(1) }, 3, old._id),
+    { code: 'PAST_SCHEDULE' },
+  );
+  plan = (await app.inject({ url: `/api/v1/courses/${courseA}/planning`, headers: adminHeaders }))
+    .json()
+    .plans.find((p: { periodId: string }) => p.periodId === f.period.id);
+  await service.publish(actor, courseA, f.period.id, plan.version);
+  const historical = await database.db
+    .collection('occurrences')
+    .findOne({ allocationId: old._id, startsAt: first.startsAt });
+  assert.equal(historical!.status, 'PLANNED');
+  const archive = await database.db
+    .collection('publicationVersions')
+    .findOne({ planId: plan.id, revision: 2 });
+  assert.equal(archive!.assessments[0].evaluationScope, 'FUTURE_MEETINGS');
+  assert.equal(archive!.assessments[0].excludedPastCount, 1);
 });

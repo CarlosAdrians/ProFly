@@ -192,6 +192,85 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
   command(
     app,
     'POST',
+    '/api/v1/courses/:courseId/recommendations',
+    z.strictObject({
+      offeringId: id,
+      meetings: allocationInput.shape.meetings,
+      allocationId: id.optional(),
+    }),
+    async (request, _reply, body) => {
+      const actor = identity.actor(request),
+        courseId = routeId(request, 'courseId');
+      return service.authorized(actor, courseId, async (session) => {
+        await service.context(
+          courseId,
+          { offeringId: body.offeringId, teacherId: actor.user._id, meetings: body.meetings },
+          session,
+        );
+        if (
+          body.allocationId &&
+          !(await service.allocations.findOne({ _id: body.allocationId, courseId }, { session }))
+        )
+          missing();
+        const members = await identity.memberships
+          .find({ courseId, role: 'teacher', active: true }, { session })
+          .sort({ userId: 1 })
+          .toArray();
+        if (members.length > 200)
+          throw new AppError(
+            422,
+            'CANDIDATE_LIMIT',
+            'Use a avaliacao individual; este curso excede o limite de comparacao em uma requisicao.',
+          );
+        const results = [];
+        for (const member of members) {
+          const teacher = await identity.users.findOne(
+            { _id: member.userId, state: 'ACTIVE', roles: 'teacher' },
+            { session },
+          );
+          if (!teacher) continue;
+          const { result } = await service.assessment(
+            courseId,
+            { offeringId: body.offeringId, teacherId: member.userId, meetings: body.meetings },
+            session,
+            body.allocationId,
+          );
+          await db.db
+            .collection<{ _id: string } & Record<string, unknown>>('evaluations')
+            .insertOne({ ...entity(), courseId, actorId: actor.user._id, ...result }, { session });
+          results.push({ ...result, name: teacher.name });
+        }
+        const ranked = results
+          .filter((r) => r.eligibility === 'ELIGIBLE' && r.score.state === 'CALCULATED')
+          .sort(
+            (a, b) => b.score.value! - a.score.value! || a.teacherId.localeCompare(b.teacherId),
+          );
+        const ranks = new Map<string, number>();
+        let rank = 0;
+        let last: number | null = null;
+        ranked.forEach((r, index) => {
+          if (last !== r.score.value) {
+            rank = index + 1;
+            last = r.score.value;
+          }
+          ranks.set(r.teacherId, rank);
+        });
+        return {
+          policy: 'PROPOSAL_CONFIGURABLE',
+          items: [...ranked, ...results.filter((r) => !ranks.has(r.teacherId))].map((r) => ({
+            ...r,
+            rank: ranks.get(r.teacherId) ?? null,
+          })),
+        };
+      });
+    },
+    coordinator,
+    'eligibility',
+  );
+
+  command(
+    app,
+    'POST',
     '/api/v1/courses/:courseId/allocations',
     allocationInput,
     async (request, reply, body) =>
@@ -385,6 +464,7 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
                 courseId,
                 teacherId: old.teacherId,
                 subjectId: old.subjectId,
+                groupId: old.groupId,
                 status: 'PLANNED',
                 startsAt: { $gt: old.startsAt },
               },

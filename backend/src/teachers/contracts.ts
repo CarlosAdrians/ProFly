@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { id, name } from '../shared/http.js';
+import { phone } from '../shared/phone.js';
 import { date, time } from '../shared/temporal.js';
 
 const text = z.string().trim().min(2).max(500);
@@ -111,10 +112,7 @@ export const profileData = z
   .strictObject({
     contact: z
       .strictObject({
-        phone: z
-          .string()
-          .trim()
-          .regex(/^\+?[0-9 ()-]{8,25}$/),
+        phone,
       })
       .optional(),
     education: z.array(education).max(20).optional(),
@@ -165,7 +163,7 @@ export const submitApplication = z.strictObject({
   profileVersion: z.number().int().min(1),
   subjectIds: ids.refine((items) => items.length > 0),
 });
-const itemDecision = z.strictObject({ id, status: z.enum(['CONFIRMED', 'REJECTED']) });
+const itemDecision = z.strictObject({ id, status: z.enum(['CONFIRMED', 'REJECTED', 'ABSENT']) });
 export const reviewApplication = z.strictObject({
   expectedVersion: z.number().int().min(1),
   profileVersion: z.number().int().min(1),

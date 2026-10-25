@@ -5,12 +5,7 @@ import { parse } from './errors.js';
 export const id = z.uuid();
 export const name = z.string().trim().min(3).max(100);
 export const email = z.string().trim().toLowerCase().pipe(z.email().max(254));
-export const password = z
-  .string()
-  .min(8)
-  .max(72)
-  .regex(/[a-zA-Z]/)
-  .regex(/[0-9]/);
+export const password = z.string().min(8).max(72).regex(/\p{L}/u).regex(/[0-9]/);
 export const opaqueToken = z.string().regex(/^[a-f0-9]{64}$/);
 export type GuardHook = (request: FastifyRequest) => Promise<void>;
 

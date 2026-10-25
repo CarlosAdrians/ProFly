@@ -19,7 +19,17 @@ export function parse<T extends z.ZodType>(schema: T, value: unknown): z.infer<T
     for (const issue of result.error.issues) {
       const key = issue.path.join('.') || '_form';
       (fields[key] ??= []).push(
-        issue.code === 'unrecognized_keys' ? 'Campo nao permitido.' : issue.message,
+        issue.code === 'unrecognized_keys'
+          ? 'Campo nao permitido.'
+          : issue.code === 'invalid_type'
+            ? 'Informe um valor do tipo esperado.'
+            : issue.code === 'too_small'
+              ? 'Valor ausente ou abaixo do minimo permitido.'
+              : issue.code === 'too_big'
+                ? 'Valor acima do limite permitido.'
+                : issue.code === 'invalid_format'
+                  ? 'Confira o formato informado.'
+                  : issue.message,
       );
     }
     throw new AppError(422, 'VALIDATION_ERROR', 'Confira os campos informados.', fields);

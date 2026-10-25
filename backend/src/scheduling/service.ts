@@ -37,7 +37,10 @@ export async function notify(
     .insertOne({ ...entity(), userId, kind, resourceId, title, read: false }, { session });
 }
 export class SchedulingService {
-  constructor(readonly identity: IdentityService) {}
+  constructor(
+    readonly identity: IdentityService,
+    readonly now: () => Date = () => new Date(),
+  ) {}
   get database() {
     return this.identity.database;
   }
@@ -196,7 +199,14 @@ export class SchedulingService {
       profile: profile?.data ?? null,
       review,
       member: !!user && !!membership,
-      slots: context.slots,
+      groupConflict: context.slots
+        .filter((slot) => slot.endsAt > this.now().toISOString())
+        .some((s) =>
+          occupied
+            .filter((a) => a.groupId === context.group._id)
+            .some((a) => a.slots.some((o) => overlaps(s, o))),
+        ),
+      slots: context.slots.filter((slot) => slot.endsAt > this.now().toISOString()),
       occupied: occupied.filter((a) => a.teacherId === data.teacherId).flatMap((a) => a.slots),
       reservedLoad: [
         ...occupied.filter((a) => a.teacherId === data.teacherId),
@@ -206,23 +216,17 @@ export class SchedulingService {
       absences,
       history,
     });
-    if (
-      context.slots.some((s) =>
-        occupied
-          .filter((a) => a.groupId === context.group._id)
-          .some((a) => a.slots.some((o) => overlaps(s, o))),
-      )
-    ) {
-      result.checks.push({
-        id: 'group',
-        state: 'FAIL',
-        reason: 'Turma ocupada neste intervalo.',
-        yes: 'seguir',
-        no: 'impedido',
-      });
-      result.eligibility = 'INELIGIBLE';
-    }
-    return { result, context };
+    return {
+      result: {
+        ...result,
+        evaluationScope: 'FUTURE_MEETINGS',
+        evaluatedSlotCount: context.slots.filter((slot) => slot.endsAt > this.now().toISOString())
+          .length,
+        excludedPastCount: context.slots.filter((slot) => slot.endsAt <= this.now().toISOString())
+          .length,
+      },
+      context,
+    };
   }
   async save(
     actor: Actor,
@@ -245,8 +249,29 @@ export class SchedulingService {
           'A alocacao exige elegibilidade confirmada.',
           { eligibility: result.checks.filter((c) => c.state !== 'PASS').map((c) => c.reason) },
         );
-      if (context.slots.some((s) => s.startsAt <= new Date().toISOString()))
-        throw new AppError(422, 'PAST_SCHEDULE', 'Nao e permitido agendar uma data passada.');
+      const now = this.now().toISOString();
+      const samePast = (
+        a: { startsAt: string; endsAt: string },
+        b: { startsAt: string; endsAt: string },
+      ) => a.startsAt === b.startsAt && a.endsAt === b.endsAt;
+      if (
+        context.slots.some(
+          (s) =>
+            s.startsAt <= now &&
+            (!old ||
+              old.teacherId !== data.teacherId ||
+              old.offeringId !== data.offeringId ||
+              !old.slots.some((previous) => samePast(s, previous))),
+        ) ||
+        old?.slots.some(
+          (s) => s.startsAt <= now && !context.slots.some((next) => samePast(s, next)),
+        )
+      )
+        throw new AppError(
+          422,
+          'PAST_SCHEDULE',
+          'Datas passadas devem ser preservadas e nao podem receber novas alocacoes.',
+        );
       const record: Allocation = {
         ...(old ?? entity()),
         ...data,
@@ -295,8 +320,28 @@ export class SchedulingService {
         .sort({ _id: 1 })
         .toArray();
       const revision = plan.publishedRevision + 1;
+      const assessments: ReturnType<typeof evaluate>[] = [];
+      const retainedHistoricalIds: string[] = [];
       for (const record of records) {
+        if (record.slots.every((slot) => slot.endsAt <= this.now().toISOString())) {
+          const previous = await this.published.findOne(
+            {
+              allocationId: record._id,
+              teacherId: record.teacherId,
+              offeringId: record.offeringId,
+            },
+            { session },
+          );
+          if (!previous || JSON.stringify(previous.slots) !== JSON.stringify(record.slots))
+            conflict(
+              'PAST_PUBLICATION',
+              'Encontros encerrados so podem ser preservados da publicacao anterior.',
+            );
+          retainedHistoricalIds.push(record._id);
+          continue;
+        }
         const { result } = await this.assessment(courseId, record, session, record._id, key);
+        assessments.push(result);
         if (result.eligibility !== 'ELIGIBLE')
           conflict('PUBLICATION_NOT_ELIGIBLE', 'Reavalie as alocacoes antes de publicar.');
       }
@@ -316,10 +361,18 @@ export class SchedulingService {
       await this.database.db
         .collection<{ _id: string } & Record<string, unknown>>('publicationVersions')
         .insertOne(
-          { ...entity(), planId: key, revision, actorId: actor.user._id, allocations: records },
+          {
+            ...entity(),
+            planId: key,
+            revision,
+            actorId: actor.user._id,
+            allocations: records,
+            assessments,
+            retainedHistoricalIds,
+          },
           { session },
         );
-      const now = new Date().toISOString();
+      const now = this.now().toISOString();
       const activeKeys = new Set(
         records.flatMap((r) =>
           r.slots.map((s) => `${r._id}:${r.teacherId}:${s.startsAt}:${s.endsAt}`),
@@ -395,7 +448,7 @@ export class SchedulingService {
         }
         await this.allocations.updateOne(
           { _id: record._id },
-          { $set: { state: 'PUBLISHED' } },
+          { $set: { state: 'PUBLISHED', updatedAt: now }, $inc: { version: 1 } },
           { session },
         );
       }
