@@ -18,16 +18,18 @@ A hospedagem futura precisa servir a SPA, encaminhar `/api`, aplicar HTTPS e os 
 | `/login`, `/esqueceu-senha` | Sessão real por cookie HttpOnly, erros estruturados e pedido genérico de recuperação. |
 | `/cadastro` | Quatro etapas, perfil detalhado, dedicação semanal opcional, cursos/disciplinas e aceites desmarcados/versionados. |
 | `/verificar-email`, `/redefinir-senha`, `/ativar-acesso` | Fragmento em memória, removido da barra; confirmação por POST explícito, expiração/uso único no servidor. |
-| `/inicio` | Professor: semana publicada, horas confirmadas versus meta opcional, últimas 10 aulas e solicitações; coordenador: acesso ao trabalho do curso. |
+| `/inicio` | Professor: próximas aulas publicadas, trabalho semanal/meta opcional, histórico e atalhos. Coordenador: próximas aulas, solicitações pendentes, rascunhos e aulas a confirmar do curso. |
 | `/conta`, `/horarios` | Dados próprios, perfil com versão esperada, foto pelo avatar/editor e horários pretendidos. Troca de e-mail exige senha e confirmação. |
 | `/professores` | Solicitações e vínculos do curso; análise por item e decisão fundamentada. Coordenador não cria professores já aprovados. |
 | `/disciplinas` | Cadastro/edição e critérios completos, com requisitos e pesos identificados como proposta configurável. |
 | `/alocacoes` | Turmas/ofertas, criar/editar rascunhos, comparar candidatos no mesmo snapshot, árvore/score, versão esperada e publicação confirmada. |
 | `/calendario` | Mês/semana/dia, turnos, feriados públicos, pins por encontro, formulário e arraste que preserva os outros encontros da recorrência. Professor vê somente a escala publicada. |
 | `/historico` | Professor: consulta própria por cursor/curso. Coordenador: confirmar aula encerrada, cancelar ou vincular reposição publicada da mesma turma/disciplina/professor. |
-| `/ausencias` | Comunicação por datas/cursos, anexo privado de imagem, decisão restrita ao curso e download autorizado. |
-| `/configuracoes` | Tema, notificações internas persistidas e troca protegida de senha com encerramento das sessões. |
+| `/ausencias` | Atestados e comunicações: arquivo, datas e cursos no mesmo formulário; retomada do upload sem duplicar o registro. Análise e download continuam autorizados por curso. |
+| `/configuracoes` | Compatibilidade: redireciona para Conta. Senha fica em Conta; tema permanece no menu e preferência de avisos no painel do sino. |
 | `/administracao` | Cursos/coordenadores, convites/revogação, competências, períodos/grade e carga máxima institucional. |
+
+O sino abre um painel na tela atual, com lista e contador compartilhados, leitura persistida, fechamento por Escape/clique externo e preferência versionada de avisos internos. `/notificacoes` redireciona para o início; não existe tela separada de notificações. O menu usa os ícones originais para os itens existentes e não exibe Ajustes. Documentos legais ficam em Conta e no acesso público, sem link solto no rodapé global.
 
 Papéis simultâneos permitem alternar visão docente/gestão. O seletor de gestão mostra somente cursos autorizados; cada comando continua sendo autorizado pelo servidor. Reprovação, pendência e versão desatualizada mantêm os campos preenchidos para correção. Falha de rede não cria sucesso nem troca para dados fictícios.
 
@@ -50,3 +52,7 @@ Evidências, comandos e limitações atualizadas em [STATUS.md](validation/STATU
 ## Situacao local ao encerrar a verificacao
 
 A previa isolada3334/5175 respondeu e exibiu escala publicada. A API principal3333 falhou ao reconectar ao Atlas com erro TLS de selecao de servidor, reproduzido por ping direto. O painel exige novo login; a lista de acesso de IPs nao pode ser confirmada nessa sessao. O frontend5174 responde, mas depende de resolver essa conexao. Nao houve reducao de TLS, alteracao da lista de acesso nem troca automatica do banco externo por um banco ficticio. Evidencias sanitizadas em STATUS.md.
+
+## Limites da visão inicial
+
+O início da coordenação usa a lista autorizada de até 500 ocorrências já disponível na API. Cursos que ultrapassem esse volume precisam da paginação/filtro de período no servidor antes de interpretar a visão como total institucional. A agenda mostra somente ocorrências previstas ativas; canceladas/remarcadas não entram nas próximas aulas. Nenhum evento ou número foi inventado para preencher a apresentação.

@@ -8,14 +8,8 @@ import {
   ApiResetPage,
   ApiVerifyPage,
 } from './AuthPages';
-import { ApiGuard, NotificationsPage, PortalLayout } from './Layout';
-import {
-  ApiAccountPage,
-  ApiAvailabilityPage,
-  ApiHomePage,
-  ApiSettingsPage,
-  HistoryPage,
-} from './AccountPages';
+import { ApiGuard, PortalLayout } from './Layout';
+import { ApiAccountPage, ApiAvailabilityPage, ApiHomePage, HistoryPage } from './AccountPages';
 import { ApiSubjectsPage, ApiTeachersPage } from './AcademicPages';
 import { ApiAllocationsPage } from './PlanningPages';
 import { ApiCalendarPage } from './CalendarPage';
@@ -88,8 +82,8 @@ export const apiRoutes: RouteObject[] = [
               { path: '/historico', element: <HistoryPage /> },
               { path: '/ausencias', element: <ApiAbsencesPage /> },
               { path: '/administracao', element: <ApiAdminPage /> },
-              { path: '/configuracoes', element: <ApiSettingsPage /> },
-              { path: '/notificacoes', element: <NotificationsPage /> },
+              { path: '/configuracoes', element: <Navigate to="/conta" replace /> },
+              { path: '/notificacoes', element: <Navigate to="/inicio" replace /> },
             ],
           },
         ],

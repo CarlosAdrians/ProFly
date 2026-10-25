@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { Auth } from './authContext';
 import { api } from './api';
 export function useApiSession() {
@@ -32,10 +32,11 @@ export function useApi<T>(path: string | null) {
       });
     return () => controller.abort();
   }, [path, attempt]);
+  const refresh = useCallback(() => setAttempt((n) => n + 1), []);
   return {
     data: state.path === path ? state.data : null,
     error: state.path === path ? state.error : null,
     loading: !!path && (state.path !== path || state.loading),
-    refresh: () => setAttempt((n) => n + 1),
+    refresh,
   };
 }

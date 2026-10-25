@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { StrictMode } from 'react';
 import { beforeAll, afterAll, beforeEach, describe, it, expect, vi } from 'vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -25,16 +26,50 @@ beforeEach(() => {
       const url = String(input);
       if (!url.startsWith('/api/v1/')) throw new Error('External network disabled');
       if (init?.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      const headers = Object.fromEntries(new Headers(init?.headers).entries());
+      let payload =
+        typeof init?.body === 'string' ? init.body : (undefined as string | Buffer | undefined);
+      if (init?.body instanceof FormData) {
+        const boundary = `profly-test-${crypto.randomUUID()}`;
+        headers['content-type'] = `multipart/form-data; boundary=${boundary}`;
+        const parts: Buffer[] = [];
+        for (const [key, value] of init.body.entries()) {
+          if (typeof value === 'string')
+            parts.push(
+              Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`,
+              ),
+            );
+          else {
+            const bytes = await new Promise<ArrayBuffer>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as ArrayBuffer);
+              reader.onerror = reject;
+              reader.readAsArrayBuffer(value);
+            });
+            parts.push(
+              Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="${key}"; filename="fixture.png"\r\nContent-Type: ${value.type}\r\n\r\n`,
+              ),
+              Buffer.from(bytes),
+              Buffer.from('\r\n'),
+            );
+          }
+        }
+        parts.push(Buffer.from(`--${boundary}--\r\n`));
+        payload = Buffer.concat(parts);
+      }
       const response = await fixture.app.inject({
         method: (init?.method ?? 'GET') as 'GET' | 'POST' | 'PUT' | 'DELETE',
         url,
         headers: {
-          ...Object.fromEntries(new Headers(init?.headers).entries()),
+          ...headers,
           ...(cookie ? { cookie } : {}),
           origin: 'http://localhost:5173',
         },
-        ...(typeof init?.body === 'string' ? { payload: init.body } : {}),
+        ...(payload !== undefined ? { payload } : {}),
       });
+      if (init?.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       const setCookie = response.headers['set-cookie'];
       if (setCookie)
         cookie = String(Array.isArray(setCookie) ? setCookie[0] : setCookie).split(';')[0]!;
@@ -61,7 +96,7 @@ async function signIn(email: string) {
   await user.type(await screen.findByLabelText('E-mail:'), email);
   await user.type(screen.getByLabelText('Senha:'), fixture.password);
   await user.click(screen.getByRole('button', { name: 'Login' }));
-  await screen.findByRole('heading', { name: 'Meu início' });
+  await screen.findByRole('heading', { name: 'Meu início' }, { timeout: 10000 });
   return user;
 }
 
@@ -204,6 +239,9 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     await user.click(screen.getByRole('button', { name: 'Publicar revisão' }));
     await user.click(screen.getByRole('button', { name: 'Confirmar publicação' }));
     await screen.findByText('Escala publicada com sucesso.');
+    await user.click(screen.getByRole('link', { name: 'Meu início' }));
+    await screen.findByRole('heading', { name: 'Próximas aulas do curso' });
+    await screen.findAllByText('Direito Civil I');
     expect(
       await fixture.database.db
         .collection('occurrences')
@@ -233,6 +271,8 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     await user.click(screen.getByRole('button', { name: 'Sair da conta' }));
     await screen.findByRole('heading', { name: 'Acesso ao ProFly' });
     await signIn(fixture.teacherEmail);
+    await screen.findByRole('heading', { name: 'Próximas aulas' });
+    await screen.findAllByText('Direito Civil I');
     await user.click(screen.getByRole('link', { name: 'Calendário' }));
     await user.clear(screen.getByLabelText('Data de referência'));
     await user.type(screen.getByLabelText('Data de referência'), fixture.from);
@@ -242,7 +282,7 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
   it('salva preferências de notificações e comunica ausência sem alterar o perfil acadêmico', async () => {
     open('/login');
     const user = await signIn(fixture.teacherEmail);
-    await user.click(screen.getByRole('link', { name: 'Ajustes' }));
+    await user.click(screen.getByRole('button', { name: /^Notificações,/ }));
     await user.click(
       await screen.findByRole('switch', { name: 'Receber notificações no sistema' }),
     );
@@ -255,10 +295,15 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
         )?.notifications,
       ).toBe(false),
     );
+    await waitFor(() =>
+      expect(
+        screen.getByRole('switch', { name: 'Receber notificações no sistema' }),
+      ).toHaveAttribute('aria-checked', 'false'),
+    );
     const before = await fixture.database.db
       .collection<{ _id: string }>('profiles')
       .findOne({ _id: fixture.teacherId });
-    await user.click(screen.getByRole('link', { name: 'Ausências' }));
+    await user.click(screen.getByRole('link', { name: 'Atestados' }));
     await user.click(await screen.findByRole('button', { name: 'Informar ausência' }));
     await user.type(screen.getByLabelText('Primeiro dia'), fixture.from);
     await user.type(screen.getByLabelText('Último dia'), fixture.until);
@@ -320,46 +365,6 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     ).toBe('Alteração concorrente no servidor');
   }, 30000);
 
-  it('recuperação usa fragmento, confirma nova senha e revoga a sessão anterior', async () => {
-    const old = await fixture.login(fixture.teacherEmail);
-    open('/esqueceu-senha');
-    const user = userEvent.setup();
-    await user.type(screen.getByLabelText('E-mail', { exact: true }), fixture.teacherEmail);
-    await user.click(screen.getByRole('button', { name: 'Solicitar recuperação' }));
-    await screen.findByText(/Se houver uma conta elegivel/);
-    const message = fixture.messages
-      .filter((m) => m.email === fixture.teacherEmail && m.purpose === 'RESET')
-      .at(-1)!;
-    expect(message).toBeTruthy();
-    cleanup();
-    window.history.replaceState(null, '', `/redefinir-senha#token=${message.token}`);
-    open('/redefinir-senha');
-    await user.type(screen.getByLabelText('Nova senha', { exact: true }), 'NovoAcesso2026');
-    await user.type(screen.getByLabelText('Confirmar nova senha'), 'NovoAcesso2026');
-    await user.click(screen.getByRole('button', { name: 'Salvar nova senha' }));
-    await screen.findByText(/Senha definida/, {}, { timeout: 10000 });
-    expect(window.location.hash).toBe('');
-    expect(
-      (await fixture.app.inject({ url: '/api/v1/auth/session', headers: old })).statusCode,
-    ).toBe(401);
-    expect(
-      (
-        await fixture.app.inject({
-          method: 'POST',
-          url: '/api/v1/auth/reset-password',
-          payload: { token: message.token, password: 'OutraSenha2026' },
-        })
-      ).statusCode,
-    ).toBe(410);
-    cleanup();
-    cookie = '';
-    setCsrf('');
-    open('/login');
-    await user.type(screen.getByLabelText('E-mail:'), fixture.teacherEmail);
-    await user.type(screen.getByLabelText('Senha:'), 'NovoAcesso2026');
-    await user.click(screen.getByRole('button', { name: 'Login' }));
-    await screen.findByRole('heading', { name: 'Meu início' });
-  }, 30000);
   it('edita turma e oferta com versão, sem alterar estruturas já alocadas', async () => {
     open('/login');
     const user = await signIn(fixture.coordinatorEmail);
@@ -399,5 +404,150 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
         (await fixture.database.db.collection('offerings').findOne({ code: 'OF-REV-UI' }))?.name,
       ).toBe('Oferta Revisada'),
     );
+  }, 30000);
+  it('sino abre painel sem navegar; leitura atualiza contador, Escape devolve foco e clique fora fecha', async () => {
+    const { entity } = await import('../../backend/src/shared/model');
+    const notice = {
+      ...entity(),
+      userId: fixture.teacherId,
+      kind: 'SCHEDULE',
+      resourceId: crypto.randomUUID(),
+      title: 'Aviso sintético do checklist',
+      read: false,
+    };
+    await fixture.database.db.collection<typeof notice>('notices').insertOne(notice);
+    const router = open('/login');
+    const user = await signIn(fixture.teacherEmail);
+    const count = await fixture.database.db
+      .collection<typeof notice>('notices')
+      .countDocuments({ userId: fixture.teacherId, read: false });
+    const bell = await screen.findByRole('button', { name: `Notificações, ${count} não lidas` });
+    const path = router.state.location.pathname;
+    expect(screen.queryByRole('link', { name: 'Ajustes' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Notificações' })).not.toBeInTheDocument();
+    await user.click(bell);
+    const dialog = screen.getByRole('dialog', { name: 'Notificações' });
+    expect(router.state.location.pathname).toBe(path);
+    const row = (await within(dialog).findByText(notice.title)).closest('li')!;
+    await user.click(within(row).getByRole('button', { name: 'Marcar como lida' }));
+    await waitFor(() => expect(bell).toHaveAccessibleName(`Notificações, ${count - 1} não lidas`));
+    expect(
+      (await fixture.database.db.collection<typeof notice>('notices').findOne({ _id: notice._id }))
+        ?.read,
+    ).toBe(true);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Notificações' })).not.toBeInTheDocument();
+    expect(bell).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('dialog', { name: 'Notificações' })).toBeInTheDocument();
+    await user.click(screen.getByRole('heading', { name: 'Meu início' }));
+    expect(screen.queryByRole('dialog', { name: 'Notificações' })).not.toBeInTheDocument();
+    await router.navigate('/configuracoes');
+    await screen.findByRole('heading', { name: 'Conta' });
+    expect(screen.getByRole('heading', { name: 'Alterar senha' })).toBeInTheDocument();
+    await router.navigate('/notificacoes');
+    await screen.findByRole('heading', { name: 'Meu início' });
+    expect(screen.queryByRole('heading', { name: 'Notificações' })).not.toBeInTheDocument();
+  }, 30000);
+  it('envia atestado no formulario e repete falha do upload sem duplicar a ausencia salva', async () => {
+    open('/login');
+    const user = await signIn(fixture.teacherEmail);
+    await user.click(screen.getByRole('link', { name: 'Atestados' }));
+    await user.click(await screen.findByRole('button', { name: 'Enviar atestado' }));
+    const dialog = screen.getByRole('dialog', { name: 'Enviar atestado' });
+    const sharp = (await import('../../backend/node_modules/sharp')).default;
+    const bytes = await sharp({
+      create: { width: 2, height: 2, channels: 3, background: '#ffffff' },
+    })
+      .png()
+      .toBuffer();
+    await user.upload(
+      within(dialog).getByLabelText('Arquivo do atestado'),
+      new File([new Uint8Array(bytes)], 'atestado-ficticio.png', { type: 'image/png' }),
+    );
+    await user.type(within(dialog).getByLabelText('Primeiro dia'), fixture.from);
+    await user.type(within(dialog).getByLabelText('Último dia'), fixture.until);
+    await user.click(within(dialog).getByRole('checkbox', { name: 'Direito' }));
+    const before = await fixture.database.db
+      .collection('absences')
+      .countDocuments({ teacherId: fixture.teacherId });
+    const actualFetch = globalThis.fetch;
+    let refused = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+        if (String(input).endsWith('/attachment') && init?.method === 'POST' && !refused) {
+          refused = true;
+          return new Response(
+            JSON.stringify({
+              error: { code: 'UNAVAILABLE', message: 'Upload temporariamente indisponível.' },
+            }),
+            { status: 503 },
+          );
+        }
+        return actualFetch(input, init);
+      }),
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Enviar atestado para análise' }));
+    await within(dialog).findByText('Upload temporariamente indisponível.');
+    expect(
+      await fixture.database.db
+        .collection('absences')
+        .countDocuments({ teacherId: fixture.teacherId }),
+    ).toBe(before + 1);
+    expect(within(dialog).getByLabelText('Primeiro dia')).toBeDisabled();
+    await user.click(within(dialog).getByRole('button', { name: 'Reenviar atestado' }));
+    await screen.findByRole('button', { name: 'Baixar atestado privado' });
+    expect(screen.queryByRole('dialog', { name: 'Enviar atestado' })).not.toBeInTheDocument();
+    expect(
+      await fixture.database.db
+        .collection('absences')
+        .countDocuments({ teacherId: fixture.teacherId }),
+    ).toBe(before + 1);
+    const stored = await fixture.database.db
+      .collection('absences')
+      .find({ teacherId: fixture.teacherId, attachment: { $exists: true } })
+      .toArray();
+    expect(stored.at(-1)?.attachment.bytes).toBe(bytes.length);
+  }, 30000);
+  it('recuperação usa fragmento, confirma nova senha e revoga a sessão anterior', async () => {
+    const old = await fixture.login(fixture.teacherEmail);
+    open('/esqueceu-senha');
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText('E-mail', { exact: true }), fixture.teacherEmail);
+    await user.click(screen.getByRole('button', { name: 'Solicitar recuperação' }));
+    await screen.findByText(/Se houver uma conta elegivel/);
+    const message = fixture.messages
+      .filter((m) => m.email === fixture.teacherEmail && m.purpose === 'RESET')
+      .at(-1)!;
+    expect(message).toBeTruthy();
+    cleanup();
+    window.history.replaceState(null, '', `/redefinir-senha#token=${message.token}`);
+    open('/redefinir-senha');
+    await user.type(screen.getByLabelText('Nova senha', { exact: true }), 'NovoAcesso2026');
+    await user.type(screen.getByLabelText('Confirmar nova senha'), 'NovoAcesso2026');
+    await user.click(screen.getByRole('button', { name: 'Salvar nova senha' }));
+    await screen.findByText(/Senha definida/, {}, { timeout: 10000 });
+    expect(window.location.hash).toBe('');
+    expect(
+      (await fixture.app.inject({ url: '/api/v1/auth/session', headers: old })).statusCode,
+    ).toBe(401);
+    expect(
+      (
+        await fixture.app.inject({
+          method: 'POST',
+          url: '/api/v1/auth/reset-password',
+          payload: { token: message.token, password: 'OutraSenha2026' },
+        })
+      ).statusCode,
+    ).toBe(410);
+    cleanup();
+    cookie = '';
+    setCsrf('');
+    open('/login');
+    await user.type(screen.getByLabelText('E-mail:'), fixture.teacherEmail);
+    await user.type(screen.getByLabelText('Senha:'), 'NovoAcesso2026');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
+    await screen.findByRole('heading', { name: 'Meu início' });
   }, 30000);
 });

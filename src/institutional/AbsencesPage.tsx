@@ -19,19 +19,29 @@ export function ApiAbsencesPage() {
     ),
     courses = useApi<Items<CatalogItem>>(teacher ? '/courses' : null),
     teachers = useApi<Items<User>>(!teacher && courseId ? `/courses/${courseId}/teachers` : null),
-    [open, setOpen] = useState(false),
+    [formMode, setFormMode] = useState<'certificate' | 'absence' | null>(null),
     action = useAction();
   return (
     <>
       <Heading
-        title={teacher ? 'Minhas ausências' : 'Ausências do curso'}
-        description="O afastamento é temporário e não reduz a compatibilidade acadêmica."
+        title={teacher ? 'Atestados e ausências' : 'Atestados do curso'}
+        description={
+          teacher
+            ? 'Envie seu atestado e acompanhe a análise da coordenação.'
+            : 'Consulte os documentos recebidos e analise o período de afastamento.'
+        }
       >
         {teacher && (
-          <Button onClick={() => setOpen(true)}>
-            <Icon name="plus" />
-            Informar ausência
-          </Button>
+          <div className={s.actions}>
+            <Button onClick={() => setFormMode('certificate')}>
+              <Icon name="upload" />
+              Enviar atestado
+            </Button>
+            <Button variant="secondary" onClick={() => setFormMode('absence')}>
+              <Icon name="plus" />
+              Informar ausência
+            </Button>
+          </div>
         )}
       </Heading>
       <LoadingError {...result} retry={result.refresh} />
@@ -77,34 +87,7 @@ export function ApiAbsencesPage() {
                 </Button>
               ) : teacher &&
                 Object.values(record.decisions).every((d) => d.status === 'SUBMITTED') ? (
-                <label className={s.select}>
-                  Anexar atestado (opcional)
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    disabled={action.busy}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file)
-                        void action.run(async () => {
-                          if (file.size > 5 * 1024 * 1024)
-                            throw new Error('Selecione uma imagem de até 5 MB.');
-                          const data = new FormData();
-                          data.append('file', file);
-                          await api(`/me/absences/${record.id}/attachment`, {
-                            method: 'POST',
-                            body: data,
-                          });
-                          result.refresh();
-                        }, 'Atestado privado recebido.');
-                      e.target.value = '';
-                    }}
-                  />
-                  <span className={s.muted}>
-                    JPG, PNG ou WebP, até 5 MB e 16 megapixels. O original enviado é preservado. PDF
-                    ainda não é aceito.
-                  </span>
-                </label>
+                <AttachmentForm recordId={record.id} onSaved={result.refresh} />
               ) : (
                 <span className={s.muted}>Sem atestado anexado.</span>
               )}
@@ -146,16 +129,18 @@ export function ApiAbsencesPage() {
         ))}
       </Panel>
       <Modal
-        open={open}
-        title="Informar ausência"
+        open={!!formMode}
+        title={formMode === 'certificate' ? 'Enviar atestado' : 'Informar ausência'}
         busy={action.busy}
-        onClose={() => setOpen(false)}
+        onClose={() => setFormMode(null)}
       >
-        {open && (
+        {formMode && (
           <AbsenceForm
+            requireFile={formMode === 'certificate'}
+            onCreated={result.refresh}
             courses={courses.data?.items ?? []}
             onSaved={() => {
-              setOpen(false);
+              setFormMode(null);
               result.refresh();
             }}
           />
@@ -164,10 +149,52 @@ export function ApiAbsencesPage() {
     </>
   );
 }
-function AbsenceForm({ courses, onSaved }: { courses: CatalogItem[]; onSaved: () => void }) {
-  const [startsOn, setStart] = useState(''),
-    [endsOn, setEnd] = useState(''),
-    [selected, setSelected] = useState<string[]>([]),
+function validateCertificate(file: File) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
+    throw new Error('Selecione um atestado em JPG, PNG ou WebP.');
+  if (!file.size || file.size > 5 * 1024 * 1024)
+    throw new Error('Selecione uma imagem válida de até 5 MB.');
+}
+async function uploadCertificate(recordId: string, file: File) {
+  validateCertificate(file);
+  const data = new FormData();
+  data.append('file', file);
+  await api(`/me/absences/${recordId}/attachment`, { method: 'POST', body: data });
+}
+function CertificateField({
+  file,
+  onChange,
+  required = false,
+  disabled = false,
+}: {
+  file: File | null;
+  onChange: (file: File | null) => void;
+  required?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <label className={s.certificateUpload}>
+      <Icon name="document" size={28} />
+      <strong>Arquivo do atestado{required ? '' : ' (opcional)'}</strong>
+      <span className={s.muted}>JPG, PNG ou WebP, até 5 MB. PDF ainda não é aceito.</span>
+      <input
+        type="file"
+        aria-label="Arquivo do atestado"
+        accept="image/jpeg,image/png,image/webp"
+        required={required && !file}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+      />
+      {file && (
+        <span>
+          {file.name} · {Math.ceil(file.size / 1024)} KB
+        </span>
+      )}
+    </label>
+  );
+}
+function AttachmentForm({ recordId, onSaved }: { recordId: string; onSaved: () => void }) {
+  const [file, setFile] = useState<File | null>(null),
     action = useAction();
   return (
     <form
@@ -175,57 +202,125 @@ function AbsenceForm({ courses, onSaved }: { courses: CatalogItem[]; onSaved: ()
       onSubmit={(e) => {
         e.preventDefault();
         void action.run(async () => {
-          await api('/me/absences', {
-            method: 'POST',
-            body: { startsOn, endsOn, courseIds: selected },
-          });
+          if (!file) return;
+          await uploadCertificate(recordId, file);
+          onSaved();
+        }, 'Atestado recebido.');
+      }}
+    >
+      <CertificateField file={file} onChange={setFile} required disabled={action.busy} />
+      <ActionFeedback action={action} />
+      <Button type="submit" loading={action.busy} disabled={!file}>
+        <Icon name="upload" />
+        Enviar este atestado
+      </Button>
+    </form>
+  );
+}
+function AbsenceForm({
+  courses,
+  onSaved,
+  onCreated,
+  requireFile,
+}: {
+  courses: CatalogItem[];
+  onSaved: () => void;
+  onCreated: () => void;
+  requireFile: boolean;
+}) {
+  const [startsOn, setStart] = useState(''),
+    [endsOn, setEnd] = useState(''),
+    [selected, setSelected] = useState<string[]>([]),
+    [file, setFile] = useState<File | null>(null),
+    [created, setCreated] = useState<Absence | null>(null),
+    action = useAction();
+  return (
+    <form
+      className={s.stack}
+      onSubmit={(e) => {
+        e.preventDefault();
+        void action.run(async () => {
+          if (requireFile && !file) throw new Error('Selecione o arquivo do atestado.');
+          if (file) validateCertificate(file);
+          let record = created;
+          if (!record) {
+            record = await api<Absence>('/me/absences', {
+              method: 'POST',
+              body: { startsOn, endsOn, courseIds: selected },
+            });
+            setCreated(record);
+            onCreated();
+          }
+          if (file) await uploadCertificate(record.id, file);
           onSaved();
         });
       }}
     >
-      <h2>Comunicar ausência</h2>
+      <h2>{requireFile ? 'Enviar atestado' : 'Comunicar ausência'}</h2>
       <p className={s.muted}>
-        Selecione as coordenações responsáveis pela análise. Não inclua diagnósticos; o documento
-        será anexado em etapa reservada após salvar.
+        Informe as datas do afastamento e os cursos que devem receber a comunicação. O documento
+        fica disponível somente para você e as coordenações selecionadas.
       </p>
-      <TextField
-        label="Primeiro dia"
-        type="date"
-        required
-        value={startsOn}
-        onChange={(e) => setStart(e.target.value)}
+      <CertificateField
+        file={file}
+        onChange={setFile}
+        required={requireFile}
+        disabled={action.busy}
       />
-      <TextField
-        label="Último dia"
-        type="date"
-        required
-        min={startsOn}
-        value={endsOn}
-        onChange={(e) => setEnd(e.target.value)}
-      />
-      <fieldset className={s.subsection}>
-        <legend>Cursos responsáveis pela análise</legend>
-        {courses.map((c) => (
-          <label className={s.check} key={c.id}>
-            <input
-              type="checkbox"
-              checked={selected.includes(c.id)}
-              onChange={(e) =>
-                setSelected(
-                  e.target.checked ? [...selected, c.id] : selected.filter((id) => id !== c.id),
-                )
-              }
-            />
-            {c.name}
-          </label>
-        ))}
+      <fieldset className={s.absenceDates} disabled={!!created || action.busy}>
+        <legend>Período de afastamento</legend>
+        <TextField
+          label="Primeiro dia"
+          type="date"
+          required
+          value={startsOn}
+          onChange={(e) => setStart(e.target.value)}
+        />
+        <TextField
+          label="Último dia"
+          type="date"
+          required
+          min={startsOn}
+          value={endsOn}
+          onChange={(e) => setEnd(e.target.value)}
+        />
       </fieldset>
-      {!courses.length && (
+      <fieldset className={s.subsection} disabled={!!created || action.busy}>
+        <legend>Cursos responsáveis pela análise</legend>
+        {courses
+          .filter((c) => c.roles?.includes('teacher'))
+          .map((c) => (
+            <label className={s.check} key={c.id}>
+              <input
+                type="checkbox"
+                checked={selected.includes(c.id)}
+                onChange={(e) =>
+                  setSelected(
+                    e.target.checked ? [...selected, c.id] : selected.filter((id) => id !== c.id),
+                  )
+                }
+              />
+              {c.name}
+            </label>
+          ))}
+      </fieldset>
+      {!courses.some((c) => c.roles?.includes('teacher')) && (
         <p>É necessário um vínculo aprovado com um curso para comunicar ausência.</p>
       )}
+      {created && (
+        <p role="status">
+          O período já foi salvo. Se o arquivo falhou, tente enviá-lo novamente; a comunicação não
+          será duplicada.
+        </p>
+      )}
       <ActionFeedback action={action} />
-      <Button type="submit" loading={action.busy}>
-        Salvar comunicação
+      <Button type="submit" loading={action.busy} disabled={!selected.length}>
+        <Icon name={file ? 'upload' : 'save'} />
+        {requireFile
+          ? created
+            ? 'Reenviar atestado'
+            : 'Enviar atestado para análise'
+          : 'Salvar comunicação'}
       </Button>
     </form>
   );

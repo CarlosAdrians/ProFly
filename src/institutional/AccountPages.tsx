@@ -1,5 +1,7 @@
 import { useAction } from './actions';
 import { dayLabel, timeLabel, today } from './dates';
+import { addDate } from './calendarModel';
+import { CoordinatorOverview, UpcomingClasses } from './HomePages';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { Button } from '../components/ui/Button/Button';
@@ -8,7 +10,6 @@ import { PasswordField } from '../components/ui/PasswordField/PasswordField';
 import { Icon } from '../components/ui/Icon/Icon';
 import { ApiModal as Modal } from './ui';
 import { AccountPhoto } from '../features/account/components/AccountPhoto';
-import { ThemeToggle } from '../components/ui/ThemeToggle/ThemeToggle';
 import { api } from './api';
 import { useApi, useApiSession } from './hooks';
 import { useScope } from './scope';
@@ -186,6 +187,11 @@ export function ApiAccountPage() {
           )}
         </Panel>
       )}
+      <AccountSecurity />
+      <div className={s.legalLinks}>
+        <Link to="/termos">Termos de uso</Link>
+        <Link to="/privacidade">Política de privacidade</Link>
+      </div>
       <Modal open={editing} title="Editar dados" onClose={() => setEditing(false)}>
         {editing && (
           <AccountForm
@@ -408,44 +414,70 @@ export function TeacherOverview() {
   const range = weekRange(),
     profile = useApi<Profile>('/me/profile'),
     schedule = useApi<Items<Occurrence>>(`/me/schedule?from=${range.from}&until=${range.until}`),
-    history = useApi<Items<Occurrence>>('/me/history');
+    history = useApi<Items<Occurrence>>('/me/history'),
+    upcoming = useApi<Items<Occurrence>>(
+      `/me/schedule?from=${today()}&until=${addDate(today(), 28)}`,
+    );
   const minutes = schedule.data?.items
     .filter((o) => o.status === 'COMPLETED')
     .reduce((n, o) => n + o.minutes, 0);
   return (
     <>
       <Heading title="Meu início" description="Sua rotina docente, a partir da escala publicada." />
-      <div className={s.grid}>
-        <Panel title="Aulas da semana">
-          <LoadingError {...schedule} retry={schedule.refresh} />
-          {schedule.data?.items.length === 0 && (
-            <p className={s.empty}>Ainda não há aulas publicadas para esta semana.</p>
+      <div className={s.homeLayout}>
+        <Panel title="Próximas aulas">
+          <div className={s.sectionCaption}>
+            <span>Escala publicada · próximos 28 dias</span>
+            <Link to="/calendario">Ver calendário</Link>
+          </div>
+          <LoadingError {...upcoming} retry={upcoming.refresh} />
+          {upcoming.data &&
+          !upcoming.data.items.some(
+            (o) => o.status === 'PLANNED' && o.endsAt > new Date().toISOString(),
+          ) ? (
+            <div className={s.agendaEmpty}>
+              <Icon name="calendar" size={32} />
+              <h3>Sua agenda está livre por enquanto</h3>
+              <p>Quando a coordenação publicar suas próximas aulas, elas aparecerão aqui.</p>
+              <Link to="/horarios">Conferir disponibilidade</Link>
+            </div>
+          ) : (
+            <UpcomingClasses
+              items={(upcoming.data?.items ?? [])
+                .filter((o) => o.status === 'PLANNED' && o.endsAt > new Date().toISOString())
+                .slice(0, 5)}
+            />
           )}
-          {schedule.data?.items
-            .filter((o) => o.status !== 'CANCELLED' && o.status !== 'RESCHEDULED')
-            .map((o) => (
-              <div className={s.row} key={o.id}>
-                <div>
-                  <strong>{o.subjectName}</strong>
-                  <p>
-                    {dayLabel(o.date)} · {timeLabel(o.startsAt)}–{timeLabel(o.endsAt)}
-                  </p>
-                </div>
-                <Badge value={o.status} />
-              </div>
-            ))}
-          <Link to="/calendario">Abrir calendário</Link>
         </Panel>
-        <Panel title="Dedicação semanal">
+        <Panel title="Minha semana">
+          <p className={s.muted}>
+            {dayLabel(range.from)} a {dayLabel(range.until)}
+          </p>
+          <LoadingError {...schedule} retry={schedule.refresh} />
+          {schedule.data && (
+            <div className={s.weekWorkload}>
+              <div>
+                <span>Programadas</span>
+                <strong>
+                  {(
+                    schedule.data.items
+                      .filter((o) => o.status === 'PLANNED' || o.status === 'COMPLETED')
+                      .reduce((sum, o) => sum + o.minutes, 0) / 60
+                  ).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}{' '}
+                  h
+                </strong>
+              </div>
+              <div>
+                <span>Realizadas</span>
+                <strong>
+                  {((minutes ?? 0) / 60).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} h
+                </strong>
+              </div>
+            </div>
+          )}
           <LoadingError {...profile} retry={profile.refresh} />
           {minutes !== undefined && (
             <>
-              <p>
-                <strong>
-                  {(minutes / 60).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} h
-                </strong>{' '}
-                de aulas confirmadas nesta semana.
-              </p>
               {profile.data?.data.desiredWeeklyMinutes !== undefined ? (
                 <>
                   <p>
@@ -467,6 +499,24 @@ export function TeacherOverview() {
           )}
           <Link to="/horarios">Revisar disponibilidade</Link>
         </Panel>
+      </div>
+      <div className={s.quickLinks}>
+        <Link to="/conta">
+          <Icon name="user" size={24} />
+          <span>
+            <strong>Meu perfil</strong>
+            <small>Formação, conhecimentos e dados de acesso</small>
+          </span>
+          <Icon name="arrowRight" />
+        </Link>
+        <Link to="/ausencias">
+          <Icon name="document" size={24} />
+          <span>
+            <strong>Enviar atestado</strong>
+            <small>Comunique o afastamento à coordenação</small>
+          </span>
+          <Icon name="arrowRight" />
+        </Link>
       </div>
       <Panel title="Últimas 10 aulas">
         <LoadingError {...history} retry={history.refresh} />
@@ -665,54 +715,13 @@ export function HistoryPage() {
     </>
   );
 }
-export function ApiSettingsPage() {
-  const prefs = useApi<{ version: number; notifications: boolean }>('/me/preferences'),
-    action = useAction(),
+function AccountSecurity() {
+  const action = useAction(),
     [password, setPassword] = useState(''),
     [newPassword, setNewPassword] = useState(''),
     auth = useApiSession();
   return (
     <>
-      <Heading title="Configurações" />
-      <Panel title="Aparência">
-        <ThemeToggle />
-      </Panel>
-      <Panel title="Notificações">
-        <LoadingError {...prefs} retry={prefs.refresh} />
-        <ActionFeedback action={action} />
-        {prefs.data && (
-          <div className={s.toggle}>
-            <button
-              type="button"
-              role="switch"
-              aria-label="Receber notificações no sistema"
-              aria-checked={prefs.data.notifications}
-              disabled={action.busy}
-              onClick={() =>
-                void action.run(async () => {
-                  await api('/me/preferences', {
-                    method: 'PUT',
-                    body: {
-                      expectedVersion: prefs.data!.version,
-                      notifications: !prefs.data!.notifications,
-                    },
-                  });
-                  prefs.refresh();
-                })
-              }
-            >
-              <span />
-            </button>
-            <div>
-              <strong>Avisos dentro do ProFly</strong>
-              <p className={s.muted}>
-                Análises, publicações e ausências. Desligar não afeta os e-mails de segurança da
-                conta.
-              </p>
-            </div>
-          </div>
-        )}
-      </Panel>
       <Panel title="Alterar senha">
         <form
           className={s.stack}
@@ -752,27 +761,5 @@ export function ApiSettingsPage() {
   );
 }
 export function ApiHomePage() {
-  return useScope().asTeacher ? (
-    <TeacherOverview />
-  ) : (
-    <>
-      <Heading
-        title="Meu início"
-        description="Organize seu curso, analise os cadastros e publique as escalas."
-      />
-      <div className={s.grid}>
-        <Panel title="Análise docente">
-          <p>
-            Confira os dados declarados e confirme cada formação, conhecimento e experiência
-            pertinente.
-          </p>
-          <Link to="/professores">Abrir solicitações</Link>
-        </Panel>
-        <Panel title="Planejamento">
-          <p>Rascunhos reservam horários. Professores acompanham a última revisão publicada.</p>
-          <Link to="/alocacoes">Organizar alocações</Link>
-        </Panel>
-      </div>
-    </>
-  );
+  return useScope().asTeacher ? <TeacherOverview /> : <CoordinatorOverview />;
 }
