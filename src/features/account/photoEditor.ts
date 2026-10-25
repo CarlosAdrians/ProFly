@@ -73,6 +73,12 @@ export async function openPhoto(file: File) {
   }
 }
 export async function reopenPhoto(source: string) {
+  if (/^\/api\/v1\/me\/photo(?:\?v=\d+)?$/.test(source)) {
+    const response = await fetch(source, { credentials: 'include' });
+    if (!response.ok) throw new Error('Não foi possível carregar a foto atual.');
+    const blob = await response.blob();
+    return openPhoto(new File([blob], 'perfil.jpg', { type: 'image/jpeg' }));
+  }
   if (!/^data:image\/(jpeg|png|webp);base64,/.test(source))
     throw new Error('Formato de foto não suportado.');
   return { image: await decode(source), release: () => {} };

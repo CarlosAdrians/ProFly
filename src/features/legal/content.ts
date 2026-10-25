@@ -1,4 +1,4 @@
-export const LEGAL_VERSION = '2026-10-24.3';
+export const LEGAL_VERSION = '2026-10-24.4';
 export interface LegalSection {
   title: string;
   text: string;
@@ -14,7 +14,7 @@ export const legalContent: Record<
     sections: [
       {
         title: '1. Finalidade do ProFly',
-        text: 'O ProFly apoia o cadastro docente, a análise de solicitações por curso e a organização de aulas. Esta versão é uma demonstração local: seus dados ficam neste navegador. Use informações fictícias e uma senha de teste, diferente das senhas dos seus serviços pessoais.',
+        text: 'O ProFly apoia o cadastro docente, a análise de solicitações por curso e a organização de aulas. No ambiente conectado, cadastros e horários são persistidos pelo servidor. O modo demonstrativo explícito usa este navegador. A implantação institucional depende de homologação; nesta apresentação, use dados fictícios e senha de teste exclusiva.',
       },
       {
         title: '2. Conta e responsabilidades',
@@ -26,7 +26,7 @@ export const legalContent: Record<
       },
       {
         title: '4. Horários e recomendações',
-        text: 'O calendário de demonstração utiliza exemplos editáveis. Um rascunho de alocação não é uma escala oficial publicada. Recomendações futuras devem explicar seus critérios e apoiar a decisão da coordenação. Não constituem garantia de aptidão nem atribuem aulas sem decisão humana.',
+        text: 'No modo conectado, rascunhos reservam horários e somente uma publicação atualiza a escala do professor. Recomendações explicam critérios configurados, ainda propostos para revisão institucional, e apoiam a coordenação. Não constituem garantia de aptidão nem atribuem aulas sem decisão humana.',
       },
       {
         title: '5. Foto e conteúdo enviado',
@@ -34,11 +34,11 @@ export const legalContent: Record<
       },
       {
         title: '6. Uso responsável',
-        text: 'Não tente acessar contas alheias, alterar permissões indevidamente ou enviar conteúdo que prejudique o funcionamento da plataforma. A demonstração não deve ser utilizada para compromissos oficiais. Os controles locais do navegador não substituem a autenticação e a autorização do servidor institucional.',
+        text: 'Não tente acessar contas alheias, alterar permissões indevidamente ou enviar conteúdo que prejudique o funcionamento da plataforma. O ambiente de homologação não deve ser utilizado para compromissos oficiais. No modo conectado, o servidor confere identidade e autorização por curso em cada operação protegida.',
       },
       {
         title: '7. Disponibilidade e alterações',
-        text: 'O projeto pode mudar durante o desenvolvimento. Limpar os dados do site ou trocar de navegador pode remover o conteúdo local. O sistema registra a versão dos termos aceita no cadastro. Mudanças relevantes devem ser apresentadas antes de uma nova utilização institucional.',
+        text: 'O projeto pode mudar durante o desenvolvimento. Limpar o navegador pode remover conteúdo demonstrativo. No modo conectado, os dados persistem no servidor. O sistema registra a versão dos termos aceita no cadastro. Mudanças relevantes devem ser apresentadas antes de uma nova utilização institucional.',
       },
       {
         title: '8. Responsáveis e implantação',
@@ -57,19 +57,19 @@ export const legalContent: Record<
       },
       {
         title: '2. Armazenamento nesta versão',
-        text: 'Na demonstração, perfis, solicitações, horários, fotos e preferências de aparência/calendário são armazenados no navegador deste computador. A sessão fica no armazenamento da aba. Uma derivação da senha de teste com sal aleatório é guardada para demonstrar o login; a senha não é gravada em texto simples. Não há envio de e-mails nem sincronização desses dados com o MongoDB nesta interface.',
+        text: 'No modo conectado, o servidor persiste contas, perfis, solicitações, fotos, escalas, avisos e histórico no MongoDB. A senha recebe derivação criptográfica com sal e a sessão usa cookie protegido contra leitura por JavaScript. O ambiente atual captura e-mails em caixa fictícia local, sem entrega externa. O modo demonstrativo explícito mantém dados separados no navegador.',
       },
       {
         title: '3. Acesso e compartilhamento',
-        text: 'O fluxo demonstra o professor acompanhando seus dados e a coordenação analisando os cursos solicitados. Dados locais podem ser acessados por outras pessoas que utilizem o mesmo perfil do navegador: evite informações reais em computadores compartilhados. Não enviamos os cadastros a serviços de publicidade ou a modelos de linguagem. O calendário consulta a BrasilAPI por ano, sem enviar dados do perfil; o provedor recebe dados técnicos da conexão, como o IP. A lista pública de datas é guardada por até 24 horas no navegador. As referências externas são abertas quando você escolhe visitá-las.',
+        text: 'O professor acompanha seus dados e cada coordenação analisa somente seus cursos. A administração mantém estrutura e acessos. Encerre a sessão em computador compartilhado; o modo demonstrativo pode expor dados a quem utilize o mesmo perfil do navegador. Não enviamos os cadastros a serviços de publicidade ou a modelos de linguagem. O calendário consulta a BrasilAPI por ano, sem enviar dados do perfil; o provedor recebe dados técnicos da conexão, como o IP. A lista pública de datas é guardada por até 24 horas no navegador. As referências externas são abertas quando você escolhe visitá-las.',
       },
       {
         title: '4. Foto e informações de saúde',
-        text: 'A foto pode ser removida sem impedir o uso das outras funções. Arquivos de imagem são reduzidos para exibição no perfil. O cadastro não recebe atestados. O fluxo reservado de ausências e documentos de saúde ainda será implementado; esses documentos não devem aparecer nas recomendações acadêmicas nem reduzir o score do professor.',
+        text: 'A foto pode ser removida sem impedir o uso das outras funções. Arquivos de imagem são reduzidos para exibição no perfil. O cadastro acadêmico não recebe atestados. O fluxo reservado de ausências aceita opcionalmente imagem do documento em armazenamento privado, acessível ao professor e às coordenações selecionadas. Original e hash são preservados e downloads são auditados. O documento não aparece nas recomendações nem reduz fatores acadêmicos. Não envie documentos reais neste ambiente de homologação.',
       },
       {
         title: '5. Controle dos dados locais',
-        text: 'Você pode atualizar sua conta e remover a foto. A limpeza dos dados deste site pelas configurações do navegador apaga os registros locais, inclusive as contas de demonstração e os rascunhos. A versão aceita dos termos e deste aviso fica registrada com a data de criação da conta. Não há prazo automático de expiração dos cadastros locais nesta versão.',
+        text: 'Você pode atualizar sua conta e remover a foto. Limpar o navegador apaga somente registros demonstrativos e preferências locais; não elimina dados da API. A versão aceita destes documentos fica registrada no cadastro conectado. Retenção, eliminação e canal institucional precisam ser definidos para homologação.',
       },
       {
         title: '6. Direitos e informações',

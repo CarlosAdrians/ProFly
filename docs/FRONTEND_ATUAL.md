@@ -1,5 +1,11 @@
 # ProFly — interface disponível
 
+## Estado em 25/10/2026
+
+A aplicação usa agora a API por padrão. Cadastro, análise por curso, administração, conta/foto, calendário publicado, alocações, score, histórico, ausências e notificações estão ligados ao servidor. Configuração, rotas, evidências e limites em [INTERFACE_API.md](INTERFACE_API.md). Não há fallback silencioso para cadastros do navegador.
+
+O conteúdo a seguir registra a demonstração anterior, preservada somente com `VITE_DEMO_MODE=true`. Suas credenciais fictícias e limitações locais não descrevem o modo conectado.
+
 Atualizado em 24/10/2026. A interface React amplia a base institucional azul e preserva a navegação original. Cartões arredondados, seletores segmentados e modo escuro seguem a direção visual solicitada. O brasão fornecido da UNIFACISA substitui o símbolo de Direito, sem fundo branco na barra lateral.
 
 ## Rotas e acesso demonstrativo

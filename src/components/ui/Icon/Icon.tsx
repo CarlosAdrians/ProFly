@@ -1,6 +1,17 @@
 import type { ReactNode, SVGProps } from 'react';
 
 const shapes = {
+  calendar: (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M16 3v4M8 3v4M3 11h18M8 15h2m4 0h2m-8 3h2" />
+    </>
+  ),
+  bell: (
+    <>
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+    </>
+  ),
   check: <path d="m5 12 4 4L19 6" />,
   circle: <circle cx="12" cy="12" r="8" />,
   plus: <path d="M12 5v14M5 12h14" />,

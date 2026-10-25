@@ -61,7 +61,7 @@ Detalhes, nós de decisão, fórmula e exemplos fictícios estão na [proposta d
 
 Planejamento por curso, turma e período, com seleção de dia e turno. Os cartões de aula representam disciplina, turma e professor e podem ser incluídos, editados e movimentados por arraste, com alternativa por formulário.
 
-Toda alteração precisa conferir novamente os horários reais, os compromissos do professor em outros cursos e sua carga. Disputas simultâneas entre coordenações devem preservar a integridade da escala. A proposta de trabalho inclui rascunho e versão publicada estável; a política de reservas e republicação ainda será detalhada.
+Toda alteração precisa conferir novamente os horários reais, os compromissos do professor em outros cursos e sua carga. Disputas simultâneas entre coordenações devem preservar a integridade da escala. A proposta de trabalho inclui rascunho e versão publicada estável; rascunhos salvos e a última publicação mantêm reservas globais até uma nova revisão atômica. Essa política conservadora permanece proposta para homologação institucional.
 
 ### Dashboard e histórico do professor
 
@@ -120,7 +120,7 @@ A aplicação deve rejeitar dados incoerentes e operações fora do escopo, mant
 | [Definição do back-end](docs/BACKEND.md) | Modelo conceitual, responsabilidades, dados e contratos com o responsável pelo banco. |
 | [Compatibilidade docente](docs/PROPOSTA_COMPATIBILIDADE.md) | Cadastro, árvore detalhada, score, dashboard, histórico e exemplos. |
 | [Expansão institucional](docs/EXPANSAO_INSTITUCIONAL.md) | Contexto, decisões tomadas e etapas da ampliação. |
-| [Front-end demonstrativo](docs/FRONTEND_ATUAL.md) | Funcionamento, rotas e limitações da implementação existente. |
+| [Interface e demonstração preservada](docs/FRONTEND_ATUAL.md) | Funcionamento, rotas e limitações da implementação existente. |
 | [Orientações de trabalho](AGENTS.md) | Regras do repositório para preservar a base, validar e salvar entregas em commits. |
 
 ## Desenvolvimento por etapas
@@ -142,61 +142,63 @@ Alterações de front-end e back-end ficam em commits separados. Testes e docume
 
 ## Estado de desenvolvimento
 
-Atualizado em **24/10/2026**. Repositório: [CarlosAdrians/ProFly](https://github.com/CarlosAdrians/ProFly). Branch local desta etapa: `feat/backend-institucional`.
+Atualizado em **25/10/2026**. Branch local: `feat/backend-institucional`. A interface usa a API por padrão; a demonstração anterior foi preservada como opção explícita.
 
 | Parte | Estado atual |
 | --- | --- |
-| Visão institucional, requisitos e matriz | Documentados para orientar a implementação. |
-| Front-end de coordenador | Demonstração com login, conta editável e foto, análise por curso, disciplinas, calendário mensal/semanal/diário, bloqueio de datas passadas, alocações locais e Configurações. |
-| Administrador e acesso por curso | API de cursos, convites de coordenadores, sessões e revogação implementada; telas administrativas pendentes. |
-| Perfil docente e aprovação de entrada | API de rascunho, versões, solicitação e análise independente por curso implementada; cadastro detalhado e análise disponíveis em demonstração local, ainda sem integração com a API. |
-| Dashboard de professor | Início com resumo do perfil, solicitações por curso, calendário e edição de disponibilidade. Aulas publicadas e histórico ainda pendentes. |
-| Servidor Node.js e MongoDB | Base HTTP, identidade e cadastro/aprovação implementados. SMTP de verificação/reset com captura local fictícia; entrega institucional e integração das telas pendentes. Veja [backend/README.md](backend/README.md) e [e-mail no backend](docs/EMAIL_BACKEND.md). |
-| Catálogo acadêmico | API de competências, disciplinas, períodos, turmas e ofertas, com referências, versões e grade configurável. Revisão de planejamento publicado ainda pendente. |
-| Motor de elegibilidade e score | Especificado; implementação e validação institucional pendentes. |
-| Calendário, alocações e publicação | Calendário e rascunhos no navegador, com conflitos e edição; publicação e persistência pela API pendentes. Feriados por BrasilAPI e referência estadual da Paraíba. |
-| Histórico de aulas e atestados | Planejados; ainda não implementados. |
-| Testes de execução do back-end | Primeiros testes unitários e de integração MongoDB implementados; cobertura completa da matriz ainda pendente. |
+| Identidade e conta | Sessão real por cookie/CSRF, cadastro detalhado, confirmação de e-mail, recuperação, troca protegida de e-mail/senha e foto privada. |
+| Aprovação por curso | Solicitações encaminhadas após verificar o e-mail; análise e vínculo restritos ao curso do coordenador. Sem aprovação automática. |
+| Administração | Cursos, coordenadores, convites, revogação, competências, períodos/grade e limite institucional de carga. Primeiro administrador exige configuração explícita. |
+| Perfil e catálogo | Perfil versionado, formação, conhecimentos, experiências, horários pretendidos e dedicação opcional; disciplinas, critérios, turmas e ofertas pela API. |
+| Elegibilidade e score | Árvore explicável e comparação consistente de candidatos, com dados desconhecidos pendentes e pesos/requisitos configuráveis como proposta. |
+| Planejamento | Rascunhos, arraste/formulário, reservas globais, versão esperada e publicação atômica; escala anterior preservada em falha. |
+| Professor | Agenda publicada, últimas 10 aulas, histórico paginado, horas realizadas confirmadas versus meta opcional. |
+| Ausências | Comunicação e decisão por curso, sinalização temporária e atestado privado JPG/PNG/WebP; PDF ainda não aceito. |
+| Notificações | Avisos internos e preferência persistida no servidor; e-mails de segurança independentes. |
+| E-mail | SMTP implementado e testado em captura fictícia local. Entrega externa depende de remetente autenticado. |
+| Validação | Testes de domínio, HTTP/MongoDB efêmero, concorrência e interface conectada; evidências e limites em [STATUS.md](docs/validation/STATUS.md). |
+
+A implementação não equivale à homologação institucional. Ainda faltam remetente real, configuração inicial da administração, revisão de critérios/grade/limites e políticas de privacidade/retenção, infraestrutura HTTPS e verificações de produção. Não inserir atestados reais na prévia de desenvolvimento.
 
 A base de implementação foi localizada em `claude/pensive-dirac-5rithn`, no commit `6e78ca6`. Na leitura inicial, a `main` continha apenas referências e protótipos. Esses dados registram a origem da etapa, sem presumir publicação desta branch no remoto.
 
-## Executar a demonstração disponível
+## Executar a aplicação conectada
 
-Na raiz deste checkout, com Node.js e npm disponíveis, use Node.js 24 como referência de ambiente:
+Use Node.js 24. Na raiz:
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Abra o endereço informado pelo Vite. O acesso demonstrativo é `felipe.araujo@profly.test`, senha `profly123`. São credenciais fictícias presentes no código, sem autenticação segura de produção.
+O Vite atende em [127.0.0.1:5174](http://127.0.0.1:5174) e encaminha `/api` para `127.0.0.1:3333`. Inicie também o [backend](backend/README.md), com MongoDB transacional e seu `backend/.env` local. URI e credenciais ficam somente no servidor; nunca em variáveis `VITE_*`. `PROFLY_API_TARGET` altera apenas o destino do proxy de desenvolvimento.
 
-A demonstração guarda cadastros, fotos e rascunhos no `localStorage`, com sessão no `sessionStorage`. No login, **Cadastrar** abre o cadastro do próprio professor; não utiliza WhatsApp. As solicitações são analisadas por curso. A interface ainda usa o adaptador demonstrativo: conectar o servidor ao MongoDB não migra os dados do navegador. Termos e aviso de privacidade são minutas para revisão institucional. Detalhes e limitações em [FRONTEND_ATUAL.md](docs/FRONTEND_ATUAL.md).
+Não há credencial administrativa padrão na aplicação conectada. Crie o primeiro administrador com o procedimento explícito do backend; ele cadastra cursos e convida coordenadores. O professor usa **Cadastrar**, confirma o e-mail e aguarda análise independente de cada curso. Conectar a API não importa nem apaga cadastros locais antigos.
 
-Comandos existentes do front-end:
+### Demonstração anterior
+
+Somente para apresentação com dados fictícios: defina `VITE_DEMO_MODE=true` antes de iniciar o Vite. A credencial demonstrativa `felipe.araujo@profly.test` / `profly123` funciona apenas nesse modo. Dados antigos de `localStorage` e sessão de `sessionStorage` foram preservados; não autenticam na API.
+
+### Verificações
 
 ```bash
-npm run build
-npm run lint
 npm run typecheck
-npm run format:check
-npm test
-```
-
-Verificação documental disponível, sem instalar dependências adicionais:
-
-```bash
+npm run lint
+npm run build
+npm test -- --maxWorkers=2
+npm run test:api
 node scripts/check-docs.mjs
 ```
 
-Esse comando confere estrutura dos documentos, links locais e referências da matriz. Ele não executa o back-end nem valida os comportamentos descritos. A configuração e os comandos do servidor estão em [backend/README.md](backend/README.md).
+`test:api` habilita explicitamente testes de interface com API real e MongoDB efêmero, sem ler `.env`. Não utiliza o banco institucional. As suítes do servidor estão em [backend/README.md](backend/README.md). Prévia isolada com contas sintéticas e configuração do envio estão em [interface conectada](docs/INTERFACE_API.md) e [e-mail](docs/EMAIL_BACKEND.md).
 
-A revisão de segurança, a separação entre demonstração e acesso institucional e os controles verificados estão em [Segurança do ambiente](docs/SEGURANCA.md).
+O proxy do Vite é somente de desenvolvimento: a hospedagem precisa configurar `/api`, HTTPS, origens e cabeçalhos. A barreira atual mantém acesso em loopback até homologação. Consulte [Segurança do ambiente](docs/SEGURANCA.md).
 
 ## Organização do repositório
 
 ```text
-src/                   Front-end existente: aplicação, componentes e funcionalidades
+src/institutional/     Interface conectada à API
+src/                   Componentes, tokens e demonstração anterior preservada
 public/images/         Imagens e recursos visuais
 docs/specs/            Spec e matriz de cenários do back-end
 docs/validation/       Registro das verificações e limitações
