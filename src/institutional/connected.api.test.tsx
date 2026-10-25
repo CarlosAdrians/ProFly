@@ -166,6 +166,7 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     open('/login');
     await signIn('cadastro.ui@profly.test');
     expect(await screen.findAllByText('Em análise')).toHaveLength(2);
+    await user.click(screen.getByRole('button', { name: 'Abrir menu da conta' }));
     await user.click(screen.getByRole('button', { name: 'Sair da conta' }));
     await screen.findByRole('heading', { name: 'Acesso ao ProFly' });
     await signIn(fixture.coordinatorEmail);
@@ -268,6 +269,7 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
         .collection('occurrences')
         .countDocuments({ teacherId: fixture.teacherId, status: 'RESCHEDULED' }),
     ).toBe(1);
+    await user.click(screen.getByRole('button', { name: 'Abrir menu da conta' }));
     await user.click(screen.getByRole('button', { name: 'Sair da conta' }));
     await screen.findByRole('heading', { name: 'Acesso ao ProFly' });
     await signIn(fixture.teacherEmail);
@@ -610,6 +612,31 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     expect(stored?.status).toBe('RESPONDED');
     expect(stored?.version).toBe(2);
     expect(stored?.events).toHaveLength(2);
+  }, 30000);
+  it('saida fica no menu do perfil com Escape foco e encerramento real de sessao', async () => {
+    const router = open('/login');
+    const user = await signIn(fixture.teacherEmail);
+    const sessionCookie = cookie;
+    const trigger = screen.getByRole('button', { name: 'Abrir menu da conta' });
+    expect(screen.queryByRole('button', { name: 'Sair da conta' })).not.toBeInTheDocument();
+    await user.click(trigger);
+    const menu = screen.getByRole('dialog', { name: 'Menu da conta' });
+    expect(within(menu).getByRole('link', { name: 'Minha conta' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Menu da conta' })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+    await router.navigate('/horarios');
+    expect(screen.queryByRole('button', { name: 'Sair da conta' })).not.toBeInTheDocument();
+    await user.click(trigger);
+    await user.click(screen.getByRole('heading', { name: 'Minha disponibilidade' }));
+    expect(screen.queryByRole('dialog', { name: 'Menu da conta' })).not.toBeInTheDocument();
+    await user.click(trigger);
+    await user.click(screen.getByRole('button', { name: 'Sair da conta' }));
+    await screen.findByRole('heading', { name: 'Acesso ao ProFly' });
+    expect(
+      (await fixture.app.inject({ url: '/api/v1/me/profile', headers: { cookie: sessionCookie } }))
+        .statusCode,
+    ).toBe(401);
   }, 30000);
   it('recuperação usa fragmento, confirma nova senha e revoga a sessão anterior', async () => {
     const old = await fixture.login(fixture.teacherEmail);

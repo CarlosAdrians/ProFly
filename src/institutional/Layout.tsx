@@ -1,4 +1,4 @@
-import { useAction } from './actions';
+import { ProfileMenu } from './ProfileMenu';
 import { Scope } from './scope';
 import { useState, type CSSProperties } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router';
@@ -8,7 +8,7 @@ import { Button } from '../components/ui/Button/Button';
 import { NotificationsBell } from './NotificationsBell';
 import { useApi, useApiSession } from './hooks';
 import type { CatalogItem, Items } from './types';
-import { ActionFeedback, LoadingError, Select } from './ui';
+import { LoadingError, Select } from './ui';
 import s from './Portal.module.css';
 
 export function ApiGuard() {
@@ -36,11 +36,10 @@ export function ApiGuard() {
 }
 
 export function PortalLayout() {
-  const { user, logout } = useApiSession(),
+  const { user } = useApiSession(),
     courses = useApi<Items<CatalogItem>>('/courses'),
     [selected, setSelected] = useState(''),
     [mode, setMode] = useState(''),
-    action = useAction(),
     location = useLocation();
 
   if (!user) return <Navigate to="/login" replace />;
@@ -126,17 +125,9 @@ export function PortalLayout() {
             </span>
 
             <div className={s.identity}>
-              {user.photoVersion > 0 && (
-                <img src={`/api/v1/me/photo?v=${user.photoVersion}`} alt="" />
-              )}
-
-              <div>
-                <strong>{user.name}</strong>
-
-                <br />
-
-                {admin ? 'Administrador' : management ? 'Coordenador' : 'Professor'}
-              </div>
+              <ProfileMenu
+                role={admin ? 'Administrador' : management ? 'Coordenador' : 'Professor'}
+              />
 
               <NotificationsBell />
             </div>
@@ -173,21 +164,6 @@ export function PortalLayout() {
             )}
 
           <Outlet />
-
-          <ActionFeedback action={action} />
-
-          <div className={s.actions}>
-            <Button
-              variant="secondary"
-
-              loading={action.busy}
-
-              onClick={() => void action.run(logout)}
-            >
-              <Icon name="logout" />
-              Sair da conta
-            </Button>
-          </div>
         </main>
       </div>
     </Scope.Provider>
