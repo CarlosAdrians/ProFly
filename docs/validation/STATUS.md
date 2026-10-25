@@ -215,3 +215,7 @@ Ao reiniciar a API principal com o codigo final, a reconexao ao MongoDB externo 
 O pedido autorizado de recuperacao para Gmail retornou202 generico antes do reinicio, mas nao houve entrega externa confirmada. Captura Mailpit segue limitada a @profly.test e sem relay; remetente SMTP autenticado ainda necessario. Primeiro administrador institucional tambem depende de nome/email/credencial definidos explicitamente pelo responsavel. Nao foram inventados usuarios institucionais nem inseridas fixtures no banco configurado em.env. Politicas/criterios propostos e limites de escala/privacidade/producao estao em INTERFACE_API.md e SEGURANCA.md; nao declarar ambiente homologado ou matriz inteira encerrada por essas suites.
 
 Complemento do editor de foto conectado: 8 testes direcionados de cliente/API, movimentacao de ocorrencia e editor aprovados em dois arquivos. Novo cenario recusa fonte externa sem fetch e trata403 da rota privada mantendo erro claro, sem abrir caminho para imagem arbitraria. A suite geral de214 antecede esse cenario adicional; nao foi renomeada como uma nova execucao completa.
+
+## Logo do login sem fundo branco
+
+Pedido do checklist: removidos background branco, padding e cantos do bloco aplicado a logo no tema escuro. A imagem institucional transparente, centralizacao e composicao do login foram preservadas. Build aprovado; navegador em tema escuro confirmou background rgba(0,0,0,0), padding0 e exibicao sem o retangulo branco. Print57 fora do repositorio. Nao foram repetidos testes de regra de negocio, pois a alteracao e apenas CSS.
