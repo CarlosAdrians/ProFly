@@ -510,6 +510,44 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
       .toArray();
     expect(stored.at(-1)?.attachment.bytes).toBe(bytes.length);
   }, 30000);
+
+  it('horarios compactos abrem para editar e preservam as outras janelas ao salvar na API', async () => {
+    const before = await fixture.database.db
+      .collection<{ _id: string; version: number; data: typeof fixture.profile }>('profiles')
+      .findOne({ _id: fixture.teacherId });
+    open('/login');
+    const user = await signIn(fixture.teacherEmail);
+    await user.click(screen.getByRole('link', { name: 'Disponibilidade' }));
+    const summary = await screen.findByText(/Segunda · 18:00–21:00/);
+    const details = summary.closest('details')!;
+    expect(details).not.toHaveAttribute('open');
+    await user.click(summary);
+    await waitFor(() => expect(details).toHaveAttribute('open'));
+    const end = within(details).getByLabelText('Fim');
+    await user.clear(end);
+    await user.type(end, '21:30');
+    await user.click(screen.getByRole('button', { name: 'Salvar perfil' }));
+    await waitFor(async () =>
+      expect(
+        (
+          await fixture.database.db
+            .collection<{ _id: string; version: number }>('profiles')
+            .findOne({ _id: fixture.teacherId })
+        )?.version,
+      ).toBe(before!.version + 1),
+    );
+    const after = await fixture.database.db
+      .collection<{ _id: string; data: typeof fixture.profile }>('profiles')
+      .findOne({ _id: fixture.teacherId });
+    expect(after!.data.availability!.windows[0]).toEqual({
+      ...before!.data.availability!.windows[0],
+      endsAt: '21:30',
+    });
+    expect(after!.data.availability!.windows.slice(1)).toEqual(
+      before!.data.availability!.windows.slice(1),
+    );
+    expect(after!.data.desiredWeeklyMinutes).toBe(before!.data.desiredWeeklyMinutes);
+  }, 30000);
   it('recuperação usa fragmento, confirma nova senha e revoga a sessão anterior', async () => {
     const old = await fixture.login(fixture.teacherEmail);
     open('/esqueceu-senha');

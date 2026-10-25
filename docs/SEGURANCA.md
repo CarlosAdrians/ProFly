@@ -43,3 +43,11 @@ Cadastro completo persiste perfil, aceites e intenção de curso antes da confir
 Foto e atestado são validados por decodificação real e permanecem privados. Cada download verifica o autor ou coordenador do curso selecionado e é auditado. PDF ainda não aceito; operação com dados de saúde reais exige política institucional. Escritas de planejamento usam guarda transacional e versões; publicação mantém cópias imutáveis e preserva o histórico passado.
 
 Não há entrega externa de e-mail confirmada. Envio síncrono ainda precisa de outbox, retentativas e endurecimento contra enumeração durante falhas do SMTP. Recuperação funciona e possui expiração testada; isso não encerra auditoria de segurança. Limites por instância, escalabilidade, backups/restore, retenção, infraestrutura HTTPS e teste de penetração permanecem pendentes. Evidências atuais em [STATUS.md](validation/STATUS.md), que complementam as revisões históricas acima.
+
+## Revisão de CORS e TLS local em 25/10/2026
+
+Origens exatas deduplicadas, sem wildcard; rejeição explícita antes do preflight, inclusive null e origem parecida com a legítima. CORS declara GET/HEAD/POST/PUT/PATCH/DELETE/OPTIONS e somente Content-Type/X-CSRF-Token, com credenciais e preflight estrito. Helmet precede o guard de origem. HSTS é exclusivo de produção, sem preload e sem estender automaticamente a subdomínios. COOKIE_SECURE=true habilita o cookie seguro no HTTPS local e não pode ser false em produção.
+
+Vite local aceita PFX privado opcional, mínimo TLS1.2, host loopback, sem CORS aberto de fontes e com bloqueio de arquivos privados. A prévia HTTPS foi exercitada com TLS1.3, verificação explícita do certificado e nome, cookie Secure/HttpOnly/SameSite=Strict, recusa de escrita sem CSRF, origens hostis e leituras estáticas privadas403. Não foi usado bypass de certificado.
+
+A instalação de confiança iniciada durante a preparação foi desfeita após confirmação acidental do usuário; ausência do certificado específico nos stores foi conferida. O navegador não tem confiança configurada por esta entrega. Detalhes em [HTTPS_LOCAL.md](HTTPS_LOCAL.md). Isso não configura TLS do domínio institucional, envio real de e-mail, disponibilidade do Atlas ou auditoria completa de segurança.

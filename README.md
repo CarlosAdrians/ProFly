@@ -192,7 +192,7 @@ node scripts/check-docs.mjs
 
 `test:api` habilita explicitamente testes de interface com API real e MongoDB efêmero, sem ler `.env`. Não utiliza o banco institucional. As suítes do servidor estão em [backend/README.md](backend/README.md). Prévia isolada com contas sintéticas e configuração do envio estão em [interface conectada](docs/INTERFACE_API.md) e [e-mail](docs/EMAIL_BACKEND.md).
 
-O proxy do Vite é somente de desenvolvimento: a hospedagem precisa configurar `/api`, HTTPS, origens e cabeçalhos. A barreira atual mantém acesso em loopback até homologação. Consulte [Segurança do ambiente](docs/SEGURANCA.md).
+O proxy do Vite é somente de desenvolvimento: a hospedagem precisa configurar `/api`, HTTPS, origens e cabeçalhos. A barreira atual mantém acesso em loopback até homologação. Consulte [Segurança do ambiente](docs/SEGURANCA.md). A configuração opcional para desenvolvimento está em [HTTPS local](docs/HTTPS_LOCAL.md), sem instalar certificados automaticamente.
 
 ## Organização do repositório
 

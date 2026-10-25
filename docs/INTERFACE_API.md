@@ -56,3 +56,11 @@ A previa isolada3334/5175 respondeu e exibiu escala publicada. A API principal33
 ## Limites da visão inicial
 
 O início da coordenação usa a lista autorizada de até 500 ocorrências já disponível na API. Cursos que ultrapassem esse volume precisam da paginação/filtro de período no servidor antes de interpretar a visão como total institucional. A agenda mostra somente ocorrências previstas ativas; canceladas/remarcadas não entram nas próximas aulas. Nenhum evento ou número foi inventado para preencher a apresentação.
+
+## Disponibilidade compacta e HTTPS local
+
+Os horários pretendidos mostram dia, faixa e vigência em linhas recolhíveis. Só o horário em edição expõe seus cinco campos; novas linhas já abrem para preenchimento. O editor mantém identificadores, validações, demais janelas e dedicação opcional ao salvar na API. Campos do portal usam altura42px no desktop e44px no móvel, com texto16px no móvel; login preserva seu dimensionamento próprio. Disponibilidade e dedicação têm largura limitada.
+
+O calendário docente continua consultando somente aulas próprias publicadas pela coordenação. Informar disponibilidade não cria aula. Atestado/comunicação continua com armazenamento privado e sem participar do score.
+
+O comando opcional `npm run dev:https` e a prévia sintética separada estão em [HTTPS_LOCAL.md](HTTPS_LOCAL.md). HTTPS foi testado com certificado explícito, sem instalar confiança permanente no navegador. A interface HTTP existente permanece disponível para o checklist.

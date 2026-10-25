@@ -1024,3 +1024,145 @@ fieldset.subsection > button {
     grid-template-columns: 1fr;
   }
 }
+
+.stack {
+  --field-height: 42px;
+  --field-label-gap: 6px;
+  --control-padding-x: 12px;
+  --control-font-size: 0.9375rem;
+  --label-font-size: 0.875rem;
+}
+.stack .select {
+  font-size: 0.875rem;
+  gap: 6px;
+}
+.stack .select select {
+  min-height: 42px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: var(--control-font-size);
+}
+.profileFields {
+  max-width: 1000px;
+  width: 100%;
+}
+.availabilityList {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+}
+.availabilityWindow {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg);
+  min-width: 0;
+}
+.availabilityWindow summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 18px;
+  cursor: pointer;
+}
+.availabilityWindow summary::-webkit-details-marker {
+  display: none;
+}
+.availabilityWindow summary > svg {
+  flex-shrink: 0;
+  color: var(--color-link);
+}
+.availabilityWindow summary > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.availabilityWindow summary strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.availabilityWindow summary span:not(.availabilityChevron) {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+.availabilityChevron {
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
+.availabilityWindow[open] .availabilityChevron {
+  transform: rotate(225deg);
+}
+.availabilityEditor {
+  padding: 0 18px 16px;
+  border-top: 1px solid var(--color-border);
+}
+.availabilityFields {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.1fr) repeat(2, minmax(90px, 0.65fr)) repeat(
+      2,
+      minmax(145px, 1fr)
+    );
+  gap: 12px;
+  padding-top: 16px;
+  align-items: end;
+}
+.removeAvailability {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  min-height: 36px;
+  padding: 6px 0;
+  margin-top: 8px;
+  cursor: pointer;
+}
+.removeAvailability:hover {
+  color: var(--color-danger);
+}
+.dedicationField {
+  max-width: 330px;
+}
+@media (max-width: 1100px) {
+  .availabilityFields {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .availabilityFields > * {
+    grid-column: span 2;
+  }
+  .availabilityFields > *:nth-child(n + 4) {
+    grid-column: span 3;
+  }
+}
+@media (max-width: 700px) {
+  .stack {
+    --field-height: 44px;
+    --control-font-size: 1rem;
+  }
+  .stack .select select {
+    min-height: 44px;
+  }
+  .availabilityFields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .availabilityFields > * {
+    grid-column: auto;
+  }
+  .availabilityFields > *:first-child,
+  .availabilityFields > *:nth-child(n + 4) {
+    grid-column: 1/-1;
+  }
+  .availabilityWindow summary {
+    padding: 14px;
+  }
+  .availabilityEditor {
+    padding: 0 14px 12px;
+  }
+}

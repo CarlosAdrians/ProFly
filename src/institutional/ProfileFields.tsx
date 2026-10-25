@@ -1,3 +1,5 @@
+import { useId } from 'react';
+import { AvailabilityWindow } from './AvailabilityWindow';
 import { educationLevels } from './profileModel';
 
 import type { ProfileData, CatalogItem } from './types';
@@ -7,9 +9,6 @@ import { Button } from '../components/ui/Button/Button';
 import { Icon } from '../components/ui/Icon/Icon';
 import { LoadingError, Select } from './ui';
 import s from './Portal.module.css';
-const weekdays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map(
-  (name, i) => ({ id: String(i + 1), name }),
-);
 const statuses = [
   { id: 'UNKNOWN', name: 'Ainda vou informar' },
   { id: 'NONE', name: 'Ainda não possuo' },
@@ -24,12 +23,13 @@ export function ProfileFields({
   onChange: (value: ProfileData) => void;
   section?: 'academic' | 'availability' | 'all';
 }) {
+  const availabilityGroup = useId();
   const competencies = useApi<{ items: CatalogItem[] }>('/catalog/competencies?limit=100');
   const patch = (values: Partial<ProfileData>) => onChange({ ...data, ...values });
   const academic = section !== 'availability',
     availability = section !== 'academic';
   return (
-    <div className={s.stack}>
+    <div className={`${s.stack} ${s.profileFields}`}>
       {academic && (
         <>
           <LoadingError {...competencies} retry={competencies.refresh} />
@@ -328,77 +328,48 @@ export function ProfileFields({
             Informe horários pretendidos e sua vigência. A escala oficial é publicada pela
             coordenação.
           </p>
-          <Select
-            label="Disponibilidade"
-            value={data.availability?.status ?? 'UNKNOWN'}
-            items={[
-              { id: 'UNKNOWN', name: 'Ainda vou informar' },
-              { id: 'NONE', name: 'Sem disponibilidade neste momento' },
-              { id: 'PROVIDED', name: 'Informar horários' },
-            ]}
-            onChange={(status) =>
-              patch({
-                availability: {
-                  status: status as 'UNKNOWN' | 'NONE' | 'PROVIDED',
-                  timeZone: 'America/Fortaleza',
-                  windows: status === 'PROVIDED' ? (data.availability?.windows ?? []) : [],
-                },
-              })
-            }
-          />
+          <div className={s.dedicationField}>
+            <Select
+              label="Disponibilidade"
+              value={data.availability?.status ?? 'UNKNOWN'}
+              items={[
+                { id: 'UNKNOWN', name: 'Ainda vou informar' },
+                { id: 'NONE', name: 'Sem disponibilidade neste momento' },
+                { id: 'PROVIDED', name: 'Informar horários' },
+              ]}
+              onChange={(status) =>
+                patch({
+                  availability: {
+                    status: status as 'UNKNOWN' | 'NONE' | 'PROVIDED',
+                    timeZone: 'America/Fortaleza',
+                    windows: status === 'PROVIDED' ? (data.availability?.windows ?? []) : [],
+                  },
+                })
+              }
+            />
+          </div>
           <p className={s.muted}>Fuso: America/Fortaleza</p>
           {data.availability?.status === 'PROVIDED' && (
             <>
-              {data.availability.windows.map((window, i) => {
-                const edit = (values: Partial<typeof window>) =>
-                  patch({
-                    availability: {
-                      ...data.availability!,
-                      windows: data.availability!.windows.map((w) =>
-                        w.id === window.id ? { ...w, ...values } : w,
-                      ),
-                    },
-                  });
-                return (
-                  <fieldset className={s.subsection} key={window.id}>
-                    <legend>Horário pretendido {i + 1}</legend>
-                    <div className={s.grid}>
-                      <Select
-                        label="Dia da semana"
-                        value={String(window.weekday)}
-                        items={weekdays}
-                        onChange={(v) => edit({ weekday: Number(v) })}
-                      />
-                      <div className={s.grid}>
-                        <TextField
-                          label="Início"
-                          type="time"
-                          value={window.startsAt}
-                          onChange={(e) => edit({ startsAt: e.target.value })}
-                        />
-                        <TextField
-                          label="Fim"
-                          type="time"
-                          value={window.endsAt}
-                          onChange={(e) => edit({ endsAt: e.target.value })}
-                        />
-                      </div>
-                      <TextField
-                        label="Válido de"
-                        type="date"
-                        value={window.validFrom}
-                        onChange={(e) => edit({ validFrom: e.target.value })}
-                      />
-                      <TextField
-                        label="Válido até"
-                        type="date"
-                        value={window.validUntil}
-                        onChange={(e) => edit({ validUntil: e.target.value })}
-                      />
-                    </div>
-                    <Button
-                      variant="secondary"
-                      onClick={() =>
+              <div className={s.availabilityList}>
+                {data.availability.windows.map((window, i) => {
+                  const edit = (values: Partial<typeof window>) =>
+                    patch({
+                      availability: {
+                        ...data.availability!,
+                        windows: data.availability!.windows.map((w) =>
+                          w.id === window.id ? { ...w, ...values } : w,
+                        ),
+                      },
+                    });
+                  return (
+                    <AvailabilityWindow
+                      key={window.id}
+                      window={window}
+                      index={i}
+                      group={availabilityGroup}
+                      onChange={edit}
+                      onRemove={() =>
                         patch({
                           availability: {
                             ...data.availability!,
@@ -406,13 +377,10 @@ export function ProfileFields({
                           },
                         })
                       }
-                    >
-                      <Icon name="trash" />
-                      Remover horário
-                    </Button>
-                  </fieldset>
-                );
-              })}
+                    />
+                  );
+                })}
+              </div>
               <Button
                 variant="secondary"
                 onClick={() =>
@@ -439,14 +407,14 @@ export function ProfileFields({
               </Button>
             </>
           )}
-          <div className={s.subsection}>
+          <div className={`${s.subsection} ${s.dedicationField}`}>
             <TextField
-              label="Dedicação pretendida (horas por semana, opcional)"
+              label="Dedicação semanal (opcional)"
               type="number"
               min={0}
               max={168}
               step={0.25}
-              hint="Uma meta pessoal. Não substitui o limite de carga definido pela instituição."
+              hint="Horas pretendidas por semana. Uma meta pessoal, diferente da carga institucional."
               value={data.desiredWeeklyMinutes === undefined ? '' : data.desiredWeeklyMinutes / 60}
               onChange={(e) => {
                 const next = { ...data };
