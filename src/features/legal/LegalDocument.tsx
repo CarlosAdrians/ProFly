@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ThemeToggle } from '../../components/ui/ThemeToggle/ThemeToggle';
 import { Link } from 'react-router';
 import { LEGAL_VERSION, legalContent } from './content';
@@ -25,7 +26,7 @@ export function LegalDocument({ kind }: { kind: 'terms' | 'privacy' }) {
           Lei Geral de Proteção de Dados Pessoais
         </a>
         <a
-          href="https://www.gov.br/anpd/pt-br/assuntos/titular-de-dados/direito-dos-titulares"
+          href="https://www.gov.br/anpd/pt-br/assuntos/titular-de-dados-1/direito-dos-titulares"
           target="_blank"
           rel="noreferrer"
         >
@@ -35,7 +36,7 @@ export function LegalDocument({ kind }: { kind: 'terms' | 'privacy' }) {
     </article>
   );
 }
-export function LegalPage({ kind }: { kind: 'terms' | 'privacy' }) {
+export function LegalPage({ kind, children }: { kind: 'terms' | 'privacy'; children?: ReactNode }) {
   return (
     <main className={styles.page}>
       <title>{legalContent[kind].title} | ProFly</title>
@@ -43,6 +44,7 @@ export function LegalPage({ kind }: { kind: 'terms' | 'privacy' }) {
       <Link to="/login" className={styles.back}>
         Voltar ao login
       </Link>
+      {children}
       <LegalDocument kind={kind} />
     </main>
   );

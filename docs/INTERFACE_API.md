@@ -64,3 +64,9 @@ Os horários pretendidos mostram dia, faixa e vigência em linhas recolhíveis. 
 O calendário docente continua consultando somente aulas próprias publicadas pela coordenação. Informar disponibilidade não cria aula. Atestado/comunicação continua com armazenamento privado e sem participar do score.
 
 O comando opcional `npm run dev:https` e a prévia sintética separada estão em [HTTPS_LOCAL.md](HTTPS_LOCAL.md). HTTPS foi testado com certificado explícito, sem instalar confiança permanente no navegador. A interface HTTP existente permanece disponível para o checklist.
+
+## Central de privacidade
+
+Conta -> Gerenciar meus dados abre /conta/privacidade para a própria pessoa. A administração atende /administracao/privacidade; coordenadores não recebem permissão para protocolos de professores. Aviso público e modal do cadastro mostram configuração real do servidor, sem inventar responsável/canal. Foto e dedicação opcionais não viram consentimento de tratamento. Novos atestados obedecem ao gate do servidor; a prévia permite apenas arquivos sintéticos.
+
+A prévia LGPD separada usa API3336 e frontendlocalhost5177, preservando o checklist3334/5175. No backend: PROFLY_RUN_INTEGRATION=1, PROFLY_PREVIEW_PORT=3336 e PROFLY_PREVIEW_HTTPS=0, depois node --import tsx scripts/dev-isolated.ts. Na raiz: PROFLY_API_TARGET=http://127.0.0.1:3336 e Vite --host127.0.0.1 --port5177 --strictPort. Os mesmos acessos sintéticos já documentados são recriados em banco efêmero independente. Nenhuma conta real/institucional é criada. Bases, prazos e procedimentos em [LGPD.md](LGPD.md).

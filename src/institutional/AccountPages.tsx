@@ -188,6 +188,16 @@ export function ApiAccountPage() {
         </Panel>
       )}
       <AccountSecurity />
+      <Panel title="Seus dados e privacidade">
+        <p>
+          Consulte uma cópia dos seus dados e acompanhe pedidos de acesso, correção e outros
+          direitos.
+        </p>
+        <Link to="/conta/privacidade" className={s.privacyLink}>
+          <Icon name="shield" />
+          Gerenciar meus dados
+        </Link>
+      </Panel>
       <div className={s.legalLinks}>
         <Link to="/termos">Termos de uso</Link>
         <Link to="/privacidade">Política de privacidade</Link>

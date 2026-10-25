@@ -548,6 +548,69 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     );
     expect(after!.data.desiredWeeklyMinutes).toBe(before!.data.desiredWeeklyMinutes);
   }, 30000);
+  it('privacidade registra pedido proprio e informa pendencias sem inventar contato', async () => {
+    open('/login');
+    const user = await signIn(fixture.teacherEmail);
+    await user.click(screen.getByRole('link', { name: /^Conta$/ }));
+    await user.click(screen.getByRole('link', { name: 'Gerenciar meus dados' }));
+    await screen.findByRole('heading', { name: 'Meus dados e privacidade' });
+    expect(await screen.findAllByText('Ainda não definido pela faculdade')).toHaveLength(2);
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Quero solicitar' }),
+      'CORRECTION',
+    );
+    await user.type(
+      screen.getByLabelText('Descreva o pedido'),
+      'Solicito conferir meus dados de formacao no teste LGPD.',
+    );
+    await user.click(screen.getByRole('button', { name: 'Registrar pedido' }));
+    await screen.findByText('Pedido registrado. Acompanhe o protocolo abaixo.');
+    await screen.findByText('Solicito conferir meus dados de formacao no teste LGPD.');
+    const stored = await fixture.database.db.collection('privacyRequests').findOne({
+      userId: fixture.teacherId,
+      message: 'Solicito conferir meus dados de formacao no teste LGPD.',
+    });
+    expect(stored?.status).toBe('OPEN');
+    expect(stored?.accessDueAt).toBeNull();
+    expect(
+      await fixture.identity.users.findOne({ _id: fixture.teacherId, state: 'ACTIVE' }),
+    ).not.toBeNull();
+  }, 30000);
+  it('administracao responde protocolo de acesso e a resposta persiste com versao', async () => {
+    const record = await fixture.call(
+      '/api/v1/me/privacy/requests',
+      { kind: 'ACCESS', message: 'Solicito acesso completo para conferencia sintetica.' },
+      fixture.teacher,
+    );
+    const router = open('/login');
+    const user = await signIn(fixture.adminEmail);
+    await router.navigate('/administracao/privacidade');
+    await screen.findByRole('heading', { name: 'Atendimento de privacidade' });
+    const entry = (
+      await screen.findByText('Solicito acesso completo para conferencia sintetica.')
+    ).closest('article')!;
+    await user.selectOptions(
+      within(entry).getByRole('combobox', { name: 'Situação do protocolo' }),
+      'RESPONDED',
+    );
+    await user.type(
+      within(entry).getByLabelText('Resposta ao titular'),
+      'Acesso conferido com dados ficticios; resposta de teste, sem dados de terceiros.',
+    );
+    await user.click(within(entry).getByRole('button', { name: 'Registrar resposta' }));
+    await screen.findByText('Resposta registrada.');
+    await screen.findByText(
+      'Acesso conferido com dados ficticios; resposta de teste, sem dados de terceiros.',
+    );
+    const stored = await fixture.database.db
+      .collection<{ _id: string; status: string; version: number; events: unknown[] }>(
+        'privacyRequests',
+      )
+      .findOne({ _id: record.id });
+    expect(stored?.status).toBe('RESPONDED');
+    expect(stored?.version).toBe(2);
+    expect(stored?.events).toHaveLength(2);
+  }, 30000);
   it('recuperação usa fragmento, confirma nova senha e revoga a sessão anterior', async () => {
     const old = await fixture.login(fixture.teacherEmail);
     open('/esqueceu-senha');

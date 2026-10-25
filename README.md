@@ -209,3 +209,5 @@ AGENTS.md              Regras de trabalho e commits
 ```
 
 A estrutura do servidor está em [backend](backend/README.md). Modelos, índices, ambiente de desenvolvimento e requisitos de transação devem ser combinados com o integrante responsável pelo MongoDB. Os testes de integração usam um MongoDB temporário real e isolado; a conclusão integrada exige validar todos os fluxos previstos.
+
+Privacidade e atendimento ao titular: [controles e pendências de LGPD](docs/LGPD.md). O uso real permanece dependente das definições institucionais; somente os controles documentados/testados são considerados implementados.

@@ -1,3 +1,4 @@
+import { PrivacyInformation } from './PrivacyPage';
 import { useAction } from './actions';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
@@ -549,6 +550,7 @@ export function ApiRegisterPage() {
         title={legal === 'terms' ? 'Termos de uso' : 'Aviso de privacidade'}
         size="wide"
       >
+        {legal === 'privacy' && <PrivacyInformation />}
         {legal && <LegalDocument kind={legal} />}
       </Modal>
     </main>

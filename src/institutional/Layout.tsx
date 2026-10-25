@@ -154,21 +154,23 @@ export function PortalLayout() {
             />
           )}
 
-          {management && location.pathname !== '/administracao' && (
-            <div style={{ maxWidth: 360, marginBottom: 24 }}>
-              <Select
-                label="Curso de trabalho"
+          {management &&
+            !location.pathname.startsWith('/administracao') &&
+            location.pathname !== '/conta/privacidade' && (
+              <div style={{ maxWidth: 360, marginBottom: 24 }}>
+                <Select
+                  label="Curso de trabalho"
 
-                value={courseId}
+                  value={courseId}
 
-                items={availableCourses}
+                  items={availableCourses}
 
-                onChange={setSelected}
-              />
+                  onChange={setSelected}
+                />
 
-              <LoadingError {...courses} retry={courses.refresh} />
-            </div>
-          )}
+                <LoadingError {...courses} retry={courses.refresh} />
+              </div>
+            )}
 
           <Outlet />
 

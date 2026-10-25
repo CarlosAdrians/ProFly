@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { useAction } from './actions';
 import { useState } from 'react';
 import { Button } from '../components/ui/Button/Button';
@@ -23,6 +24,10 @@ export function ApiAdminPage() {
         title="Administração"
         description="Estrutura institucional, responsabilidades e limites de carga."
       />
+      <Link to="/administracao/privacidade" className={s.privacyLink}>
+        <Icon name="shield" />
+        Atendimento de privacidade
+      </Link>
       <div className={s.actions}>
         {[
           ['courses', 'Cursos'],

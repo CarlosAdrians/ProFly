@@ -1,4 +1,4 @@
-export const LEGAL_VERSION = '2026-10-24.4';
+export const LEGAL_VERSION = '2026-10-25.1';
 export interface LegalSection {
   title: string;
   text: string;
@@ -49,35 +49,47 @@ export const legalContent: Record<
   privacy: {
     title: 'Aviso de privacidade',
     intro:
-      'Saiba quais informações entram no ProFly, para que são utilizadas e quais são os limites desta demonstração. A confirmação de leitura não autoriza publicidade nem usos incompatíveis com o cadastro docente.',
+      'Este aviso descreve o tratamento de dados no ProFly. A implantação institucional ainda aguarda definição do controlador, do canal de atendimento e das políticas aplicáveis. Até essa definição, utilize somente dados fictícios. Confirmar a leitura deste aviso não equivale a consentir com qualquer uso de dados.',
     sections: [
       {
-        title: '1. Dados e finalidades',
-        text: 'Nome, e-mail e telefone identificam o cadastro e permitem contato. Formação, conhecimentos e experiências apoiam a análise acadêmica. Cursos, disciplinas e disponibilidade ajudam a organizar as solicitações e os horários. A foto é opcional e serve somente para identificação no ProFly. Não coletamos CPF, biometria ou dados bancários neste formulário.',
+        title: '1. Quem responde pelo tratamento',
+        text: 'A faculdade ainda não definiu formalmente o controlador e o canal de privacidade desta implantação. As informações configuradas no servidor aparecem na seção de responsabilidade. A equipe acadêmica desenvolve o sistema; o uso da marca da instituição não comprova sua autorização como controlador ou operador.',
       },
       {
-        title: '2. Armazenamento nesta versão',
-        text: 'No modo conectado, o servidor persiste contas, perfis, solicitações, fotos, escalas, avisos e histórico no MongoDB. A senha recebe derivação criptográfica com sal e a sessão usa cookie protegido contra leitura por JavaScript. O ambiente atual captura e-mails em caixa fictícia local, sem entrega externa. O modo demonstrativo explícito mantém dados separados no navegador.',
+        title: '2. Informações utilizadas',
+        text: 'A conta contém nome, e-mail, telefone, credencial protegida e, se você escolher, uma foto. O perfil reúne formação, conhecimentos, experiência, cursos de interesse e horários pretendidos. A operação registra solicitações, análises, critérios e resultados de recomendação, aulas publicadas, ocorrências, avisos, preferências e trilhas de auditoria. O cadastro não solicita CPF, dados bancários, biometria ou diagnóstico. Não inclua informações desnecessárias nos campos livres.',
       },
       {
-        title: '3. Acesso e compartilhamento',
-        text: 'O professor acompanha seus dados e cada coordenação analisa somente seus cursos. A administração mantém estrutura e acessos. Encerre a sessão em computador compartilhado; o modo demonstrativo pode expor dados a quem utilize o mesmo perfil do navegador. Não enviamos os cadastros a serviços de publicidade ou a modelos de linguagem. O calendário consulta a BrasilAPI por ano, sem enviar dados do perfil; o provedor recebe dados técnicos da conexão, como o IP. A lista pública de datas é guardada por até 24 horas no navegador. As referências externas são abertas quando você escolhe visitá-las.',
+        title: '3. Finalidades e bases legais',
+        text: 'Os dados apoiam acesso à conta, comunicação operacional, análise por curso, planejamento de aulas, segurança e atendimento ao titular. A instituição deve documentar a base legal adequada a cada finalidade antes do uso real; não há uma autorização geral pelo aceite dos termos. Informações opcionais, como foto e dedicação pretendida, não condicionam a criação de uma conta. A matrícula docente depende da análise da coordenação do curso.',
       },
       {
-        title: '4. Foto e informações de saúde',
-        text: 'A foto pode ser removida sem impedir o uso das outras funções. Arquivos de imagem são reduzidos para exibição no perfil. O cadastro acadêmico não recebe atestados. O fluxo reservado de ausências aceita opcionalmente imagem do documento em armazenamento privado, acessível ao professor e às coordenações selecionadas. Original e hash são preservados e downloads são auditados. O documento não aparece nas recomendações nem reduz fatores acadêmicos. Não envie documentos reais neste ambiente de homologação.',
+        title: '4. Atestados e dados de saúde',
+        text: 'Atestados podem conter dados pessoais sensíveis. Novos envios ficam bloqueados no ambiente comum até a configuração institucional da finalidade e base específica para dados de saúde. A prévia isolada permite somente documentos fictícios. Quando habilitado, o fluxo privado recebe imagem JPG, PNG ou WebP, com limite de 5 MB e 16 megapixels; PDF não é suportado. Professor e coordenações selecionadas acessam o documento mediante autorização. O arquivo original é preservado e downloads são auditados. Documento médico não é fator do score acadêmico. Não inclua CID ou detalhes clínicos nos outros formulários.',
       },
       {
-        title: '5. Controle dos dados locais',
-        text: 'Você pode atualizar sua conta e remover a foto. Limpar o navegador apaga somente registros demonstrativos e preferências locais; não elimina dados da API. A versão aceita destes documentos fica registrada no cadastro conectado. Retenção, eliminação e canal institucional precisam ser definidos para homologação.',
+        title: '5. Destinatários e provedores',
+        text: 'O professor consulta seus registros; cada coordenação atua em seus cursos e a administração mantém acessos e atendimento de privacidade. O servidor usa MongoDB; provedores, operadores, localização, compartilhamentos e eventual transferência internacional precisam ser identificados na implantação. Nesta prévia, e-mails são capturados localmente sem entrega externa. O calendário consulta a BrasilAPI por ano sem enviar perfil docente, mas a conexão informa dados técnicos como IP ao provedor. Não há envio de cadastros a publicidade ou a modelos de linguagem neste fluxo.',
       },
       {
-        title: '6. Direitos e informações',
-        text: 'A LGPD prevê direitos como acesso, correção e informações sobre o tratamento, além de eliminação e outros direitos nas hipóteses aplicáveis. Para a implantação institucional, o aviso deverá identificar o controlador e seu contato, as bases legais, os destinatários e os prazos de retenção. A confirmação deste aviso não substitui essa definição.',
+        title: '6. Sessão, armazenamento local e segurança',
+        text: 'A sessão utiliza cookie essencial HttpOnly e SameSite=Strict, com Secure na configuração HTTPS. Tema e cache público de feriados podem ficar no navegador; o cache de feriados dura até 24 horas. Não há ferramenta de publicidade ou rastreamento comportamental nesta implementação. Limpar o navegador não exclui dados do servidor. Senhas recebem derivação criptográfica com sal; o sistema aplica autorização, controle de versões e proteção contra comandos indevidos. Nenhuma dessas medidas elimina todos os riscos.',
       },
       {
-        title: '7. Responsável e canal institucional',
-        text: 'O controlador e o canal formal de atendimento ainda serão definidos na revisão com a faculdade. Esta versão não se apresenta como aviso institucional homologado. Antes de utilizar dados pessoais reais, a equipe do projeto deve publicar essas informações e integrar os mecanismos de atendimento e exclusão ao servidor.',
+        title: '7. Retenção e encerramento',
+        text: 'A faculdade ainda precisa fixar prazos e critérios de descarte por categoria, incluindo cópias de segurança. Não há prazo institucional inventado neste aviso. Tokens e sessões possuem expiração e limpeza técnica; registros acadêmicos e protocolos não são apagados automaticamente ao sair ou limpar o navegador. A prévia isolada usa banco efêmero, encerrado com o processo. Pedidos de eliminação serão analisados considerando necessidade, bases aplicáveis e eventuais obrigações de guarda, com resposta justificada.',
+      },
+      {
+        title: '8. Como exercer seus direitos',
+        text: 'Na conta, Meus dados e privacidade permite baixar uma cópia estruturada com confirmação de senha e abrir pedidos gratuitos de confirmação, acesso, correção, eliminação, anonimização, bloqueio, informações de compartilhamento, portabilidade, oposição, revogação de consentimento quando aplicável e revisão. O protocolo conserva a resposta e a análise; enviar um pedido não executa automaticamente exclusão ou portabilidade. Para acesso ou confirmação completos, o sistema registra o prazo geral de até 15 dias. A cópia automática não substitui a declaração completa nem a portabilidade regulamentada. Você também pode buscar orientação e peticionar à ANPD pelos canais oficiais.',
+      },
+      {
+        title: '9. Recomendações e decisões',
+        text: 'O sistema apresenta elegibilidade, fatores e pontuação para apoiar a coordenação. Requisitos e pesos são propostas configuráveis pendentes de validação institucional. Publicar uma escala depende de ação da coordenação; a recomendação não contrata nem atribui aulas automaticamente. Você pode solicitar esclarecimento, correção dos dados ou revisão pelo protocolo de privacidade. Não use dados de saúde, religião, raça ou outros atributos sensíveis para pontuar o professor.',
+      },
+      {
+        title: '10. Versões e comunicação',
+        text: 'O cadastro registra a versão dos termos e a ciência do aviso, com data. Novas versões não substituem retroativamente registros anteriores e não criam consentimentos presumidos. Mudanças relevantes de tratamento devem ser comunicadas e avaliadas pela instituição. O canal formal ainda será publicado; enquanto isso, os protocolos internos são ferramentas de homologação, sem representar atendimento institucional já designado.',
       },
     ],
   },

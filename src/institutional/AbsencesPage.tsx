@@ -1,3 +1,4 @@
+import type { PrivacyPolicy } from './PrivacyPage';
 import { useAction } from './actions';
 import { dayLabel } from './dates';
 import { useState } from 'react';
@@ -20,7 +21,9 @@ export function ApiAbsencesPage() {
     courses = useApi<Items<CatalogItem>>(teacher ? '/courses' : null),
     teachers = useApi<Items<User>>(!teacher && courseId ? `/courses/${courseId}/teachers` : null),
     [formMode, setFormMode] = useState<'certificate' | 'absence' | null>(null),
-    action = useAction();
+    action = useAction(),
+    privacy = useApi<PrivacyPolicy>('/catalog/privacy');
+  const canUpload = !!privacy.data && privacy.data.healthUploads !== 'BLOCKED';
   return (
     <>
       <Heading
@@ -33,7 +36,7 @@ export function ApiAbsencesPage() {
       >
         {teacher && (
           <div className={s.actions}>
-            <Button onClick={() => setFormMode('certificate')}>
+            <Button disabled={!canUpload} onClick={() => setFormMode('certificate')}>
               <Icon name="upload" />
               Enviar atestado
             </Button>
@@ -44,6 +47,18 @@ export function ApiAbsencesPage() {
           </div>
         )}
       </Heading>
+      <LoadingError {...privacy} retry={privacy.refresh} />
+      {privacy.data?.healthUploads === 'BLOCKED' && (
+        <p className={s.privacyPending}>
+          Novos atestados estão bloqueados até a faculdade definir o tratamento de dados de saúde.
+          Você ainda pode informar ausência sem documento.
+        </p>
+      )}
+      {privacy.data?.healthUploads === 'SYNTHETIC_ONLY' && (
+        <p className={s.muted}>
+          Documentos habilitados somente para testes. Não envie atestados reais.
+        </p>
+      )}
       <LoadingError {...result} retry={result.refresh} />
       <ActionFeedback action={action} />
       <Panel>
@@ -86,6 +101,7 @@ export function ApiAbsencesPage() {
                   Baixar atestado privado
                 </Button>
               ) : teacher &&
+                canUpload &&
                 Object.values(record.decisions).every((d) => d.status === 'SUBMITTED') ? (
                 <AttachmentForm recordId={record.id} onSaved={result.refresh} />
               ) : (
@@ -137,6 +153,7 @@ export function ApiAbsencesPage() {
         {formMode && (
           <AbsenceForm
             requireFile={formMode === 'certificate'}
+            canUpload={canUpload}
             onCreated={result.refresh}
             courses={courses.data?.items ?? []}
             onSaved={() => {
@@ -222,11 +239,13 @@ function AbsenceForm({
   onSaved,
   onCreated,
   requireFile,
+  canUpload,
 }: {
   courses: CatalogItem[];
   onSaved: () => void;
   onCreated: () => void;
   requireFile: boolean;
+  canUpload: boolean;
 }) {
   const [startsOn, setStart] = useState(''),
     [endsOn, setEnd] = useState(''),
@@ -261,12 +280,14 @@ function AbsenceForm({
         Informe as datas do afastamento e os cursos que devem receber a comunicação. O documento
         fica disponível somente para você e as coordenações selecionadas.
       </p>
-      <CertificateField
-        file={file}
-        onChange={setFile}
-        required={requireFile}
-        disabled={action.busy}
-      />
+      {canUpload && (
+        <CertificateField
+          file={file}
+          onChange={setFile}
+          required={requireFile}
+          disabled={action.busy}
+        />
+      )}
       <fieldset className={s.absenceDates} disabled={!!created || action.busy}>
         <legend>Período de afastamento</legend>
         <TextField

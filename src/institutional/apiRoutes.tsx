@@ -1,3 +1,4 @@
+import { PrivacyPage, PrivacyInformation } from './PrivacyPage';
 import { Navigate, type RouteObject } from 'react-router';
 import { ForRole } from './RoleGuard';
 import {
@@ -29,7 +30,14 @@ export const apiRoutes: RouteObject[] = [
       { path: '/redefinir-senha', element: <ApiResetPage /> },
       { path: '/ativar-acesso', element: <ApiInvitePage /> },
       { path: '/termos', element: <LegalPage kind="terms" /> },
-      { path: '/privacidade', element: <LegalPage kind="privacy" /> },
+      {
+        path: '/privacidade',
+        element: (
+          <LegalPage kind="privacy">
+            <PrivacyInformation />
+          </LegalPage>
+        ),
+      },
       {
         element: <ApiGuard />,
         children: [
@@ -38,6 +46,15 @@ export const apiRoutes: RouteObject[] = [
             children: [
               { path: '/inicio', element: <ApiHomePage /> },
               { path: '/conta', element: <ApiAccountPage /> },
+              { path: '/conta/privacidade', element: <PrivacyPage /> },
+              {
+                path: '/administracao/privacidade',
+                element: (
+                  <ForRole roles={['admin']}>
+                    <PrivacyPage admin />
+                  </ForRole>
+                ),
+              },
               {
                 path: '/professores',
                 element: (

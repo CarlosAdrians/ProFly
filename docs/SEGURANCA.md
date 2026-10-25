@@ -51,3 +51,7 @@ Origens exatas deduplicadas, sem wildcard; rejeição explícita antes do prefli
 Vite local aceita PFX privado opcional, mínimo TLS1.2, host loopback, sem CORS aberto de fontes e com bloqueio de arquivos privados. A prévia HTTPS foi exercitada com TLS1.3, verificação explícita do certificado e nome, cookie Secure/HttpOnly/SameSite=Strict, recusa de escrita sem CSRF, origens hostis e leituras estáticas privadas403. Não foi usado bypass de certificado.
 
 A instalação de confiança iniciada durante a preparação foi desfeita após confirmação acidental do usuário; ausência do certificado específico nos stores foi conferida. O navegador não tem confiança configurada por esta entrega. Detalhes em [HTTPS_LOCAL.md](HTTPS_LOCAL.md). Isso não configura TLS do domínio institucional, envio real de e-mail, disponibilidade do Atlas ou auditoria completa de segurança.
+
+## Controles LGPD adicionados
+
+[LGPD.md](LGPD.md) registra os controles, inventário e pendências de governança. Exportação própria exige senha, CSRF, sessão revalidada e projeção explícita sem credenciais/terceiros; respostas administrativas preservam versões/eventos. Novos atestados são bloqueados por padrão no ambiente comum; somente testes sintéticos ou habilitação institucional explícita permitem upload. Produção recusa política incompleta. Nenhum parâmetro substitui análise jurídica, política real de retenção, implementação controlada das providências de eliminação ou homologação da infraestrutura. Relatório de validação continua sendo a fonte das evidências executadas.
