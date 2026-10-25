@@ -30,15 +30,12 @@ export async function buildApp(
     genReqId: () => randomUUID(),
     ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } },
   });
-  await app.register(cookie);
-  await app.register(cors, { origin: config.origins, credentials: true });
-  await app.register(helmet);
-  await app.register(rateLimit, { global: false });
-  await app.register(multipart, {
-    limits: { fileSize: config.uploadMaxBytes, files: 1, fields: 0 },
+  await app.register(helmet, {
+    strictTransportSecurity:
+      config.environment === 'production'
+        ? { maxAge: 31536000, includeSubDomains: false, preload: false }
+        : false,
   });
-  await app.register(swagger, { openapi: { info: { title: 'ProFly API', version: '0.1.0' } } });
-
   app.addHook('onRequest', async (request, reply) => {
     // Session tokens and private academic data must not be cached, including error responses.
     if (request.url.startsWith('/api/')) reply.header('Cache-Control', 'no-store');
@@ -53,6 +50,21 @@ export async function buildApp(
     )
       throw new AppError(403, 'ORIGIN_NOT_ALLOWED', 'Origem nao permitida.');
   });
+  await app.register(cookie);
+  await app.register(cors, {
+    origin: config.origins,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
+    strictPreflight: true,
+    maxAge: 300,
+  });
+  await app.register(rateLimit, { global: false });
+  await app.register(multipart, {
+    limits: { fileSize: config.uploadMaxBytes, files: 1, fields: 0 },
+  });
+  await app.register(swagger, { openapi: { info: { title: 'ProFly API', version: '0.1.0' } } });
+
   app.setErrorHandler((error, request, reply) => {
     const result = errorResponse(error, request.id);
     reply.code(result.status).send(result.body);

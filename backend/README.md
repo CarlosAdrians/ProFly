@@ -160,3 +160,9 @@ Planejamento, recomendacoes em snapshot unico, historico e atestados estao em [P
 ## Previa isolada opcional
 
 `scripts/dev-isolated.ts` exige PROFLY_RUN_INTEGRATION=1 e cria um MongoDB efemero `_test`, sem carregar .env. Usa exclusivamente contas ficticias de `test/ui-fixture.ts`; nao e comando de populacao do banco institucional. Porta 3334, frontend separado 5175 com PROFLY_API_TARGET correspondente. A captura Mailpit local precisa estar disponivel. Encerrar a previa remove seu banco efemero; nenhuma identidade real e criada por esse script.
+
+## Origens e sessão HTTPS
+
+ALLOWED_ORIGINS aceita somente origens exatas, sem wildcard. O guard de origem roda antes do preflight; métodos PUT/PATCH/DELETE e o header CSRF são explicitamente permitidos. Origem hostil é recusada mesmo no OPTIONS. Helmet também cobre essas recusas; HSTS fica ativo somente em produção, sem preload nem includeSubDomains.
+
+COOKIE_SECURE=true permite desenvolvimento atrás de proxy HTTPS; em produção o cookie é sempre Secure e uma tentativa de desligá-lo é recusada. A prévia isolada aceita PROFLY_PREVIEW_HTTPS=1 para API3335, origens HTTPS5176 e cookie seguro, em outro banco efêmero. [Segurança do ambiente](../docs/SEGURANCA.md) registra os controles e limites de implantação.

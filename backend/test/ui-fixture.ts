@@ -9,7 +9,10 @@ import type { Notifications } from '../src/identity/models.js';
 import type { ProfileData } from '../src/teachers/contracts.js';
 
 /** Explicit opt-in only. Never reads .env or connects to an institutional database. */
-export async function createUiFixture(extraNotifications?: Notifications) {
+export async function createUiFixture(
+  extraNotifications?: Notifications,
+  preview: { https?: boolean } = {},
+) {
   if (process.env.PROFLY_RUN_INTEGRATION !== '1')
     throw new Error('UI integration requires PROFLY_RUN_INTEGRATION=1.');
   const replica = await MongoMemoryReplSet.create({
@@ -21,7 +24,10 @@ export async function createUiFixture(extraNotifications?: Notifications) {
     NODE_ENV: 'test',
     MONGODB_URI: replica.getUri(),
     MONGODB_DATABASE: `profly_ui_${randomUUID().replaceAll('-', '')}_test`,
-    ALLOWED_ORIGINS: 'http://localhost:5173,http://127.0.0.1:5174,http://127.0.0.1:5175',
+    ALLOWED_ORIGINS: preview.https
+      ? 'https://127.0.0.1:5176,https://localhost:5176'
+      : 'http://localhost:5173,http://127.0.0.1:5174,http://127.0.0.1:5175',
+    COOKIE_SECURE: preview.https ? 'true' : 'false',
   });
   const database = new Database(config);
   await database.connect();

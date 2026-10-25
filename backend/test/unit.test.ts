@@ -211,3 +211,73 @@ test('respostas privadas nao sao armazenaveis e origens hostis sao recusadas ant
     await database.close();
   }
 });
+
+test('CASE-006/049/051: CORS valida origem antes do preflight e limita metodos e headers', async () => {
+  const { buildApp } = await import('../src/app.js');
+  const { Database } = await import('../src/database.js');
+  const config = loadConfig({
+    ...env,
+    ALLOWED_ORIGINS: 'https://localhost:5176',
+    COOKIE_SECURE: 'true',
+  });
+  assert.equal(config.secureCookies, true);
+  assert.throws(() => loadConfig({ ...env, ALLOWED_ORIGINS: 'https://*.invalid' }));
+  assert.throws(() =>
+    loadConfig({
+      ...env,
+      NODE_ENV: 'production',
+      ALLOWED_ORIGINS: 'https://app.profly.test',
+      COOKIE_SECURE: 'false',
+    }),
+  );
+  const database = new Database(config),
+    app = await buildApp(config, database);
+  try {
+    for (const method of ['PUT', 'PATCH', 'DELETE']) {
+      const allowed = await app.inject({
+        method: 'OPTIONS',
+        url: '/api/v1/me/profile',
+        headers: {
+          origin: 'https://localhost:5176',
+          'access-control-request-method': method,
+          'access-control-request-headers': 'content-type,x-csrf-token',
+        },
+      });
+      assert.equal(allowed.statusCode, 204, allowed.body);
+      assert.equal(allowed.headers['access-control-allow-origin'], 'https://localhost:5176');
+      assert.equal(allowed.headers['access-control-allow-credentials'], 'true');
+      assert.ok(String(allowed.headers['access-control-allow-methods']).includes(method));
+      assert.ok(
+        String(allowed.headers['access-control-allow-headers'])
+          .toLowerCase()
+          .includes('x-csrf-token'),
+      );
+      assert.ok(
+        !String(allowed.headers['access-control-allow-headers'])
+          .toLowerCase()
+          .includes('authorization'),
+      );
+      assert.equal(allowed.headers['cache-control'], 'no-store');
+    }
+    for (const origin of ['https://hostile.test', 'null', 'https://localhost:5176.evil.test']) {
+      const refused = await app.inject({
+        method: 'OPTIONS',
+        url: '/api/v1/me/profile',
+        headers: { origin, 'access-control-request-method': 'PUT' },
+      });
+      assert.equal(refused.statusCode, 403, refused.body);
+      assert.equal(refused.headers['access-control-allow-origin'], undefined);
+    }
+    const malformed = await app.inject({
+      method: 'OPTIONS',
+      url: '/api/v1/me/profile',
+      headers: { origin: 'https://localhost:5176' },
+    });
+    assert.equal(malformed.statusCode, 400);
+    const local = await app.inject('/health/live');
+    assert.equal(local.headers['strict-transport-security'], undefined);
+  } finally {
+    await app.close();
+    await database.close();
+  }
+});

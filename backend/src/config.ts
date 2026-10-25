@@ -9,6 +9,7 @@ const environment = z.object({
   MONGODB_URI: z.string().regex(/^mongodb(?:\+srv)?:\/\//),
   MONGODB_DATABASE: z.string().regex(/^[a-zA-Z0-9_-]{1,63}$/),
   ALLOWED_ORIGINS: z.string().min(1),
+  COOKIE_SECURE: z.enum(['true', 'false']).optional(),
   SESSION_HOURS: z.coerce.number().int().min(1).max(24).default(8),
   UPLOAD_MAX_BYTES: z.coerce
     .number()
@@ -50,6 +51,7 @@ export function loadConfig(input: Record<string, string | undefined> = process.e
         return (
           !['http:', 'https:'].includes(url.protocol) ||
           url.origin !== value ||
+          url.hostname.includes('*') ||
           (env.NODE_ENV === 'production' && url.protocol !== 'https:')
         );
       } catch {
@@ -58,6 +60,8 @@ export function loadConfig(input: Record<string, string | undefined> = process.e
     })
   )
     throw new Error('Configuracao invalida: ALLOWED_ORIGINS');
+  if (env.NODE_ENV === 'production' && env.COOKIE_SECURE === 'false')
+    throw new Error('Configuracao invalida: COOKIE_SECURE');
   if (env.NODE_ENV === 'test' && !env.MONGODB_DATABASE.endsWith('_test')) {
     throw new Error('Banco de teste deve terminar em _test');
   }
@@ -67,11 +71,11 @@ export function loadConfig(input: Record<string, string | undefined> = process.e
     port: env.PORT,
     mongoUri: env.MONGODB_URI,
     database: env.MONGODB_DATABASE,
-    origins,
+    origins: [...new Set(origins)],
     sessionHours: env.SESSION_HOURS,
     uploadMaxBytes: env.UPLOAD_MAX_BYTES,
     uploadDirectory: path.resolve(env.UPLOAD_DIRECTORY),
-    secureCookies: env.NODE_ENV === 'production',
+    secureCookies: env.NODE_ENV === 'production' || env.COOKIE_SECURE === 'true',
     mail: loadMailConfig(input, env.NODE_ENV, origins),
   };
 }
