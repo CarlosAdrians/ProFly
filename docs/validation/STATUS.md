@@ -219,3 +219,9 @@ Complemento do editor de foto conectado: 8 testes direcionados de cliente/API, m
 ## Logo do login sem fundo branco
 
 Pedido do checklist: removidos background branco, padding e cantos do bloco aplicado a logo no tema escuro. A imagem institucional transparente, centralizacao e composicao do login foram preservadas. Build aprovado; navegador em tema escuro confirmou background rgba(0,0,0,0), padding0 e exibicao sem o retangulo branco. Print57 fora do repositorio. Nao foram repetidos testes de regra de negocio, pois a alteracao e apenas CSS.
+
+## Tema claro como padrao do checklist
+
+Sem escolha salva, o ProFly inicia em claro, inclusive quando o dispositivo prefere escuro ou o armazenamento esta indisponivel. Escolhas explicitas de claro/escuro continuam persistidas; acompanhar o sistema exige opcao explicita na configuracao demonstrativa. Essa opcao agora grava system para distinguir escolha do usuario de ausencia de preferencia. Nao foram apagadas preferencias existentes.
+
+Quatro testes existentes de toggle/configuracoes aprovados; tipos, ESLint dos arquivos alterados e build aprovados. Conferencia direta da resolucao cobre ausencia de escolha com OS escuro e as tres escolhas explicitas. Nao houve mudanca no backend, contas ou permissoes.

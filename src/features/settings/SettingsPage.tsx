@@ -9,11 +9,11 @@ import styles from './SettingsPage.module.css';
 function themeChoice() {
   try {
     const value = localStorage.getItem(THEME_KEY);
-    if (value === 'light' || value === 'dark') return value;
+    if (value === 'light' || value === 'dark' || value === 'system') return value;
   } catch {
-    /* OS default. */
+    /* Light default. */
   }
-  return 'system';
+  return 'light';
 }
 export function SettingsPage() {
   const { session } = useAuth();
@@ -32,8 +32,7 @@ export function SettingsPage() {
   }, []);
   function chooseTheme(value: string) {
     try {
-      if (value === 'system') localStorage.removeItem(THEME_KEY);
-      else localStorage.setItem(THEME_KEY, value);
+      localStorage.setItem(THEME_KEY, value);
       applyTheme(preferredDark());
       setTheme(value);
       setError('');
