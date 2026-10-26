@@ -91,7 +91,7 @@ As referências incluem os [protótipos originais](docs/prototipos/README.md), a
 | Back-end implementado | Node.js, TypeScript, Fastify, validação Zod e API REST. |
 | Banco definido | MongoDB, com configuração coordenada por outro integrante do grupo. |
 | Qualidade do front-end | Vitest, Testing Library, ESLint e Prettier já configurados. |
-| Qualidade do back-end | Spec, matriz, checagem de tipos/lint/build e primeiros testes unitários e de integração implementados; cobertura dos módulos ainda em andamento. |
+| Qualidade do back-end | Spec, matriz rastreada, comando único de tipos/lint/build e testes de domínio, HTTP, MongoDB, concorrência, privacidade e documentos. |
 
 Arquitetura pretendida:
 
@@ -114,7 +114,7 @@ A aplicação deve rejeitar dados incoerentes e operações fora do escopo, mant
 | Documento | Conteúdo |
 | --- | --- |
 | [Spec do back-end](docs/specs/BACKEND_V1.md) | Requisitos rastreáveis, contratos, invariantes, limites e critérios de aceitação. |
-| [Matriz de cenários](docs/specs/backend-cases.json) | 56 cenários planejados para testes de domínio, contratos, autorização, integração, concorrência e entradas adversariais. |
+| [Matriz de cenários](docs/specs/backend-cases.json) | 66 cenários planejados para testes de domínio, contratos, autorização, integração, concorrência e entradas adversariais. |
 | [Fluxo de trabalho](docs/WORKFLOW.md) | Ordem de implementação, ciclo de validação e commits por área. |
 | [Estado das validações](docs/validation/STATUS.md) | O que foi verificado e o que ainda está pendente ou não implementado. |
 | [Definição do back-end](docs/BACKEND.md) | Modelo conceitual, responsabilidades, dados e contratos com o responsável pelo banco. |
@@ -142,23 +142,24 @@ Alterações de front-end e back-end ficam em commits separados. Testes e docume
 
 ## Estado de desenvolvimento
 
-Atualizado em **25/10/2026**. Branch local: `feat/backend-institucional`. A interface usa a API por padrão; a demonstração anterior foi preservada como opção explícita.
+Atualizado em **26/10/2026**. Branch local: `feat/backend-institucional`. A interface usa a API por padrão; a demonstração anterior foi preservada como opção explícita.
 
 | Parte | Estado atual |
 | --- | --- |
 | Identidade e conta | Sessão real por cookie/CSRF, cadastro detalhado, confirmação de e-mail, recuperação, troca protegida de e-mail/senha e foto privada. |
-| Aprovação por curso | Solicitações encaminhadas após verificar o e-mail; análise e vínculo restritos ao curso do coordenador. Sem aprovação automática. |
+| Aprovação por curso | Solicitações encaminhadas após verificar o e-mail; análise exclusiva do coordenador com vínculo ativo no curso, inclusive para quem acumula papel de administrador. Sem aprovação automática. |
 | Administração | Cursos, coordenadores, convites, revogação, competências, períodos/grade e limite institucional de carga. Primeiro administrador exige configuração explícita. |
 | Perfil e catálogo | Perfil versionado, formação, conhecimentos, experiências, horários pretendidos e dedicação opcional; disciplinas, critérios, turmas e ofertas pela API. |
 | Elegibilidade e score | Árvore explicável e comparação consistente de candidatos, com dados desconhecidos pendentes e pesos/requisitos configuráveis como proposta. |
 | Planejamento | Rascunhos, arraste/formulário, reservas globais, versão esperada e publicação atômica; escala anterior preservada em falha. |
 | Professor | Agenda publicada, últimas 10 aulas, histórico paginado, horas realizadas confirmadas versus meta opcional. |
-| Ausências | Comunicação e decisão por curso, sinalização temporária e atestado privado JPG/PNG/WebP; PDF ainda não aceito. |
-| Notificações | Avisos internos e preferência persistida no servidor; e-mails de segurança independentes. |
+| Ausências | Comunicação e decisão por curso, sinalização temporária e atestado privado JPG/PNG/WebP e PDF passivo na API; o controle de seleção de PDF no frontend ainda precisa ser conectado. |
+| Comprovantes acadêmicos | API de documentos privados por versão/item do perfil, imutáveis, auditados, com quotas e retirada sem apagar o original; integração dos novos controles no frontend pendente. |
+| Notificações | Avisos internos, paginação, total não lido e preferência persistida; e-mails de segurança independentes. |
 | E-mail | SMTP implementado e testado em captura fictícia local. Entrega externa depende de remetente autenticado. |
-| Validação | Testes de domínio, HTTP/MongoDB efêmero, concorrência e interface conectada; evidências e limites em [STATUS.md](docs/validation/STATUS.md). |
+| Validação | Fechamento local com comando backend/scripts/verify.mjs; rastreabilidade dos 66 cenários em [aceitação do backend](docs/validation/BACKEND_ACCEPTANCE.md), histórico em [STATUS.md](docs/validation/STATUS.md). |
 
-A implementação não equivale à homologação institucional. Ainda faltam remetente real, configuração inicial da administração, revisão de critérios/grade/limites e políticas de privacidade/retenção, infraestrutura HTTPS e verificações de produção. Não inserir atestados reais na prévia de desenvolvimento.
+A implementação está validada para demonstração acadêmica local e não equivale à homologação institucional. O MongoDB configurado ainda falhou na conexão TLS na conferência desta etapa, sem desativar validação de certificados. Ainda faltam remetente real, configuração inicial da administração, revisão de critérios/grade/limites e políticas de privacidade/retenção, infraestrutura HTTPS e verificações de produção. Não inserir atestados reais na prévia de desenvolvimento.
 
 A base de implementação foi localizada em `claude/pensive-dirac-5rithn`, no commit `6e78ca6`. Na leitura inicial, a `main` continha apenas referências e protótipos. Esses dados registram a origem da etapa, sem presumir publicação desta branch no remoto.
 

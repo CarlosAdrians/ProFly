@@ -295,3 +295,74 @@ test('CASE-024/026: carga de outra semana nao contamina a proposta e formacao in
   input.review!.items = input.review!.items.filter((i) => i.id !== educationId);
   assert.equal(evaluate(input).eligibility, 'PENDING');
 });
+
+test('CASE-031/034/056: scores calculados permanecem finitos, explicaveis e deterministicos nas fronteiras', () => {
+  let calculated = 0;
+  for (const level of [3, 4, 5])
+    for (const teaching of [0, 1, 4, 1200])
+      for (const professional of [0, 1, 24, 1200]) {
+        const input = fixture();
+        input.profile!.knowledge![0]!.level = level;
+        input.profile!.teaching!.entries[0]!.completedUnits = teaching;
+        input.profile!.professional!.entries[0]!.completedUnits = professional;
+        const result = evaluate(input);
+        assert.equal(result.score.state, 'CALCULATED');
+        assert.ok(Number.isFinite(result.score.value));
+        assert.ok(result.score.value! >= 0 && result.score.value! <= 100);
+        assert.ok(
+          Math.abs(
+            result.score.factors.reduce((sum, factor) => sum + factor.points!, 0) -
+              result.score.value!,
+          ) < 0.011,
+        );
+        assert.ok(
+          result.score.factors.every(
+            (factor) =>
+              Number.isFinite(factor.points) &&
+              factor.points! >= 0 &&
+              factor.points! <= factor.weight,
+          ),
+        );
+        assert.equal(result.profileVersion, input.profileVersion);
+        assert.equal(result.rulesVersion, input.rulesVersion);
+        assert.equal(result.offeringId, input.offeringId);
+        assert.deepEqual(evaluate(input).score, result.score);
+        assert.deepEqual(evaluate(input).checks, result.checks);
+        calculated++;
+      }
+  assert.equal(calculated, 48);
+});
+
+test('CASE-023/026/027/029: todos os conhecimentos obrigatorios e grade ausente geram caminhos explicitos', () => {
+  const input = fixture();
+  const second = { id: randomUUID(), competencyId: randomUUID(), level: 4 };
+  const third = { id: randomUUID(), competencyId: randomUUID(), level: 1 };
+  input.criteria!.mandatoryKnowledge.push(
+    { competencyId: second.competencyId, minLevel: 3 },
+    { competencyId: third.competencyId, minLevel: 2 },
+  );
+  input.profile!.knowledge!.push(second, third);
+  input.review!.items.push({ id: third.id, status: 'CONFIRMED' });
+  let result = evaluate(input);
+  assert.equal(result.eligibility, 'INELIGIBLE');
+  assert.ok(result.pending.includes(`knowledge:${second.competencyId}`));
+  assert.equal(
+    result.tree.find((node) => node.id === `knowledge:${second.competencyId}`)!.answer,
+    null,
+  );
+  assert.equal(
+    result.tree.find((node) => node.id === `knowledge:${third.competencyId}`)!.answer,
+    false,
+  );
+  assert.equal(result.checks.filter((check) => check.id.startsWith('knowledge:')).length, 3);
+  input.review!.items.push({ id: second.id, status: 'CONFIRMED' });
+  third.level = 2;
+  assert.equal(evaluate(input).eligibility, 'ELIGIBLE');
+  input.period.calendarStatus = 'DRAFT';
+  result = evaluate(input);
+  assert.equal(result.eligibility, 'CONFIGURATION_PENDING');
+  assert.ok(result.pending.includes('calendar'));
+  input.period.calendarStatus = 'REVIEWED';
+  input.slots = [];
+  assert.equal(evaluate(input).eligibility, 'CONFIGURATION_PENDING');
+});

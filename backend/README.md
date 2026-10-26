@@ -194,10 +194,24 @@ Implementacao backend (CASE-064/065): atestados e comprovantes aceitam JPG/PNG/W
 | --- | --- |
 | POST /api/v1/me/academic-documents | profileVersion, section (education/knowledge/teaching/professional), itemId e title; cria metadados para item proprio da versao atual. |
 | POST /api/v1/me/academic-documents/:documentId/file | Multipart com um arquivo; permite retomar envio incompleto, recusa substituir original ou enviar apos retirada. |
-| GET /api/v1/me/academic-documents | cursor UUID e limit de1 a100; items e nextCursor, inclui documentos retirados do proprio titular. |
+| GET /api/v1/me/academic-documents | cursor UUID e limit de 1 a 100; items e nextCursor, inclui documentos retirados do proprio titular. |
 | GET /api/v1/me/academic-documents/:documentId/file | Baixa original proprio, inclusive apos retirada da analise. |
 | POST /api/v1/me/academic-documents/:documentId/withdraw | expectedVersion; retira da analise sem apagar original/auditoria nem mudar score. |
 | GET /api/v1/courses/:courseId/applications/:applicationId/documents | Somente coordenador responsavel; comprovantes ativos com arquivo ligados a versao submetida. |
 | GET /api/v1/courses/:courseId/academic-documents/:documentId/file | Revalida coordenacao ativa, solicitacao correspondente e documento ativo a cada acesso. |
 
 Quotas conservadoras: 100 metadados e 50 MB por conta, inclusive originais retirados, serializados contra uploads concorrentes. Retirada nao e eliminacao LGPD; descarte e retencao dependem de politica institucional. Exportacao propria inclui metadados e links privados separados, nunca bytes ou arquivos alheios. Anexar comprovante nao confirma automaticamente formacao, experiencia, elegibilidade ou score; a analise continua no fluxo do coordenador. Interfaces de envio/consulta desses novos comprovantes serao conectadas na etapa de frontend.
+
+## Consultas paginadas e fechamento local
+
+CASE-066: listas de cursos, usuarios, catalogos academicos, periodos, solicitacoes, docentes, avisos e ausencias retornam items, limit, offset e nextOffset (null no fim). Catalogos de competencias/disciplinas conservam maximo 100; listagens gerais maximo 200, usuarios maximo 100, ocorrencias maximo 500. Defaults anteriores preservados quando aplicavel. Ordenacao inclui ID como desempate; offset nao e snapshot entre requisicoes, portanto recarregue apos alteracoes concorrentes. Escopo por curso/titular e aplicado antes de paginar. Papeis de cursos refletem vinculos reais; acesso global de administrador nao cria coordenacao ficticia.
+
+GET /api/v1/courses/:courseId/planning aceita periodId opcional e recusa agregados acima de 500 alocacoes/publicacoes ou 100 planos com PLANNING_LIMIT. Alternativas paginadas: /allocations, /published-allocations e /plans, com periodId opcional. /occurrences aceita from/until, limit e offset. Calendario docente recusa mais de 4096 encontros, solicitando reduzir intervalo; comparacao recusa mais de 200 candidatos e nao publica ranking parcial. Avisos retornam unreadCount separado do tamanho da pagina.
+
+Verificacao completa, sem ler .env nem enviar mensagens externas:
+
+```powershell
+node scripts/verify.mjs
+```
+
+O comando usa apenas testes sinteticos com MongoDB efemero/SMTP local. Valida tipos, lint completo, build, suites e documentos; escreve .data/validation/last-run.json fora do Git. Falha em teste, skip/todo, ausencia de resumo ou mudanca de codigo durante a execucao impede PASS. Consulte a [aceitacao do backend](../docs/validation/BACKEND_ACCEPTANCE.md) para evidencias por cenario e limites institucionais. Configuracao definitiva do banco, remetente, dominio, backup/restore e privacidade real nao e substituida por esse resultado local.

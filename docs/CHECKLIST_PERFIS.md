@@ -1,61 +1,47 @@
 # Revisão dos perfis do ProFly
 
-Revisão atualizada em 26/10/2026, na branch feat/backend-institucional. Este checklist compara o código e as verificações disponíveis com os pedidos do projeto. Implementado não significa homologado pela faculdade. A matriz de cenários permanece planejamento; resultados executados constam em [STATUS.md](validation/STATUS.md).
+Atualizado em 26/10/2026, branch feat/backend-institucional. Backend implementado e validado localmente para demonstração acadêmica; operação institucional ainda depende dos itens externos abaixo. [Aceitação e rastreabilidade dos 66 cenários](validation/BACKEND_ACCEPTANCE.md); [histórico das verificações](validation/STATUS.md).
 
 ## Professor
 
-| Área | Situação observada | Próximo trabalho |
+| Área | Backend entregue | Próxima etapa / limite |
 | --- | --- | --- |
-| Conta e acesso | Cadastro, confirmação, perfil detalhado, edição, foto opcional, senha e recuperação conectados | Envio real de e-mail ainda depende de SMTP institucional; captura local não entrega ao Gmail |
-| Entrada nos cursos | Solicitação e análise por curso; criar identidade não atribui aulas | Manter clara a separação entre confirmação de conta, aprovação acadêmica e publicação |
-| Disponibilidade | Janelas com vigência e dedicação opcional, preservadas ao salvar | Homologar horários/blocos reais e regras institucionais; cinco novas janelas apenas no cenário sintético |
-| Agenda | Somente aulas próprias publicadas, mês/semana/dia e consulta de detalhes | Validar com a faculdade a apresentação final após visualizar agenda preenchida; não é relógio de ponto |
-| Histórico e horas | Ocorrências e confirmação pela coordenação; início mostra horas programadas/confirmadas | Definir procedimento de confirmação, reposições e uso institucional; não contar ausência como penalidade de score |
-| Formação/certificações | Formação e conhecimentos estruturados no perfil | Anexos próprios de certificados/diplomas e gestão documental específica ainda não implementados |
-| Atestados | Imagens privadas, análise por curso e retomada de upload | PDF ainda não suportado; dados reais de saúde bloqueados até política institucional, retenção e base específica |
-| Privacidade | Cópia própria, correção, novo pedido recolhido e protocolos | Governança institucional foi retirada da tela pessoal; responsável/canal/prazos seguem pendentes, disponíveis na área administrativa e aviso público |
+| Conta | Cadastro completo, confirmação, sessão, recuperação em uma hora, email/senha protegidos e foto própria | SMTP externo depende de remetente autenticado; captura local não entrega ao Gmail |
+| Entrada | Conta criada não aprova entrada; solicitação independente por curso e versão do perfil | Análise pelo coordenador responsável; nenhuma aula criada pela aprovação |
+| Perfil e disponibilidade | Formação, conhecimentos, experiências, vigência e dedicação opcional | Dados ausentes permanecem pendentes; parâmetros acadêmicos reais precisam de homologação |
+| Comprovantes | API privada por versão/item, PDF/imagens, arquivo imutável, paginação, quotas e retirada da análise | Conectar novos controles no frontend; comprovante não confirma conhecimento nem aumenta score automaticamente |
+| Atestados | Imagem/PDF passivo privado, análise por curso, auditoria e sinalização temporária | Atualizar controle de arquivo no frontend para PDF; saúde real bloqueada até definição institucional |
+| Agenda e histórico | Somente aulas próprias publicadas, últimas dez de vários cursos, histórico com cursor e confirmação explícita de realização | Não é relógio de ponto; fluxo real de confirmação depende da faculdade |
+| Privacidade | Cópia própria com senha, metadados/links privados separados e protocolos | Retenção, descarte e responsáveis ainda dependem da instituição |
 
 ## Coordenador
 
-| Área | Situação observada | Próximo trabalho |
+| Área | Backend entregue | Próxima etapa / limite |
 | --- | --- | --- |
-| Escopo | Vínculos por curso e comandos autorizados no servidor | Ver P1 abaixo: privilégio global de administrador ainda alcança análise acadêmica |
-| Cadastro/análise | Professor se cadastra; responsável analisa a solicitação | Definir rotina de conferência de documentos/declarações e revisão de perfis alterados |
-| Disciplinas e critérios | Gestão conectada e critérios versionados | Requisitos, relevâncias e pesos permanecem propostas; homologar com os cursos |
-| Elegibilidade e score | Verificações explicáveis, critérios versionados e dados pendentes distintos de zero | Validar critérios/relevâncias com docentes reais somente após autorização institucional |
-| Alocações e publicação | Rascunhos, versões, conflitos globais e publicação testados | Homologar grade real, feriados locais próprios e regras de turmas/carga |
-| Volume institucional | Listas e consultas têm limites explícitos | Expandir paginação/consulta por período antes de tratar lotes como totais de toda a faculdade |
+| Análise acadêmica | Papel e vínculo ativo no curso exigidos na consulta/decisão; administrador sem vínculo recusado; revogação vale na sessão existente | P1 de aprovação administrativa irrestrita corrigido, CASE-063; autoria forjada rejeitada |
+| Organização | Disciplinas, critérios, turmas, períodos/ofertas, referências e versões | Grade, pesos, pertinência e requisitos são propostas para validação acadêmica |
+| Elegibilidade e score | Todos os requisitos obrigatórios avaliados, pendência separada de falha e zero, score limitado/explicável | Recomendação não atribui aula; ausência temporária não diminui score acadêmico |
+| Alocação/publicação | Reservas globais de professor/turma/carga, concorrência, versões e rollback | Inclusive entre períodos distintos com datas sobrepostas; histórico passado preservado |
+| Consulta | Listas com continuação explícita; planejamento por período e endpoints paginados | Visão agregada recusa corte em mais de 500 alocações/publicações ou 100 planos; comparação recusa mais de 200 candidatos por chamada |
 
 ## Administrador
 
-| Área | Situação observada | Próximo trabalho |
+| Área | Backend entregue | Próxima etapa / limite |
 | --- | --- | --- |
-| Estrutura | Cursos, coordenadores/vínculos, competências, períodos/blocos e carga docente | Revisar dados reais e rotina operacional de configuração |
-| Atendimento de privacidade | Protocolos administrativos e informações institucionais concentrados nesta área | Definir responsáveis; os parâmetros públicos ainda são configurados no servidor, sem formulário institucional de homologação |
-| Usuários | Rotas de estado ACTIVE/DISABLED existem no backend | Tela geral de gestão de usuários/ativação/inativação ainda não está nas abas administrativas; revisar desligamento e impactos nas escalas |
-| Convites | Interface permite copiar link de convite | Remessa institucional por e-mail e acompanhamento operacional ainda dependem de implementação/configuração |
-| Operação | Prévia sintética está disponível | Primeiro administrador real, Atlas, SMTP, domínio HTTPS, backups/restore e retenção precisam de configuração/homologação |
+| Estrutura | Cursos, coordenadores/vínculos, competências, períodos/blocos e carga institucional | Configurar a estrutura real e o primeiro administrador explicitamente |
+| Usuários | Consulta paginada e alteração versionada de ACTIVE/DISABLED; proteção do último administrador | Tela geral de gestão ainda é etapa de frontend |
+| Papéis | Cursos acessíveis ao administrador não são apresentados como vínculos fictícios de coordenação | Para analisar professor, também precisa ser coordenador ativo daquele curso |
+| Privacidade | Protocolos, respostas versionadas e trilha de atendimento | Definir controlador/canal, bases e retenção; nenhuma exclusão automática |
 
-## Prioridades identificadas
+## Fechamento local e dependências externas
 
-**P1 — aprovação acadêmica somente pelo coordenador responsável.** O pedido do projeto define esse limite. Atualmente teachers/routes.ts cria o guard de análise com coordinator e admin, e IdentityService.course permite bypass global para admin. Assim, o administrador também consegue aprovar um curso sem vínculo de coordenação. Isso é uma divergência da regra solicitada; precisa ser restringida no backend e refletida na interface, com testes de administrador sem vínculo, coordenador de outro curso e pessoa com papéis simultâneos. Esta revisão não declara a divergência resolvida. O cenário visual desta etapa usou de fato o coordenador do curso para aprovar/publicar, sem usar o bypass.
+O backend tem gates reproduzíveis em node scripts/verify.mjs, executado no diretório backend. A revisão final cobre contratos, falhas, fronteiras, escopo, concorrência, arquivos, histórico, persistência e segurança. Os resultados e limites estão na aceitação vinculada acima; matriz planejada não é prova de execução.
 
-**P1 — operação real e dados de saúde.** Controlador, canal, hipóteses legais, retenção, destinatários e operadores ainda não definidos; produção exige configuração e não está homologada. SMTP real, conexão externa ao Atlas e certificado do domínio são dependências separadas do sucesso dos testes locais. Não enviar atestados reais à prévia.
-
-**P2 — gestão de usuários e documentos.** Completar a interface de estado/desligamento, certificados/diplomas e PDF de atestado, conforme as prioridades validadas pelo grupo. Não criar descarte automático sem política de guarda.
-
-**P2 — escala da faculdade.** Paginar as listas e verificar totais institucionais. Histórico docente já usa cursor; catálogos100, agenda da coordenação500 e comparação200 não devem ser apresentados como volume ilimitado.
-
-## O que falta para fechar a entrega acadêmica
-
-1. **Corrigir a aprovação acadêmica (REQ-02/03).** Exigir papel e vínculo ativo de coordenador no curso analisado, inclusive para pessoa que acumula o papel de administrador. Cobrir administrador sem vínculo, coordenador de outro curso, professor e coordenador responsável; confirmar recusa sem alterar solicitação ou criar vínculo. A suíte atual passa, mas não prova essa regra mais restrita.
-2. **Consolidar a aceitação final.** Revisar os 62 cenários planejados e ligar cada requisito à evidência executada, mantendo lacunas explícitas. Repassar os três perfis no fluxo cadastro -> confirmação -> análise -> elegibilidade/score -> alocação/publicação -> consulta/histórico/ausência. Revalidar os testes afetados depois da correção de permissões. Critérios acadêmicos e pesos continuam propostas configuráveis, até validação pelo professor da disciplina/projeto.
-3. **Fechar o escopo incompleto.** Gestão geral de usuários na interface administrativa, anexos de certificados/diplomas, PDF de atestados e paginação institucional estão descritos acima. Ainda precisam de implementação se exigidos na entrega completa; a versão atual não deve apresentá-los como prontos. Separar no material da apresentação o que foi entregue do que fica como evolução acordada com o grupo/professor.
-4. **Preparar demonstração reproduzível.** Documentar inicialização, variáveis sem valores secretos, dados fictícios dos três perfis e sequência de demonstração. Manter uma agenda publicada preenchida, explicar dados desconhecidos versus score pendente, ausência temporária e controle de concorrência. Conferir ambiente após reiniciar; não usar o banco efêmero como armazenamento permanente.
-
-Validação repetida em 26/10: 59 testes do backend (unidade, SMTP local e integração MongoDB descartável), 14 da interface conectada e 6 de cliente/modelo aprovados. Tipos, lint direcionado e build aprovados. Nenhum desses resultados implica entrega real ao Gmail, conexão Atlas homologada ou teste de volume institucional.
-
-Para uso real pela faculdade, há uma etapa adicional: provisionar primeiro administrador, conexão de banco e recuperação de backup, remetente SMTP real, domínio/HTTPS e definições institucionais de privacidade/retenção. Essas dependências de operação não são necessárias para mostrar um protótipo com dados fictícios, mas impedem declará-lo pronto para produção. Não instalar certificados raiz de desenvolvimento no Windows como parte da demonstração.
+- MongoDB configurado: NOT_READY na tentativa somente de leitura desta etapa, erro de seleção de servidor relacionado a TLS. Causa externa exata ainda não diagnosticada; TLS e certificados mantidos. MongoDB real descartável dos testes: PASS.
+- SMTP local de captura: PASS; entrega externa/remetente institucional: NOT_TESTED. Não houve envio real ao Gmail.
+- Critérios/grade/carga, responsáveis e políticas de privacidade: pendentes de homologação; dados clínicos reais não liberados.
+- Backup/restore, domínio/HTTPS e carga institucional: ainda não homologados. Não instalar certificados raiz de desenvolvimento para apresentação.
+- Próximo frontend: ligar comprovantes, seleção de PDF, gestão geral de usuários e navegação de mais páginas. A mudança de autorização foi refletida nos controles de análise existentes, sem redesenhar as telas.
 
 ## Cenário visual preparado nesta etapa
 

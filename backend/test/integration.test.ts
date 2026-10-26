@@ -2213,6 +2213,20 @@ test('CASE-063: analise exige coordenador ativo do curso mesmo com papel de admi
         items: [],
       },
     });
+  const spoof = await app.inject({
+    method: 'POST',
+    url: `${url(courseA, a.id)}/review`,
+    headers: coordinatorHeaders,
+    payload: {
+      expectedVersion: 1,
+      profileVersion: 1,
+      decision: 'APPROVED',
+      reason: 'Tentativa sintetica de falsificar autor',
+      items: [],
+      reviewerId: crypto.randomUUID(),
+    },
+  });
+  assert.equal(spoof.statusCode, 422);
   for (const headers of [adminHeaders, teacher.headers]) {
     assert.equal((await app.inject({ url: url(courseA, a.id), headers })).statusCode, 403);
     assert.equal((await review(courseA, a.id, headers)).statusCode, 403);
@@ -2261,4 +2275,54 @@ test('CASE-063: analise exige coordenador ativo do curso mesmo com papel de admi
     404,
   );
   assert.equal((await review(courseB, b.id, adminHeaders)).statusCode, 404);
+});
+
+test('CASE-025/036: periodos com IDs diferentes e datas sobrepostas preservam reserva global', async () => {
+  const f = await schedulingFixture('overlapping-periods');
+  const original = f.period;
+  const period = await f.write('/api/v1/admin/periods', {
+    code: 'OVERLAPPING-SECOND',
+    name: 'Outro periodo sobreposto',
+    active: true,
+    startsOn: original.startsOn,
+    endsOn: original.endsOn,
+    timeZone: original.timeZone,
+    calendarStatus: original.calendarStatus,
+    blocks: original.blocks,
+  });
+  assert.notEqual(period.id, original.id);
+  const group = await f.write(`/api/v1/courses/${courseB}/groups`, {
+    code: 'OVERLAPPING-SECOND',
+    name: 'Turma de outro periodo',
+    active: true,
+    periodId: period.id,
+  });
+  const offering = await f.write(`/api/v1/courses/${courseB}/offerings`, {
+    code: 'OVERLAPPING-SECOND',
+    name: 'Oferta de outro periodo',
+    active: true,
+    periodId: period.id,
+    subjectId: f.teacher.subjectB,
+    groupId: group.id,
+    meetings: [f.meeting],
+  });
+  const options = [
+    [courseA, f.offerings[0].id],
+    [courseB, offering.id],
+  ];
+  const result = await Promise.all(
+    options.map(([courseId, offeringId]) =>
+      app.inject({
+        method: 'POST',
+        url: `/api/v1/courses/${courseId}/allocations`,
+        headers: adminHeaders,
+        payload: { offeringId, teacherId: f.teacher.id, meetings: [f.meeting] },
+      }),
+    ),
+  );
+  assert.deepEqual(result.map((response) => response.statusCode).sort(), [201, 409]);
+  assert.equal(
+    await database.db.collection('allocations').countDocuments({ teacherId: f.teacher.id }),
+    1,
+  );
 });
