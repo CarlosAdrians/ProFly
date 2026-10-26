@@ -170,3 +170,18 @@ COOKIE_SECURE=true permite desenvolvimento atrás de proxy HTTPS; em produção 
 ## Privacidade e direitos do titular
 
 GET /api/v1/catalog/privacy publica somente configuração pública do tratamento. GET/POST /api/v1/me/privacy/requests recebem/consultam protocolos próprios; GET/PATCH /api/v1/admin/privacy/requests atende administradores, com versão e eventos preservados. POST /api/v1/me/privacy/export exige currentPassword/CSRF e entrega cópia privada estruturada. Curso/coordenador não autoriza acessar protocolos de outro titular. Detalhes, configuração e limites em [LGPD.md](../docs/LGPD.md). A matriz foi ampliada com REQ-15/CASE-057..062; o status da matriz continua planejamento, e resultados reais são registrados no relatório de validação.
+
+## Semana visual de cinco aulas na prévia
+
+`scripts/seed-preview-week.mjs` é uma operação explícita de apresentação sintética, não carga de dados institucionais. Exige PROFLY_SEED_PREVIEW_WEEK=1, PROFLY_PREVIEW_PASSWORD no ambiente e API local3334/3337 identificada como SYNTHETIC_ONLY e sem homologação. Não lê.env; identidades fixas @profly.test. A escola/servidor real em3333 e URLs externas são recusados antes da conexão.
+
+O script usa as APIs de administrador, professor e coordenador do curso: cria um período/turma visual e ofertas, preserva a disponibilidade anterior, acrescenta janelas diurnas, submete e aprova o perfil sintético, aloca e publica cinco encontros na próxima semana. A aprovação/publicação usa o coordenador responsável. Não insere ocorrências diretamente no MongoDB nem apaga dados. Reexecução preserva ofertas/alocações existentes e não duplica os cinco encontros; sessões temporárias criadas pelo script são encerradas ao terminar com sucesso, sem revogar a sessão do navegador. Se houver outro rascunho no período, interrompe a publicação para revisão.
+
+```powershell
+$env:PROFLY_SEED_PREVIEW_WEEK='1'
+$env:PROFLY_PREVIEW_API='http://127.0.0.1:3337'
+# Defina PROFLY_PREVIEW_PASSWORD somente no ambiente local do processo.
+node scripts/seed-preview-week.mjs
+```
+
+A semana é calculada em America/Fortaleza. Nesta preparação:26/10 a01/11/2026, aulas segunda08:00/14:00, terça09:00, quinta14:00 e sexta15:00,50 minutos cada. Esse conjunto é fictício, não currículo aprovado pela instituição. Não executar a rotina em conta real.

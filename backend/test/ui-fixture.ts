@@ -123,7 +123,13 @@ export async function createUiFixture(
       { code: 'SI-UI', name: 'Ética e Legislação', active: true, criteria },
       admin,
     );
-  const first = new Date();
+  const localDay = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Fortaleza',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+  const first = new Date(`${localDay}T12:00:00Z`);
   first.setUTCDate(first.getUTCDate() + ((8 - (first.getUTCDay() || 7)) % 7 || 7));
   const from = first.toISOString().slice(0, 10);
   first.setUTCDate(first.getUTCDate() + 27);
