@@ -766,6 +766,20 @@
       "scenario": "Comprovante de formacao/experiencia ligado ao perfil, tentativa alheia, uploads/retiradas concorrentes, versao antiga, quotas e paginacao.",
       "expected": "Referencia ao item e versao atuais, arquivo imutavel; consulta propria ou coordenacao do curso/solicitacao correspondente; uma gravacao vence, retirada oculta da coordenacao sem eliminar original; sem aprovacao ou score automatico; exportacao sem bytes e limites explicitos.",
       "status": "PLANNED"
+    },
+    {
+      "id": "CASE-066",
+      "requirements": [
+        "REQ-02",
+        "REQ-05",
+        "REQ-09",
+        "REQ-11",
+        "REQ-12"
+      ],
+      "layer": "integration",
+      "scenario": "Listas maiores que a pagina, nomes/datas empatados, troca de curso/titular e planejamento com mais de500 alocacoes.",
+      "expected": "Ordenacao com desempate, continuacao explicita sem ampliar escopo; usuarios sem hashes/senhas; papeis de curso refletem vinculos reais; planejamento agregado recusa truncamento e permite filtro por periodo/listas paginadas; notificacoes informam total nao lido.",
+      "status": "PLANNED"
     }
   ]
 }

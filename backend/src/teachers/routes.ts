@@ -3,6 +3,8 @@ import { z } from 'zod';
 import type { ClientSession } from 'mongodb';
 import type { IdentityService } from '../identity/service.js';
 import type { Actor, User } from '../identity/models.js';
+import { listQuery, pageOf } from '../shared/pagination.js';
+import { parse } from '../shared/errors.js';
 import { command, email, name, routeId } from '../shared/http.js';
 import { AppError, conflict, missing } from '../shared/errors.js';
 import { audit, entity, lock, view, type Guard } from '../shared/model.js';
@@ -169,15 +171,16 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
   app.get(
     '/api/v1/me/applications',
     { preHandler: teacher, schema: { tags: ['applications'] } },
-    async (request) => ({
-      items: (
-        await applications
-          .find({ teacherId: identity.actor(request).user._id })
-          .sort({ updatedAt: -1, _id: 1 })
-          .limit(100)
-          .toArray()
-      ).map(view),
-    }),
+    async (request) => {
+      const page = parse(listQuery, request.query);
+      const values = await applications
+        .find({ teacherId: identity.actor(request).user._id })
+        .sort({ updatedAt: -1, _id: 1 })
+        .skip(page.offset)
+        .limit(page.limit + 1)
+        .toArray();
+      return pageOf(values.map(view), page);
+    },
   );
 
   command(
@@ -267,11 +270,14 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
     async (request) => {
       const courseId = routeId(request, 'courseId');
       await identity.coordinatedCourse(identity.actor(request), courseId);
-      return {
-        items: (
-          await applications.find({ courseId }).sort({ updatedAt: -1, _id: 1 }).limit(100).toArray()
-        ).map(view),
-      };
+      const page = parse(listQuery, request.query);
+      const values = await applications
+        .find({ courseId })
+        .sort({ updatedAt: -1, _id: 1 })
+        .skip(page.offset)
+        .limit(page.limit + 1)
+        .toArray();
+      return pageOf(values.map(view), page);
     },
   );
   app.get(

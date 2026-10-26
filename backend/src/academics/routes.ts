@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ClientSession } from 'mongodb';
 import { z } from 'zod';
+import { listQuery, pageOf } from '../shared/pagination.js';
 import type { IdentityService } from '../identity/service.js';
 import { command, routeId } from '../shared/http.js';
 import { AppError, conflict, missing, parse } from '../shared/errors.js';
@@ -154,17 +155,15 @@ export function academicRoutes(app: FastifyInstance, identity: IdentityService) 
         const courseId = scoped ? routeId(request, 'courseId') : undefined;
         if (courseId) await identity.course(identity.actor(request), courseId);
         const query = parse(pagination, request.query);
-        return {
-          items: (
-            await collection
-              .find(courseId ? { courseId } : {})
-              .sort({ code: 1, _id: 1 })
-              .skip(query.offset)
-              .limit(query.limit)
-              .toArray()
-          ).map(view),
-          ...query,
-        };
+        const values = (
+          await collection
+            .find(courseId ? { courseId } : {})
+            .sort({ code: 1, _id: 1 })
+            .skip(query.offset)
+            .limit(query.limit + 1)
+            .toArray()
+        ).map(view);
+        return pageOf(values, query);
       },
     );
   }
@@ -290,16 +289,17 @@ export function academicRoutes(app: FastifyInstance, identity: IdentityService) 
   app.get(
     '/api/v1/periods',
     { preHandler: identity.guard(['coordinator', 'admin']) },
-    async () => ({
-      items: (
-        await db.db
-          .collection<Academic<PeriodData>>('periods')
-          .find({ active: true })
-          .sort({ startsOn: -1, _id: 1 })
-          .limit(100)
-          .toArray()
-      ).map(view),
-    }),
+    async (request) => {
+      const page = parse(listQuery, request.query);
+      const values = await db.db
+        .collection<Academic<PeriodData>>('periods')
+        .find({ active: true })
+        .sort({ startsOn: -1, _id: 1 })
+        .skip(page.offset)
+        .limit(page.limit + 1)
+        .toArray();
+      return pageOf(values.map(view), page);
+    },
   );
 
   app.get('/api/v1/catalog/competencies', { schema: { tags: ['catalog'] } }, async (request) => {
@@ -309,12 +309,12 @@ export function academicRoutes(app: FastifyInstance, identity: IdentityService) 
       .find({ active: true })
       .sort({ code: 1, _id: 1 })
       .skip(query.offset)
-      .limit(query.limit)
+      .limit(query.limit + 1)
       .toArray();
-    return {
-      items: items.map((item) => ({ id: item._id, code: item.code, name: item.name })),
-      ...query,
-    };
+    return pageOf(
+      items.map((item) => ({ id: item._id, code: item.code, name: item.name })),
+      query,
+    );
   });
   app.get(
     '/api/v1/catalog/courses/:courseId/subjects',
@@ -328,12 +328,12 @@ export function academicRoutes(app: FastifyInstance, identity: IdentityService) 
         .find({ courseId, active: true })
         .sort({ code: 1, _id: 1 })
         .skip(query.offset)
-        .limit(query.limit)
+        .limit(query.limit + 1)
         .toArray();
-      return {
-        items: items.map((item) => ({ id: item._id, code: item.code, name: item.name })),
-        ...query,
-      };
+      return pageOf(
+        items.map((item) => ({ id: item._id, code: item.code, name: item.name })),
+        query,
+      );
     },
   );
 }

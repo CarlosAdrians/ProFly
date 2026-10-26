@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { listQuery, pageOf } from '../shared/pagination.js';
 import { IdentityService, SESSION_COOKIE } from './service.js';
 import { type AccessToken, type Course, type Session, type User, userView } from './models.js';
 import { command, email, id, name, opaqueToken, password, routeId } from '../shared/http.js';
@@ -192,11 +193,22 @@ export function identityRoutes(app: FastifyInstance, service: IdentityService) {
     true,
   );
 
-  app.get('/api/v1/catalog/courses', { schema: { tags: ['catalog'] } }, async () => ({
-    items: (
-      await service.courses.find({ active: true }).sort({ name: 1, _id: 1 }).limit(200).toArray()
-    ).map((item) => ({ id: item._id, name: item.name, code: item.code })),
-  }));
+  app.get('/api/v1/catalog/courses', { schema: { tags: ['catalog'] } }, async (request) => {
+    const page = parse(
+      listQuery.extend({ limit: listQuery.shape.limit.default(200) }),
+      request.query,
+    );
+    const values = await service.courses
+      .find({ active: true })
+      .sort({ name: 1, _id: 1 })
+      .skip(page.offset)
+      .limit(page.limit + 1)
+      .toArray();
+    return pageOf(
+      values.map((item) => ({ id: item._id, name: item.name, code: item.code })),
+      page,
+    );
+  });
 
   app.get(
     '/api/v1/courses',
@@ -211,20 +223,22 @@ export function identityRoutes(app: FastifyInstance, service: IdentityService) {
         : (await service.memberships.find({ userId: actor.user._id, active: true }).toArray()).map(
             (item) => item.courseId,
           );
-      return {
-        items: (
-          await service.courses
-            .find({ active: true, ...(ids ? { _id: { $in: ids } } : {}) })
-            .sort({ name: 1, _id: 1 })
-            .limit(200)
-            .toArray()
-        ).map((record) => ({
-          ...view(record),
-          roles: actor.user.roles.includes('admin')
-            ? ['coordinator']
-            : assignments.filter((m) => m.courseId === record._id).map((m) => m.role),
-        })),
-      };
+      const page = parse(
+        listQuery.extend({ limit: listQuery.shape.limit.default(200) }),
+        request.query,
+      );
+      const values = (
+        await service.courses
+          .find({ active: true, ...(ids ? { _id: { $in: ids } } : {}) })
+          .sort({ name: 1, _id: 1 })
+          .skip(page.offset)
+          .limit(page.limit + 1)
+          .toArray()
+      ).map((record) => ({
+        ...view(record),
+        roles: assignments.filter((m) => m.courseId === record._id).map((m) => m.role),
+      }));
+      return pageOf(values, page);
     },
   );
 
@@ -467,9 +481,19 @@ export function identityRoutes(app: FastifyInstance, service: IdentityService) {
     'admin',
   );
 
-  app.get('/api/v1/admin/courses', { preHandler: admin }, async () => ({
-    items: (await service.courses.find().sort({ name: 1, _id: 1 }).limit(200).toArray()).map(view),
-  }));
+  app.get('/api/v1/admin/courses', { preHandler: admin }, async (request) => {
+    const page = parse(
+      listQuery.extend({ limit: listQuery.shape.limit.default(200) }),
+      request.query,
+    );
+    const values = await service.courses
+      .find()
+      .sort({ name: 1, _id: 1 })
+      .skip(page.offset)
+      .limit(page.limit + 1)
+      .toArray();
+    return pageOf(values.map(view), page);
+  });
 
   app.get(
     '/api/v1/admin/users',
@@ -492,16 +516,15 @@ export function identityRoutes(app: FastifyInstance, service: IdentityService) {
         }),
         request.query,
       );
-      return {
-        items: (
-          await service.users
-            .find()
-            .sort({ createdAt: 1, _id: 1 })
-            .skip(query.offset)
-            .limit(query.limit)
-            .toArray()
-        ).map(userView),
-      };
+      const values = (
+        await service.users
+          .find()
+          .sort({ createdAt: 1, _id: 1 })
+          .skip(query.offset)
+          .limit(query.limit + 1)
+          .toArray()
+      ).map(userView);
+      return pageOf(values, query);
     },
   );
 }

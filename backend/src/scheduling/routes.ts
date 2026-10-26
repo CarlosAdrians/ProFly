@@ -2,12 +2,13 @@ import type { FastifyInstance } from 'fastify';
 import { Binary } from 'mongodb';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
+import { listQuery, pageOf } from '../shared/pagination.js';
 import type { IdentityService } from '../identity/service.js';
 import type { Actor } from '../identity/models.js';
 import { command, id, routeId } from '../shared/http.js';
 import { date } from '../shared/temporal.js';
 import { AppError, conflict, missing, parse } from '../shared/errors.js';
-import { audit, entity, lock, view } from '../shared/model.js';
+import { audit, entity, lock, view, type Entity } from '../shared/model.js';
 import {
   absenceInput,
   allocationInput,
@@ -80,15 +81,20 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
     authenticated,
     'notifications',
   );
-  app.get('/api/v1/me/notifications', { preHandler: authenticated }, async (request) => ({
-    items: (
-      await notices
-        .find({ userId: identity.actor(request).user._id })
-        .sort({ createdAt: -1, _id: -1 })
-        .limit(100)
-        .toArray()
-    ).map(view),
-  }));
+  app.get('/api/v1/me/notifications', { preHandler: authenticated }, async (request) => {
+    const page = parse(listQuery, request.query),
+      userId = identity.actor(request).user._id;
+    const values = await notices
+      .find({ userId })
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(page.offset)
+      .limit(page.limit + 1)
+      .toArray();
+    return {
+      ...pageOf(values.map(view), page),
+      unreadCount: await notices.countDocuments({ userId, read: false }),
+    };
+  });
   command(
     app,
     'POST',
@@ -152,18 +158,23 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
   app.get('/api/v1/courses/:courseId/teachers', { preHandler: coordinator }, async (request) => {
     const courseId = routeId(request, 'courseId');
     await identity.course(identity.actor(request), courseId);
-    const members = await identity.memberships
-      .find({ courseId, role: 'teacher', active: true })
-      .limit(200)
+    const page = parse(
+      listQuery.extend({ limit: listQuery.shape.limit.default(200) }),
+      request.query,
+    );
+    const values = await identity.memberships
+      .aggregate<{ id: string; name: string; email: string }>([
+        { $match: { courseId, role: 'teacher', active: true } },
+        { $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'user' } },
+        { $unwind: '$user' },
+        { $match: { 'user.state': 'ACTIVE', 'user.roles': 'teacher' } },
+        { $project: { _id: 0, id: '$user._id', name: '$user.name', email: '$user.email' } },
+        { $sort: { name: 1, id: 1 } },
+        { $skip: page.offset },
+        { $limit: page.limit + 1 },
+      ])
       .toArray();
-    return {
-      items: (
-        await identity.users
-          .find({ _id: { $in: members.map((m) => m.userId) }, state: 'ACTIVE' })
-          .sort({ name: 1, _id: 1 })
-          .toArray()
-      ).map((u) => ({ id: u._id, name: u.name, email: u.email })),
-    };
+    return pageOf(values, page);
   });
   command(
     app,
@@ -328,18 +339,48 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
   app.get('/api/v1/courses/:courseId/planning', { preHandler: coordinator }, async (request) => {
     const courseId = routeId(request, 'courseId');
     await identity.course(identity.actor(request), courseId);
+    const query = parse(z.strictObject({ periodId: id.optional() }), request.query);
+    const filter = { courseId, ...(query.periodId ? { periodId: query.periodId } : {}) };
+    const allocations = await service.allocations
+      .find({ ...filter, state: { $ne: 'CANCELLED' } })
+      .sort({ _id: 1 })
+      .limit(501)
+      .toArray();
+    const published = await service.published.find(filter).sort({ _id: 1 }).limit(501).toArray();
+    const plans = await service.plans.find(filter).sort({ _id: 1 }).limit(101).toArray();
+    if (allocations.length > 500 || published.length > 500 || plans.length > 100)
+      throw new AppError(
+        422,
+        'PLANNING_LIMIT',
+        'Filtre um periodo menor ou use as consultas paginadas de alocacoes, publicacoes e planos.',
+      );
     return {
-      allocations: (
-        await service.allocations
-          .find({ courseId, state: { $ne: 'CANCELLED' } })
-          .sort({ _id: 1 })
-          .limit(500)
-          .toArray()
-      ).map(view),
-      published: (await service.published.find({ courseId }).limit(500).toArray()).map(view),
-      plans: (await service.plans.find({ courseId }).limit(100).toArray()).map(view),
+      allocations: allocations.map(view),
+      published: published.map(view),
+      plans: plans.map(view),
     };
   });
+  for (const collectionName of ['allocations', 'publishedAllocations', 'plans'] as const) {
+    const resource =
+      collectionName === 'publishedAllocations' ? 'published-allocations' : collectionName;
+    app.get(
+      `/api/v1/courses/:courseId/${resource}`,
+      { preHandler: coordinator },
+      async (request) => {
+        const courseId = routeId(request, 'courseId');
+        await identity.course(identity.actor(request), courseId);
+        const query = parse(listQuery.extend({ periodId: id.optional() }), request.query);
+        const values = await db.db
+          .collection<Entity & { courseId: string; periodId: string }>(collectionName)
+          .find({ courseId, ...(query.periodId ? { periodId: query.periodId } : {}) })
+          .sort({ _id: 1 })
+          .skip(query.offset)
+          .limit(query.limit + 1)
+          .toArray();
+        return pageOf(values.map(view), query);
+      },
+    );
+  }
   command(
     app,
     'POST',
@@ -368,8 +409,10 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
     const records = await service.occurrences
       .find({ teacherId, date: { $gte: query.from, $lte: query.until } })
       .sort({ startsAt: 1, _id: 1 })
-      .limit(4096)
+      .limit(4097)
       .toArray();
+    if (records.length > 4096)
+      throw new AppError(422, 'SCHEDULE_LIMIT', 'Reduza o periodo consultado.');
     const cases = await absences
       .find({ teacherId, startsOn: { $lte: query.until }, endsOn: { $gte: query.from } })
       .toArray();
@@ -422,15 +465,38 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
   app.get('/api/v1/courses/:courseId/occurrences', { preHandler: coordinator }, async (request) => {
     const courseId = routeId(request, 'courseId');
     await identity.course(identity.actor(request), courseId);
-    return {
-      items: (
-        await service.occurrences
-          .find({ courseId })
-          .sort({ startsAt: -1, _id: -1 })
-          .limit(500)
-          .toArray()
-      ).map(view),
-    };
+    const query = parse(
+      listQuery
+        .extend({
+          limit: z
+            .string()
+            .regex(/^\d+$/)
+            .transform(Number)
+            .pipe(z.number().int().min(1).max(500))
+            .default(500),
+          from: date.optional(),
+          until: date.optional(),
+        })
+        .refine((q) => !q.from || !q.until || q.from <= q.until),
+      request.query,
+    );
+    const values = await service.occurrences
+      .find({
+        courseId,
+        ...(query.from || query.until
+          ? {
+              date: {
+                ...(query.from ? { $gte: query.from } : {}),
+                ...(query.until ? { $lte: query.until } : {}),
+              },
+            }
+          : {}),
+      })
+      .sort({ startsAt: -1, _id: -1 })
+      .skip(query.offset)
+      .limit(query.limit + 1)
+      .toArray();
+    return pageOf(values.map(view), query);
   });
   command(
     app,
@@ -553,30 +619,34 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
     }
     return record;
   }
-  app.get('/api/v1/me/absences', { preHandler: teacher }, async (request) => ({
-    items: (
-      await absences
-        .find({ teacherId: identity.actor(request).user._id })
-        .sort({ createdAt: -1, _id: -1 })
-        .limit(100)
-        .toArray()
-    ).map(view),
-  }));
+  app.get('/api/v1/me/absences', { preHandler: teacher }, async (request) => {
+    const page = parse(listQuery, request.query);
+    const values = await absences
+      .find({ teacherId: identity.actor(request).user._id })
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(page.offset)
+      .limit(page.limit + 1)
+      .toArray();
+    return pageOf(values.map(view), page);
+  });
   app.get('/api/v1/courses/:courseId/absences', { preHandler: coordinator }, async (request) => {
     const courseId = routeId(request, 'courseId');
     await identity.course(identity.actor(request), courseId);
-    const records = await absences
+    const page = parse(listQuery, request.query);
+    const values = await absences
       .find({ courseIds: courseId })
       .sort({ createdAt: -1, _id: -1 })
-      .limit(100)
+      .skip(page.offset)
+      .limit(page.limit + 1)
       .toArray();
-    return {
-      items: records.map((r) => {
-        const { decisions, courseIds, ...data } = view(r);
+    return pageOf(
+      values.map((record) => {
+        const { decisions, courseIds, ...data } = view(record);
         void courseIds;
         return { ...data, decisions: { [courseId]: decisions[courseId] } };
       }),
-    };
+      page,
+    );
   });
   command(
     app,
