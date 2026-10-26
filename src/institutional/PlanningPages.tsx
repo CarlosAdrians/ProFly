@@ -22,6 +22,7 @@ import type {
 } from './types';
 import { ActionFeedback, Badge, Heading, LoadingError, Panel, Select } from './ui';
 import s from './Portal.module.css';
+import { RoomLabel } from './RoomLabel';
 export function MeetingFields({
   meetings,
   onChange,
@@ -183,13 +184,14 @@ export function AllocationForm({
     periods = useApi<Items<Period>>('/periods');
   const [offeringId, setOffering] = useState(record?.offeringId ?? offeringPreset ?? ''),
     [teacherId, setTeacher] = useState(record?.teacherId ?? ''),
+    [room, setRoom] = useState(record?.room ?? ''),
     [meetings, setMeetings] = useState<Meeting[]>(record?.meetings ?? []),
     [assessment, setAssessment] = useState<Assessment | null>(null),
     [candidates, setCandidates] = useState<(Assessment & { name: string })[]>([]),
     action = useAction();
   const offering = offerings.data?.items.find((o) => o.id === offeringId),
     period = periods.data?.items.find((p) => p.id === offering?.periodId);
-  const payload = { offeringId, teacherId, meetings };
+  const payload = { offeringId, teacherId, meetings, room: room.trim() || null };
   const assess = async () => {
     setAssessment(
       await api<Assessment>(`/courses/${courseId}/eligibility`, {
@@ -239,6 +241,21 @@ export function AllocationForm({
           setAssessment(null);
         }}
       />
+      <TextField
+        label="Sala"
+        placeholder="Ex.: 201"
+        maxLength={80}
+        value={room}
+        onChange={(event) => {
+          setRoom(event.target.value);
+          setAssessment(null);
+          setCandidates([]);
+        }}
+      />
+      <p className={s.muted}>
+        Informe o nome ou número da sala. Se ainda não estiver definida, deixe em branco. A sala
+        aparecerá para o professor após a publicação.
+      </p>
       <MeetingFields
         meetings={meetings}
         period={period}
@@ -269,7 +286,12 @@ export function AllocationForm({
                 items: (Assessment & { name: string; rank: number | null })[];
               }>(`/courses/${courseId}/recommendations`, {
                 method: 'POST',
-                body: { offeringId, meetings, ...(record ? { allocationId: record.id } : {}) },
+                body: {
+                  offeringId,
+                  meetings,
+                  room: room.trim() || null,
+                  ...(record ? { allocationId: record.id } : {}),
+                },
               });
               const results = response.items;
               setCandidates(results);
@@ -370,6 +392,9 @@ export function ApiAllocationsPage() {
                 {a.slots.length} encontros
               </p>
               <Badge value={a.state} />
+              <p>
+                <RoomLabel room={a.room} />
+              </p>
             </div>
             <div className={s.actions}>
               <Button variant="secondary" onClick={() => setEditing(a)}>

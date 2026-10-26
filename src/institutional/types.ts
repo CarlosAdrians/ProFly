@@ -53,6 +53,7 @@ export type Subject = CatalogItem & { criteria: Criteria | null };
 export type Offering = RecordBase & OfferingData & { courseId: string };
 export type Meeting = OfferingData['meetings'][number];
 export type Allocation = RecordBase & {
+  room?: string | null;
   offeringId: string;
   teacherId: string;
   courseId: string;
@@ -61,7 +62,7 @@ export type Allocation = RecordBase & {
   groupId: string;
   state: string;
   meetings: Meeting[];
-  slots: { date: string; startsAt: string; endsAt: string }[];
+  slots: { date: string; startsAt: string; endsAt: string; room?: string | null }[];
 };
 export type Plan = RecordBase & {
   courseId: string;
@@ -88,6 +89,7 @@ export interface Assessment {
   };
 }
 export type Occurrence = RecordBase & {
+  room?: string | null;
   teacherId: string;
   courseId: string;
   subjectId: string;

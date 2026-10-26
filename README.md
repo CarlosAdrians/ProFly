@@ -75,9 +75,11 @@ Detalhes, nós de decisão, fórmula e exemplos fictícios estão na [proposta d
 
 ### Alocações e calendário
 
-Planejamento por curso, turma e período, com seleção de dia e turno. Os cartões de aula representam disciplina, turma e professor e podem ser incluídos, editados e movimentados por arraste, com alternativa por formulário.
+Planejamento por curso, turma e período, com seleção de dia e turno. Os cartões de aula representam disciplina, turma, professor e sala e podem ser incluídos, editados e movimentados por arraste, com alternativa por formulário.
 
-Toda alteração precisa conferir novamente os horários reais, os compromissos do professor em outros cursos e sua carga. Disputas simultâneas entre coordenações devem preservar a integridade da escala. A proposta de trabalho inclui rascunho e versão publicada estável; rascunhos salvos e a última publicação mantêm reservas globais até uma nova revisão atômica. Essa política conservadora permanece proposta para homologação institucional.
+Toda alteração precisa conferir novamente os horários reais, os compromissos do professor em outros cursos e sua carga. Disputas simultâneas entre coordenações devem preservar a integridade da escala. A proposta de trabalho inclui rascunho e versão publicada estável; rascunhos salvos e a última publicação mantêm reservas globais de professor, turma e sala até uma nova revisão atômica. Essa política conservadora permanece proposta para homologação institucional.
+
+A alocação pode informar a **sala pelo nome ou número**, como “201”, sem bloco. O local aparece no calendário e nos detalhes da aula, nas próximas aulas e no histórico. Aulas sem local informado mostram **Sala a definir**. [Veja um exemplo dos detalhes com Sala 201](docs/assets/screenshots/23-professor-sala.jpg). Salvar mantém a mudança no rascunho; publicar atualiza somente as aulas futuras do professor e preserva a sala dos encontros já iniciados ou passados. A mesma sala não pode ser reservada em horários sobrepostos, inclusive entre cursos, turmas e professores diferentes.
 
 ### Dashboard e histórico do professor
 
@@ -173,7 +175,7 @@ Atualizado em **26/10/2026**. Branch local: `feat/backend-institucional`. A inte
 | Comprovantes acadêmicos | API de documentos privados por versão/item do perfil, imutáveis, auditados, com quotas e retirada sem apagar o original; integração dos novos controles no frontend pendente. |
 | Notificações | Avisos internos, paginação, total não lido e preferência persistida; e-mails de segurança independentes. |
 | E-mail | SMTP implementado e testado em captura fictícia local. Entrega externa depende de remetente autenticado. |
-| Validação | Fechamento local com comando backend/scripts/verify.mjs; rastreabilidade dos 68 cenários em [aceitação do backend](docs/validation/BACKEND_ACCEPTANCE.md), histórico em [STATUS.md](docs/validation/STATUS.md). |
+| Validação | Fechamento local com comando backend/scripts/verify.mjs; rastreabilidade dos 70 cenários em [aceitação do backend](docs/validation/BACKEND_ACCEPTANCE.md), histórico em [STATUS.md](docs/validation/STATUS.md). |
 
 A implementação está validada para demonstração acadêmica local e não equivale à homologação institucional. O MongoDB configurado ainda falhou na conexão TLS na conferência desta etapa, sem desativar validação de certificados. Ainda faltam remetente real, configuração inicial da administração, revisão de critérios/grade/limites e políticas de privacidade/retenção, infraestrutura HTTPS e verificações de produção. Não inserir atestados reais na prévia de desenvolvimento.
 
@@ -181,7 +183,7 @@ A base de implementação foi localizada em `claude/pensive-dirac-5rithn`, no co
 
 ## O que falta para a entrega
 
-A base está validada para **demonstração acadêmica local** nos cenários documentados. A última verificação registrou **74 testes de backend, 18 da interface conectada e 220 gerais de frontend aprovados**, além de tipos, lint e build. O código do backend foi comparado novamente ao relatório nesta revisão e permanece igual. A captura das telas não substitui testes de fluxo nem homologação de produção.
+A base está validada para **demonstração acadêmica local** nos cenários documentados. A última verificação registrou **76 testes de backend, 18 da interface conectada e 220 gerais de frontend aprovados**, além de tipos, lint e build. O código do backend foi comparado novamente ao relatório nesta revisão e permanece igual. A captura das telas não substitui testes de fluxo nem homologação de produção.
 
 Antes de considerar a operação institucional concluída:
 

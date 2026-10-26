@@ -1,6 +1,12 @@
 import type { ReactNode, SVGProps } from 'react';
 
 const shapes = {
+  door: (
+    <>
+      <path d="M4 21h16M6 21V3h12v18M10 3v18" />
+      <path d="M14 12h.01" />
+    </>
+  ),
   document: (
     <>
       <path d="M14 2H5v20h14V7l-5-5Z" />

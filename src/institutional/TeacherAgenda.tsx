@@ -7,6 +7,7 @@ import { calendarSubjectTone } from './calendarColors';
 import { lessonDayPart } from './calendarShifts';
 import type { ProfileData, Occurrence } from './types';
 import s from './TeacherAgenda.module.css';
+import { RoomLabel } from './RoomLabel';
 
 const shiftScene = (shift: string) =>
   shift === 'MORNING' ? 'morning' : shift === 'AFTERNOON' ? 'afternoon' : 'night';
@@ -214,6 +215,7 @@ export function HistoryTimeline({ items }: { items: Occurrence[] }) {
                         <span>
                           {item.courseName} · {item.groupName}
                         </span>
+                        <RoomLabel room={item.room} />
                       </span>
                       <Badge value={item.displayStatus ?? item.status} />
                       <Icon name="arrowRight" size={18} />
@@ -236,6 +238,9 @@ export function HistoryTimeline({ items }: { items: Occurrence[] }) {
               {timeLabel(selected.endsAt)}
             </p>
             <Badge value={selected.displayStatus ?? selected.status} />
+            <p>
+              <RoomLabel room={selected.room} />
+            </p>
             <p>
               {selected.status === 'COMPLETED'
                 ? 'Realização confirmada no registro da coordenação.'

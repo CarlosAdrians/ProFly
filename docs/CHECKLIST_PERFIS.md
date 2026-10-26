@@ -1,6 +1,6 @@
 # Revisão dos perfis do ProFly
 
-Atualizado em 26/10/2026, branch feat/backend-institucional. Backend implementado e validado localmente para demonstração acadêmica; operação institucional ainda depende dos itens externos abaixo. [Aceitação e rastreabilidade dos 68 cenários](validation/BACKEND_ACCEPTANCE.md); [histórico das verificações](validation/STATUS.md).
+Atualizado em 26/10/2026, branch feat/backend-institucional. Backend implementado e validado localmente para demonstração acadêmica; operação institucional ainda depende dos itens externos abaixo. [Aceitação e rastreabilidade dos 70 cenários](validation/BACKEND_ACCEPTANCE.md); [histórico das verificações](validation/STATUS.md).
 
 ## Professor
 
@@ -21,7 +21,7 @@ Atualizado em 26/10/2026, branch feat/backend-institucional. Backend implementad
 | Análise acadêmica | Papel e vínculo ativo no curso exigidos na consulta/decisão; administrador sem vínculo recusado; revogação vale na sessão existente | P1 de aprovação administrativa irrestrita corrigido, CASE-063; autoria forjada rejeitada |
 | Organização | Disciplinas, critérios, turmas, períodos/ofertas, referências e versões | Grade, pesos, pertinência e requisitos são propostas para validação acadêmica |
 | Elegibilidade e score | Todos os requisitos obrigatórios avaliados, pendência separada de falha e zero, score limitado/explicável | Recomendação não atribui aula; ausência temporária não diminui score acadêmico |
-| Alocação/publicação | Reservas globais de professor/turma/carga, concorrência, versões e rollback | Inclusive entre períodos distintos com datas sobrepostas; histórico passado preservado |
+| Alocação/publicação | Reservas globais de professor/turma/sala/carga, concorrência, versões e rollback | Inclusive entre períodos distintos com datas sobrepostas; histórico passado preservado |
 | Consulta | Listas com continuação explícita; planejamento por período e endpoints paginados | Visão agregada recusa corte em mais de 500 alocações/publicações ou 100 planos; comparação recusa mais de 200 candidatos por chamada |
 
 ## Administrador
@@ -51,4 +51,4 @@ Disponibilidade anterior noturna preservada; acrescentadas cinco janelas diurnas
 
 O calendário agora inicia em Semana/Todos para o professor, mostra horário/disciplina/turma, contador, legenda e dias livres. Paleta de oito tons consistente pelo nome normalizado do curso/disciplina, preservada entre datas/turnos/visões; as três matérias do cenário usam cores distintas. Curso e demais dados estão no modal da aula. Controles compactos, destaque de hoje e temas claro/escuro; mês/semana/dia exibem segunda a sábado. A coordenação mantém seu filtro inicial, apresentação e editor de alocações; o professor continua sem criar/arrastar aulas.
 
-Incremento visual de 26/10: cadernos de turnos no calendário, quadro semanal de disponibilidade, linha do tempo consultiva e atestados com PDF no formulário. Cinco registros históricos da semana 19..23/10 acrescentados apenas à conta sintética (3 realizados, 1 cancelado, 1 a confirmar), por rotina transacional restrita ao banco efêmero local; repetição não duplica. Aulas publicadas da semana 26..31 e perfil/critérios preservados. 404/carregamento/manutenção com marca institucional; pausa operacional configurável sem revogar sessões. Testes atuais: 74 de backend, 18 da interface conectada e 220 gerais do frontend, com limites externos conservados.
+Incremento visual de 26/10: cadernos de turnos no calendário, quadro semanal de disponibilidade, linha do tempo consultiva e atestados com PDF no formulário. Cinco registros históricos da semana 19..23/10 acrescentados apenas à conta sintética (3 realizados, 1 cancelado, 1 a confirmar), por rotina transacional restrita ao banco efêmero local; repetição não duplica. Aulas publicadas da semana 26..31 e perfil/critérios preservados. 404/carregamento/manutenção com marca institucional; pausa operacional configurável sem revogar sessões. Testes atuais: 76 de backend, 18 da interface conectada e 220 gerais do frontend, com limites externos conservados.

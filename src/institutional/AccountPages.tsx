@@ -1,5 +1,6 @@
 import { AvailabilityBoard, TeacherNote, HistoryTimeline } from './TeacherAgenda';
 import agenda from './TeacherAgenda.module.css';
+import { RoomLabel } from './RoomLabel';
 import { useAction } from './actions';
 import { dayLabel, timeLabel, today } from './dates';
 import { addDate } from './calendarModel';
@@ -573,6 +574,9 @@ export function OccurrenceList({ items }: { items: Occurrence[] }) {
             <strong>{o.subjectName}</strong>
             <p>
               {o.courseName} · {o.groupName}
+            </p>
+            <p>
+              <RoomLabel room={o.room} />
             </p>
             <p>
               {dayLabel(o.date)} · {timeLabel(o.startsAt)}–{timeLabel(o.endsAt)}

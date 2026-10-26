@@ -227,6 +227,7 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
       screen.getByLabelText('Professor aprovado no curso'),
       fixture.teacherId,
     );
+    await user.type(screen.getByLabelText('Sala'), '201');
     await user.click(screen.getByRole('button', { name: 'Comparar professores' }));
     await screen.findAllByText(/pontos$/);
     await user.click(screen.getByRole('button', { name: 'Conferir elegibilidade' }));
@@ -242,6 +243,13 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     await user.click(screen.getByRole('button', { name: 'Publicar revisão' }));
     await user.click(screen.getByRole('button', { name: 'Confirmar publicação' }));
     await screen.findByText('Escala publicada com sucesso.');
+    expect(
+      (
+        await fixture.database.db
+          .collection('allocations')
+          .findOne({ offeringId: fixture.offering.id })
+      )?.room,
+    ).toBe('201');
     await user.click(screen.getByRole('link', { name: 'Meu início' }));
     await screen.findByRole('heading', { name: 'Próximas aulas do curso' });
     await screen.findAllByText('Direito Civil I');
@@ -282,6 +290,7 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
       target: { value: fixture.from },
     });
     await screen.findAllByText('Direito Civil I');
+    expect((await screen.findAllByText('Sala 201')).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: 'Nova alocação' })).not.toBeInTheDocument();
   }, 30000);
   it('salva preferências de notificações e comunica ausência sem alterar o perfil acadêmico', async () => {

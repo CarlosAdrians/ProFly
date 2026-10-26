@@ -20,6 +20,7 @@ import { addDate, monday, monthDates, moveMeeting, weekday } from './calendarMod
 import { calendarSubjectTone } from './calendarColors';
 import c from './TeacherCalendar.module.css';
 import s from './Portal.module.css';
+import { RoomLabel } from './RoomLabel';
 interface Pin {
   id: string;
   date: string;
@@ -28,6 +29,7 @@ interface Pin {
   subject: string;
   teacher: string;
   course?: string;
+  room?: string | null;
   status: string;
   allocation?: Allocation;
   occurrence?: Occurrence;
@@ -72,6 +74,7 @@ export function ApiCalendarPage() {
         subject: o.subjectName,
         teacher: o.groupName,
         course: o.courseName,
+        room: o.room,
         status: o.status,
         occurrence: o,
       }))
@@ -86,6 +89,7 @@ export function ApiCalendarPage() {
             subject: subjects.data?.items.find((v) => v.id === a.subjectId)?.name ?? 'Disciplina',
             teacher: teachers.data?.items.find((t) => t.id === a.teacherId)?.name ?? 'Professor',
             status: a.state,
+            room: slot.room !== undefined ? slot.room : a.room,
             allocation: a,
           })),
       );
@@ -114,6 +118,7 @@ export function ApiCalendarPage() {
           data: {
             offeringId: a.offeringId,
             teacherId: a.teacherId,
+            room: a.room ?? null,
             meetings: moveMeeting(a, source.date, to),
           },
         },
@@ -359,6 +364,7 @@ export function ApiCalendarPage() {
                             <span className={teacher ? c.subject : undefined}>{p.subject}</span>
                             {p.course && !teacher && <small>{p.course}</small>}
                             <small className={teacher ? c.group : undefined}>{p.teacher}</small>
+                            <RoomLabel room={p.room} />
                             <small className={teacher ? c.status : undefined}>
                               {p.status === 'DRAFT'
                                 ? 'Rascunho'
@@ -440,6 +446,9 @@ export function ApiCalendarPage() {
               {timeLabel(selected.endsAt)}
             </p>
             <Badge value={selected.status} />
+            <p>
+              <RoomLabel room={selected.room} />
+            </p>
             {selected.absencePending && (
               <p>Há uma comunicação de ausência aplicável a este período.</p>
             )}
