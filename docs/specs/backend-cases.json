@@ -1,0 +1,835 @@
+{
+  "version": "0.1",
+  "status": "PLANNED",
+  "requirements": [
+    {
+      "id": "REQ-01",
+      "title": "Identidade e sessao"
+    },
+    {
+      "id": "REQ-02",
+      "title": "Autorizacao por recurso e curso"
+    },
+    {
+      "id": "REQ-03",
+      "title": "Solicitacao e aprovacao"
+    },
+    {
+      "id": "REQ-04",
+      "title": "Perfil e qualidade dos dados"
+    },
+    {
+      "id": "REQ-05",
+      "title": "Referencias academicas"
+    },
+    {
+      "id": "REQ-06",
+      "title": "Horarios e carga"
+    },
+    {
+      "id": "REQ-07",
+      "title": "Arvore de elegibilidade"
+    },
+    {
+      "id": "REQ-08",
+      "title": "Score explicavel"
+    },
+    {
+      "id": "REQ-09",
+      "title": "Alocacao e concorrencia"
+    },
+    {
+      "id": "REQ-10",
+      "title": "Ausencias e anexos"
+    },
+    {
+      "id": "REQ-11",
+      "title": "Historico proprio"
+    },
+    {
+      "id": "REQ-12",
+      "title": "Contratos e falhas"
+    },
+    {
+      "id": "REQ-13",
+      "title": "Persistencia real"
+    },
+    {
+      "id": "REQ-14",
+      "title": "Versoes e rastreabilidade"
+    },
+    {
+      "id": "REQ-15",
+      "title": "Privacidade e atendimento aos direitos do titular"
+    }
+  ],
+  "cases": [
+    {
+      "id": "CASE-001",
+      "requirements": [
+        "REQ-01"
+      ],
+      "layer": "authorization",
+      "scenario": "Login valido e credencial incorreta.",
+      "expected": "Criar sessao somente para credencial valida; rejeitar a incorreta sem revelar dados privados.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-002",
+      "requirements": [
+        "REQ-01",
+        "REQ-02"
+      ],
+      "layer": "authorization",
+      "scenario": "Revogar sessao ou inativar vinculo e reutilizar credencial anterior.",
+      "expected": "Proxima operacao protegida e rejeitada; permissoes antigas do navegador nao concedem acesso.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-003",
+      "requirements": [
+        "REQ-01",
+        "REQ-12"
+      ],
+      "layer": "adversarial",
+      "scenario": "Professor envia role=admin, approved=true ou outro teacherId.",
+      "expected": "Rejeitar campos protegidos; nao alterar privilegios nem outro perfil.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-004",
+      "requirements": [
+        "REQ-01",
+        "REQ-13"
+      ],
+      "layer": "integration",
+      "scenario": "Consumir convite duas vezes ou depois da validade.",
+      "expected": "No maximo uma ativacao consistente; segunda tentativa ou convite expirado e rejeitado.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-005",
+      "requirements": [
+        "REQ-02"
+      ],
+      "layer": "authorization",
+      "scenario": "Coordenador consulta ou altera recurso de outro curso pelo ID.",
+      "expected": "Recurso fora do escopo nao e retornado nem alterado, com resposta consistente com a spec.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-006",
+      "requirements": [
+        "REQ-02",
+        "REQ-12"
+      ],
+      "layer": "adversarial",
+      "scenario": "Trocar courseId no corpo, URL ou filtro mantendo recurso de outro curso.",
+      "expected": "Servidor confere a propriedade real do recurso e rejeita a operacao.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-007",
+      "requirements": [
+        "REQ-02",
+        "REQ-11"
+      ],
+      "layer": "authorization",
+      "scenario": "Professor filtra historico ou escala por ID de outro professor.",
+      "expected": "Somente dados proprios autorizados sao consultaveis; filtro nao amplia escopo.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-008",
+      "requirements": [
+        "REQ-02"
+      ],
+      "layer": "authorization",
+      "scenario": "Professor ou coordenador chama operacao administrativa.",
+      "expected": "403 e nenhuma mutacao administrativa.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-009",
+      "requirements": [
+        "REQ-03"
+      ],
+      "layer": "contract",
+      "scenario": "Solicitacao nova ainda pendente.",
+      "expected": "Acesso limitado a propria solicitacao e dados; nenhum acesso academico liberado automaticamente.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-010",
+      "requirements": [
+        "REQ-03",
+        "REQ-13"
+      ],
+      "layer": "integration",
+      "scenario": "Mesma pessoa solicita dois cursos; um aprova e outro recusa.",
+      "expected": "Uma identidade, vinculos independentes e preservacao da aprovacao existente.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-011",
+      "requirements": [
+        "REQ-03",
+        "REQ-14"
+      ],
+      "layer": "contract",
+      "scenario": "Coordenador pede ajuste ou decide solicitacao.",
+      "expected": "Situacao valida, motivo e autoria do ator real registrados, sem atribuir aula automaticamente.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-012",
+      "requirements": [
+        "REQ-04"
+      ],
+      "layer": "contract",
+      "scenario": "Salvar perfil parcial com campos presentes validos.",
+      "expected": "Salvar rascunho e listar pendencias, sem afirmar que perfil ou elegibilidade estao completos.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-013",
+      "requirements": [
+        "REQ-04",
+        "REQ-12"
+      ],
+      "layer": "contract",
+      "scenario": "Submeter cadastro sem campo obrigatorio ou com texto vazio.",
+      "expected": "422 com fieldErrors e sem transicao indevida de estado.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-014",
+      "requirements": [
+        "REQ-04",
+        "REQ-12"
+      ],
+      "layer": "adversarial",
+      "scenario": "Enviar null, objeto, array ou numero nao finito em campo de tipo diferente.",
+      "expected": "Rejeicao por campo; nenhum dado malformado persistido.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-015",
+      "requirements": [
+        "REQ-04",
+        "REQ-08"
+      ],
+      "layer": "unit",
+      "scenario": "Comparar experiencia declarada como zero com experiencia nao informada.",
+      "expected": "Zero conhecido e pendencia sao estados distintos; nenhum zero ficticio para informacao ausente.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-016",
+      "requirements": [
+        "REQ-04",
+        "REQ-14"
+      ],
+      "layer": "integration",
+      "scenario": "Editar perfil com versao anterior apos outra atualizacao.",
+      "expected": "409; dados mais recentes preservados.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-017",
+      "requirements": [
+        "REQ-05",
+        "REQ-13"
+      ],
+      "layer": "concurrency",
+      "scenario": "Duas criacoes simultaneas com codigo academico que deve ser unico.",
+      "expected": "Somente uma criacao, outra recebe conflito; indice de banco impede duplicidade.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-018",
+      "requirements": [
+        "REQ-05",
+        "REQ-02"
+      ],
+      "layer": "contract",
+      "scenario": "Criar oferta com disciplina e turma de cursos incompativeis.",
+      "expected": "422 ou rejeicao de escopo conforme causa; nenhuma referencia incoerente.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-019",
+      "requirements": [
+        "REQ-05",
+        "REQ-14"
+      ],
+      "layer": "integration",
+      "scenario": "Inativar registro ja usado em escala publicada.",
+      "expected": "Historico preservado e operacoes futuras seguem politica explicita; sem exclusao em cascata silenciosa.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-020",
+      "requirements": [
+        "REQ-06"
+      ],
+      "layer": "unit",
+      "scenario": "Aulas adjacentes, uma terminando exatamente quando outra inicia.",
+      "expected": "Sem conflito apenas pela fronteira compartilhada.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-021",
+      "requirements": [
+        "REQ-06"
+      ],
+      "layer": "unit",
+      "scenario": "Blocos com IDs diferentes mas horarios sobrepostos.",
+      "expected": "Conflito detectado pelos intervalos reais.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-022",
+      "requirements": [
+        "REQ-06",
+        "REQ-07"
+      ],
+      "layer": "unit",
+      "scenario": "Professor cobre um dos encontros, mas nao todos os encontros da oferta.",
+      "expected": "Nao confirmar disponibilidade completa; informar encontro descoberto.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-023",
+      "requirements": [
+        "REQ-06"
+      ],
+      "layer": "unit",
+      "scenario": "Enviar fim anterior/igual ao inicio, vigencia invalida ou turno sem grade configurada.",
+      "expected": "Entrada invalida e rejeitada; falta de configuracao e explicitada sem inventar horarios.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-024",
+      "requirements": [
+        "REQ-06"
+      ],
+      "layer": "unit",
+      "scenario": "Carga resultante exatamente no limite e depois acima do limite.",
+      "expected": "Permitir a fronteira valida e rejeitar excesso, considerando semanas e periodos sobrepostos.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-025",
+      "requirements": [
+        "REQ-06",
+        "REQ-09"
+      ],
+      "layer": "integration",
+      "scenario": "Professor possui compromisso em outro curso durante periodo letivo sobreposto.",
+      "expected": "Conflito global detectado independentemente do curso ou nome do periodo.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-026",
+      "requirements": [
+        "REQ-07"
+      ],
+      "layer": "unit",
+      "scenario": "Disciplina possui varios conhecimentos obrigatorios.",
+      "expected": "Todos sao avaliados com niveis e analise; caminho e motivos rastreaveis.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-027",
+      "requirements": [
+        "REQ-07"
+      ],
+      "layer": "unit",
+      "scenario": "Conhecimento obrigatorio pendente e outro requisito obrigatorio sabidamente nao atendido.",
+      "expected": "INELIGIBLE pela falha conhecida, com pendencias preservadas na explicacao.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-028",
+      "requirements": [
+        "REQ-07",
+        "REQ-08"
+      ],
+      "layer": "unit",
+      "scenario": "Requisitos obrigatorios atendidos e dados de fator de score ainda ausentes.",
+      "expected": "ELIGIBLE com score PENDING e value=null; fora do ranking numerico completo.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-029",
+      "requirements": [
+        "REQ-07",
+        "REQ-12"
+      ],
+      "layer": "contract",
+      "scenario": "Oferta sem criterios configurados ou avaliacao sem todos os horarios.",
+      "expected": "CONFIGURATION_PENDING ou avaliacao preliminar explicita; nunca disponibilidade completa inventada.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-030",
+      "requirements": [
+        "REQ-08"
+      ],
+      "layer": "unit",
+      "scenario": "Calcular fixtures sinteticas Ana e Bruno descritas na proposta.",
+      "expected": "80,0 e 85,0 respectivamente, com fatores explicando os totais; sem alegar politica institucional validada.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-031",
+      "requirements": [
+        "REQ-08",
+        "REQ-12"
+      ],
+      "layer": "contract",
+      "scenario": "Inspecionar todas as respostas CALCULATED.",
+      "expected": "Numero finito 0..100, fatores coerentes, versoes e contexto presentes; falhar se contraditorio.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-032",
+      "requirements": [
+        "REQ-08"
+      ],
+      "layer": "unit",
+      "scenario": "Adicionar conhecimento fora da ficha ou duplicar item equivalente.",
+      "expected": "Nenhum bonus por dado irrelevante ou repetido.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-033",
+      "requirements": [
+        "REQ-08"
+      ],
+      "layer": "unit",
+      "scenario": "Sobrepor experiencias ou importar novamente experiencia ja registrada.",
+      "expected": "Nao contar duas vezes o mesmo intervalo/contexto.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-034",
+      "requirements": [
+        "REQ-08"
+      ],
+      "layer": "unit",
+      "scenario": "Dois candidatos com mesmos fatores e mesma versao.",
+      "expected": "Mesmo score e posicao empatada; ordem secundaria nao altera pontuacao.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-035",
+      "requirements": [
+        "REQ-08",
+        "REQ-10"
+      ],
+      "layer": "unit",
+      "scenario": "Registrar afastamento temporario mantendo dados academicos.",
+      "expected": "Score academico preservado; somente disponibilidade nas datas aplicaveis e afetada.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-036",
+      "requirements": [
+        "REQ-09",
+        "REQ-13"
+      ],
+      "layer": "concurrency",
+      "scenario": "Duas coordenacoes reservam simultaneamente o mesmo professor no mesmo intervalo.",
+      "expected": "Somente uma alocacao valida e confirmada; outra recebe conflito, sem estado parcial.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-037",
+      "requirements": [
+        "REQ-09",
+        "REQ-06"
+      ],
+      "layer": "concurrency",
+      "scenario": "Duas alocacoes simultaneas usam horarios distintos mas excedem juntas a carga.",
+      "expected": "Limite global preservado; nao confirmar ambas se o total for invalido.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-038",
+      "requirements": [
+        "REQ-09"
+      ],
+      "layer": "concurrency",
+      "scenario": "Duas requisicoes tentam ocupar a mesma turma no mesmo intervalo.",
+      "expected": "Nenhuma sobreposicao invalida de turma e persistida.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-039",
+      "requirements": [
+        "REQ-09",
+        "REQ-14"
+      ],
+      "layer": "integration",
+      "scenario": "Mover cartao com versao antiga ou salvar recomendacao que ficou desatualizada.",
+      "expected": "Revalidar, retornar conflito quando necessario e preservar estado anterior para restauracao da UI.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-040",
+      "requirements": [
+        "REQ-09",
+        "REQ-13"
+      ],
+      "layer": "integration",
+      "scenario": "Falha durante publicacao de uma revisao de escala.",
+      "expected": "Rollback consistente; versao publicada anterior continua integra.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-041",
+      "requirements": [
+        "REQ-10",
+        "REQ-02"
+      ],
+      "layer": "authorization",
+      "scenario": "Consultar ou baixar atestado alheio por ID ou URL conhecida.",
+      "expected": "Acesso negado fora do escopo autorizado, sem exposicao do documento.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-042",
+      "requirements": [
+        "REQ-10",
+        "REQ-12"
+      ],
+      "layer": "adversarial",
+      "scenario": "Enviar anexo acima do limite, tipo recusado ou extensao enganosa.",
+      "expected": "413/415 conforme o caso e nenhuma disponibilizacao publica do arquivo.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-043",
+      "requirements": [
+        "REQ-10",
+        "REQ-09"
+      ],
+      "layer": "integration",
+      "scenario": "Professor comunica ausencia que afeta aulas publicadas.",
+      "expected": "Caso e aulas afetadas sinalizados; nenhuma exclusao ou republicacao automatica.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-044",
+      "requirements": [
+        "REQ-10",
+        "REQ-12"
+      ],
+      "layer": "contract",
+      "scenario": "Consultar recomendacao/calendario durante afastamento.",
+      "expected": "Apenas indisponibilidade necessaria; nenhum documento ou metadado clinico no score/retorno.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-045",
+      "requirements": [
+        "REQ-11"
+      ],
+      "layer": "contract",
+      "scenario": "Consultar dashboard com mais de 10 ocorrencias passadas em varios cursos.",
+      "expected": "Ultimas 10 proprias por inicio decrescente, com desempate estavel e dados de curso/turma/situacao.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-046",
+      "requirements": [
+        "REQ-11"
+      ],
+      "layer": "integration",
+      "scenario": "Paginar historico completo com datas empatadas e filtros.",
+      "expected": "Sem duplicacao ou perda indevida por paginacao; somente registros autorizados.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-047",
+      "requirements": [
+        "REQ-11",
+        "REQ-08"
+      ],
+      "layer": "unit",
+      "scenario": "Passar o horario de aula prevista ou cancelar/remarcar ocorrencia.",
+      "expected": "Nao confirmar realizacao nem gerar experiencia concluida automaticamente.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-048",
+      "requirements": [
+        "REQ-11",
+        "REQ-08"
+      ],
+      "layer": "unit",
+      "scenario": "Calcular experiencia de professor com mais de 10 aulas confirmadas pertinentes.",
+      "expected": "Usar historico pertinente completo e agregado, sem limitar ao recorte visual nem inflar por aula.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-049",
+      "requirements": [
+        "REQ-12"
+      ],
+      "layer": "adversarial",
+      "scenario": "JSON malformado, payload excessivo e propriedades inesperadas.",
+      "expected": "400/422/limite configurado conforme contrato; erro estruturado e nenhuma mutacao parcial.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-050",
+      "requirements": [
+        "REQ-12",
+        "REQ-13"
+      ],
+      "layer": "adversarial",
+      "scenario": "Injetar operador MongoDB em filtros ou campos de identidade.",
+      "expected": "Rejeitar tipos/chaves nao permitidos; nao ampliar consulta nem alterar comandos do banco.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-051",
+      "requirements": [
+        "REQ-12"
+      ],
+      "layer": "contract",
+      "scenario": "Receber erro de dominio, validacao ou excecao de dependencia.",
+      "expected": "Resposta com codigo e mensagem uteis, campos quando aplicavel e sem stack/segredo.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-052",
+      "requirements": [
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "contract",
+      "scenario": "Salvar formulario invalido usado por modal.",
+      "expected": "Erros por campo permitem manter e corrigir valores; nenhum sucesso ficticio retornado.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-053",
+      "requirements": [
+        "REQ-13"
+      ],
+      "layer": "integration",
+      "scenario": "MongoDB indisponivel durante operacao persistente.",
+      "expected": "503 ou falha documentada; nao substituir por memoria e declarar sucesso.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-054",
+      "requirements": [
+        "REQ-13"
+      ],
+      "layer": "integration",
+      "scenario": "Reiniciar aplicacao depois de gravar cadastro valido.",
+      "expected": "Dados recuperados do MongoDB de teste com integridade e indices esperados.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-055",
+      "requirements": [
+        "REQ-14"
+      ],
+      "layer": "integration",
+      "scenario": "Analisar perfil ou alocar aula com tentativa de falsificar reviewerId.",
+      "expected": "Autor real vem da sessao; historico contem ator, data e versao confiaveis.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-056",
+      "requirements": [
+        "REQ-07",
+        "REQ-08",
+        "REQ-14"
+      ],
+      "layer": "contract",
+      "scenario": "Recalcular depois de alterar perfil ou ficha da disciplina.",
+      "expected": "Nova avaliacao identifica versoes atuais; avaliacao anterior nao e reescrita como se usasse os dados novos.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-057",
+      "requirements": [
+        "REQ-15",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "contract",
+      "scenario": "Configuracao institucional ausente ou habilitacao indevida de dados de saude.",
+      "expected": "Producao recusa politica ausente; novos atestados bloqueados por padrao; teste sintetico explicito.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-058",
+      "requirements": [
+        "REQ-15",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "authorization",
+      "scenario": "Titular abre protocolo, tenta forjar dono ou acessar pedidos de outro usuario.",
+      "expected": "Identidade vem da sessao, CSRF obrigatorio, consulta propria isolada e administracao exclusiva.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-059",
+      "requirements": [
+        "REQ-15",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "concurrency",
+      "scenario": "Duas respostas administrativas com a mesma versao ou tentativa de reescrever resposta final.",
+      "expected": "Uma resposta vence; conflito409 preserva eventos e trilha, sem executar eliminacao de dados.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-060",
+      "requirements": [
+        "REQ-15",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "adversarial",
+      "scenario": "Exportar sem senha atual, sem CSRF ou misturar registros de terceiros.",
+      "expected": "Recusa indevida, projecoes de inclusao excluem segredos/terceiros; copia privada no-store auditada.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-061",
+      "requirements": [
+        "REQ-15",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "integration",
+      "scenario": "Mais de50 protocolos com mesma data de criacao e cursor malformado.",
+      "expected": "Paginacao estavel sem perdas/duplicatas, sempre por titular; cursor invalido422.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-062",
+      "requirements": [
+        "REQ-15",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "integration",
+      "scenario": "Upload de atestado quando tratamento de saude nao esta habilitado.",
+      "expected": "403 antes de ler arquivo/persistir bytes, sem alterar documentos anteriores ou score.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-063",
+      "requirements": [
+        "REQ-02",
+        "REQ-03",
+        "REQ-14"
+      ],
+      "layer": "authorization",
+      "scenario": "Administrador sem coordenacao, coordenador de outro curso, professor e papel simultaneo tentam analisar uma solicitacao; vinculo de coordenacao revogado com sessao existente.",
+      "expected": "Somente coordenador com vinculo ativo no curso consulta e analisa; administrador nao tem bypass academico; recusas nao alteram solicitacao/revisoes/vinculos; revogacao vale na proxima operacao.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-064",
+      "requirements": [
+        "REQ-10",
+        "REQ-12",
+        "REQ-15"
+      ],
+      "layer": "adversarial",
+      "scenario": "PDF passivo, MIME falso, arquivo truncado, script ou anexo incorporado, formulario, mais de50 paginas e varios uploads simultaneos.",
+      "expected": "Somente PDF passivo ou imagem valida; tamanho e paralelismo limitados; worker com prazo/heap limitado; original privado preservado e download autenticado como anexo; bloqueio institucional de saude mantido.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-065",
+      "requirements": [
+        "REQ-04",
+        "REQ-12",
+        "REQ-14",
+        "REQ-15"
+      ],
+      "layer": "integration",
+      "scenario": "Comprovante de formacao/experiencia ligado ao perfil, tentativa alheia, uploads/retiradas concorrentes, versao antiga, quotas e paginacao.",
+      "expected": "Referencia ao item e versao atuais, arquivo imutavel; consulta propria ou coordenacao do curso/solicitacao correspondente; uma gravacao vence, retirada oculta da coordenacao sem eliminar original; sem aprovacao ou score automatico; exportacao sem bytes e limites explicitos.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-066",
+      "requirements": [
+        "REQ-02",
+        "REQ-05",
+        "REQ-09",
+        "REQ-11",
+        "REQ-12"
+      ],
+      "layer": "integration",
+      "scenario": "Listas maiores que a pagina, nomes/datas empatados, troca de curso/titular e planejamento com mais de500 alocacoes.",
+      "expected": "Ordenacao com desempate, continuacao explicita sem ampliar escopo; usuarios sem hashes/senhas; papeis de curso refletem vinculos reais; planejamento agregado recusa truncamento e permite filtro por periodo/listas paginadas; notificacoes informam total nao lido.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-067",
+      "requirements": [
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "integration",
+      "scenario": "Manutencao planejada com sessao existente, consultas e escritas, readiness e liveness.",
+      "expected": "503 MAINTENANCE antes dos handlers, Retry-After e CORS preservados; live e status consultaveis; nenhum dado/sessao revogado e acesso recuperavel ao desativar.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-068",
+      "requirements": [
+        "REQ-11",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "integration",
+      "scenario": "Preparacao explicita de cinco aulas historicas na previa sintetica isolada; repeticao e destinos nao permitidos.",
+      "expected": "Somente banco efemero local e identidades ficticias vinculadas; uma transacao idempotente, sem sobrescrever perfil, criterios, alocacoes ou registros existentes; sem rota publica para importar passado.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-069",
+      "requirements": [
+        "REQ-06",
+        "REQ-07",
+        "REQ-09",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "concurrency",
+      "scenario": "Sala informada com tipo/formato invalido; reserva da mesma sala em dois cursos, periodos e professores distintos; variacoes de escrita e cancelamento de rascunho.",
+      "expected": "Validacao no servidor; identidade global normalizada; somente uma reserva concorrente vence e conflito retorna motivo sem dados alheios; outro horario/sala permitido; publicacao anterior conserva reserva ate republicar cancelamento; fatores academicos nao alterados.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-070",
+      "requirements": [
+        "REQ-09",
+        "REQ-11",
+        "REQ-14",
+        "REQ-15"
+      ],
+      "layer": "integration",
+      "scenario": "Alocacao com sala, consulta docente antes/depois de publicar, alteracao e republicacao com encontros passados, cliente anterior omitindo sala e versao obsoleta.",
+      "expected": "Sala no rascunho, calendario e ocorrencias publicadas; professor so recebe revisao publicada; alteracao atualiza somente encontros futuros, preserva local/versao do passado; omissao conserva sala, null explicito remove, versao obsoleta recusada; exportacao propria inclui local.",
+      "status": "PLANNED"
+    }
+  ]
+}

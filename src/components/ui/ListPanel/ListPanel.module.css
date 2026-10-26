@@ -1,0 +1,27 @@
+.page {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+}
+
+.search {
+  margin-bottom: var(--space-4);
+}
+
+.status:not(:empty) {
+  margin-bottom: var(--space-3);
+}
+
+@media (max-width: 768px) {
+  .search {
+    max-width: none;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Os cartões da tabela já têm borda; o painel externo fica sem moldura. */
+  .panel {
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+  }
+}

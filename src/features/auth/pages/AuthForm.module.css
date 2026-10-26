@@ -1,0 +1,85 @@
+/* Estilos compartilhados pelos formulários de Login e Esqueceu senha. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* "Cadastrar?" logo abaixo do logo, sem competir com o formulário. */
+.register {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 var(--space-4);
+}
+.title {
+  text-align: left;
+  font-size: 1.35rem;
+  margin: 0 0 10px;
+}
+.loginTitle {
+  text-align: center;
+  margin-bottom: 4px;
+}
+.legalLinks {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8rem;
+  margin-top: 28px;
+}
+.legalLinks a {
+  color: var(--color-link);
+}
+
+.intro {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-subtitle);
+  font-weight: var(--font-weight-semibold);
+}
+
+.status:not(:empty) {
+  margin-top: var(--space-4);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.actionsCentered {
+  justify-content: center;
+  margin-top: 0;
+}
+
+.link {
+  gap: 7px;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  color: var(--color-link);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-md);
+  text-underline-offset: 3px;
+}
+
+.link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.backLink {
+  align-self: center;
+}
+
+@media (max-width: 480px) {
+  .actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    text-align: center;
+  }
+}

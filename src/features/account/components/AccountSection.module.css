@@ -1,0 +1,75 @@
+/* Data stays readable in paired fields; forms use the same hierarchy. */
+.view {
+  min-width: 0;
+}
+.details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0 30px;
+  margin: 0;
+}
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.row:nth-last-child(-n + 2) {
+  border-bottom: 0;
+  padding-bottom: 8px;
+}
+.row dt {
+  color: var(--color-text-muted);
+  font-size: 0.73rem;
+}
+.row dd {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+.form {
+  padding-top: 14px;
+}
+.formFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.fullWidth {
+  grid-column: 1/-1;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 10px;
+  margin-top: 26px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 22px;
+}
+.actions button {
+  min-width: 0;
+  font-size: 0.8rem;
+}
+@media (max-width: 650px) {
+  .details,
+  .formFields {
+    grid-template-columns: 1fr;
+  }
+  .row:nth-last-child(2) {
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 22px;
+  }
+}
+@media (max-width: 480px) {
+  .actions > button {
+    flex: 1;
+    padding: 0 12px;
+  }
+}

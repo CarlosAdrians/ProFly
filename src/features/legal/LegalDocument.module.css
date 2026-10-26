@@ -1,0 +1,46 @@
+.page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+.back {
+  display: inline-block;
+  margin-bottom: 24px;
+  color: var(--color-link);
+}
+.document {
+  color: var(--color-text);
+  line-height: 1.7;
+}
+.document h1 {
+  font-size: 1.65rem;
+  margin: 0 0 8px;
+}
+.document h2 {
+  font-size: 1.05rem;
+  margin: 24px 0 4px;
+}
+.document p {
+  margin: 0 0 12px;
+}
+.version {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+.intro {
+  padding: 16px;
+  background: var(--color-bg-subtle);
+  border-left: 4px solid var(--color-primary);
+  border-radius: 6px;
+}
+.references {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 24px;
+  padding-top: 16px;
+}
+.references a {
+  color: var(--color-link);
+  font-size: 0.9rem;
+}

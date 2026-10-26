@@ -1,0 +1,153 @@
+/*
+ * Tokens visuais do ProFly — fonte única de cores, tipografia, espaçamentos e formas.
+ * Direção visual: institucional, inspirada no Canvas da UNIFACISA (navbar azul-marinho,
+ * conteúdo branco, bordas cinza-claro e azul nos destaques).
+ * Contrastes conferidos para WCAG AA.
+ */
+:root {
+  /* Cores — marca e navegação */
+  --color-navbar: #21499b; /* navbar lateral; branco sobre ela: 8,4:1 */
+  --color-navbar-hover: #2a55aa;
+  --color-navbar-active: #2e5bb5; /* item selecionado */
+  --color-navbar-divider: rgba(255, 255, 255, 0.2);
+  --color-navbar-outline: rgba(255, 255, 255, 0.6);
+  --color-primary: #2676bb; /* botões e destaques; branco sobre ele: 4,8:1 */
+  --color-primary-hover: #1f64a0;
+  --color-link: #1f5f99; /* 6,7:1 sobre branco */
+  --color-field-accent: var(--color-navbar); /* faixa à esquerda dos campos (identidade ProFly) */
+
+  /* Cores — superfícies e texto */
+  --color-bg: #ffffff;
+  --color-bg-subtle: #f3f5f8; /* cabeçalho de tabela, áreas secundárias */
+  --color-row-hover: #f7f9fc;
+  --color-border: #d9dee7; /* divisórias e contornos de cartões */
+  --color-border-strong: #8a94a6; /* contorno de campos (3:1 sobre branco) */
+  --color-text: #252b35;
+  --color-text-muted: #5a6372;
+  --color-text-inverse: #ffffff;
+
+  /* Cores — feedback */
+  --color-success: #15880a;
+  --color-success-bg: #e6f4ea;
+  --color-success-text: #1e6b2b;
+  --color-danger: #b30303;
+  --color-danger-bg: #fdecec;
+  --color-danger-text: #8a0202;
+  --color-neutral-bg: #eceef2;
+  --color-neutral-text: #4a5260;
+
+  /* Foco e camadas */
+  --color-focus: var(--color-primary);
+  --color-focus-inverse: #ffffff; /* foco sobre a navbar */
+  --color-scrim: rgba(37, 43, 53, 0.5); /* fundo dos modais */
+  --color-scrim-light: rgba(255, 255, 255, 0.6); /* foto esmaecida (Esqueceu senha) */
+
+  /* Tipografia — hierarquia */
+  --font-family:
+    'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-size-title: 1.5rem; /* título da página */
+  --font-size-subtitle: 1.125rem;
+  --font-size-md: 1rem; /* texto e botões */
+  --font-size-sm: 0.875rem; /* ajuda, erros, selos */
+  --font-size-xs: 0.8125rem; /* rótulos da navbar */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Espaçamento */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.5rem;
+  --space-8: 3rem;
+
+  /* Bordas e sombras discretas */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(37, 43, 53, 0.06), 0 1px 3px rgba(37, 43, 53, 0.08);
+  --shadow-md: 0 4px 12px rgba(37, 43, 53, 0.12);
+  --shadow-lg: 0 12px 32px rgba(37, 43, 53, 0.18);
+
+  /* Controles (campos, botões, busca) — densidade moderada.
+     Alturas >= 44px para manter alvos de toque confortáveis. */
+  --field-height: 48px;
+  --field-accent-width: 5px;
+  --control-radius: var(--radius-md);
+  --control-padding-x: 0.875rem;
+  --control-font-size: 1rem; /* 16px evita zoom automático no iOS */
+  --label-font-size: 0.9375rem;
+  --search-height: 44px;
+  --touch-target: 44px;
+
+  /* Espaçamentos de formulário */
+  --field-label-gap: 0.375rem; /* rótulo → campo */
+  --field-message-gap: 0.25rem; /* campo → ajuda/erro */
+  --form-gap: 1rem; /* entre campos */
+  --form-actions-gap: 1.5rem; /* último campo → ações */
+
+  /* Layout */
+  --sidebar-width: 88px;
+  --topbar-height: 56px;
+  --content-max-width: 1180px;
+  --breakpoint-mobile: 768px; /* referência; media queries usam o valor literal */
+}
+
+/* Superficies e estados compartilhados pelos modos claro e escuro. */
+:root {
+  color-scheme: light;
+  --color-canvas: #f3f4f8;
+  --color-accent-bg: #eaf2ff;
+  --color-accent-border: #cedcf2;
+  --color-holiday-bg: #fff0ed;
+  --color-holiday-text: #943c32;
+  --color-warning-bg: #fff4db;
+  --color-warning-text: #805612;
+  --color-success-button: #21763a;
+  --color-danger-button: #b3262f;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.125rem;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-canvas: #111216;
+  --color-bg: #1c1d23;
+  --color-bg-subtle: #252730;
+  --color-row-hover: #2a2d38;
+  --color-border: #3a3e4b;
+  --color-border-strong: #788397;
+  --color-text: #f1f2f6;
+  --color-text-muted: #b4bac8;
+  --color-navbar: #173467;
+  --color-navbar-hover: #254a88;
+  --color-navbar-active: #2c5598;
+  --color-primary: #316db2;
+  --color-primary-hover: #3c7cc4;
+  --color-link: #9bc8ff;
+  --color-focus: #9bc8ff;
+  --color-accent-bg: #202f47;
+  --color-accent-border: #3b567c;
+  --color-holiday-bg: #3c2629;
+  --color-holiday-text: #ffb7ac;
+  --color-warning-bg: #3d321c;
+  --color-warning-text: #f2cc80;
+  --color-success-bg: #1c3629;
+  --color-success-text: #a1dfb0;
+  --color-success: #a1dfb0;
+  --color-danger-bg: #422529;
+  --color-danger-text: #ffb1b7;
+  --color-danger: #ffb1b7;
+  --color-neutral-bg: #313540;
+  --color-neutral-text: #c8ceda;
+  --color-scrim: #000a;
+  --color-scrim-light: #111216bb;
+  --shadow-sm: 0 1px 3px #0003;
+  --shadow-md: 0 6px 20px #0004;
+  --shadow-lg: 0 16px 48px #0006;
+}

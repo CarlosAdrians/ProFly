@@ -1,0 +1,329 @@
+.page {
+  max-width: var(--content-max-width);
+  margin: auto;
+}
+.intro {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.8;
+  margin: 18px 0 26px;
+}
+.status:not(:empty) {
+  margin-bottom: 22px;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  align-items: start;
+  gap: 26px;
+}
+.identity {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.identityMain {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 30px 22px 24px;
+  text-align: center;
+}
+.photoHint {
+  font-size: 0.66rem;
+  color: var(--color-text-muted);
+  margin-top: 14px;
+}
+.identity h2 {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  letter-spacing: -0.025em;
+  margin: 20px 0 12px;
+  overflow-wrap: anywhere;
+}
+.role {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 7px;
+  padding: 6px 10px;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+}
+.anchors {
+  display: grid;
+  gap: 3px;
+  padding: 14px;
+  border-top: 1px solid var(--color-border);
+}
+.anchors a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 10px;
+  border-radius: 8px;
+  color: var(--color-link);
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+.anchors a:hover {
+  background: var(--color-row-hover);
+}
+.session {
+  border-top: 1px solid var(--color-border);
+  padding: 21px 24px 15px;
+}
+.session p {
+  margin: 0 0 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.session > span {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  line-height: 1.7;
+}
+.session .signout {
+  min-width: 0;
+  padding: 0;
+  min-height: 44px;
+  font-size: 0.76rem;
+  color: var(--color-danger-text);
+  background: transparent;
+  box-shadow: none;
+  margin-top: 12px;
+}
+.content {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.card {
+  padding: 0;
+  border-radius: 16px;
+  box-shadow: none;
+  scroll-margin-top: 24px;
+  overflow: hidden;
+}
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 23px 26px;
+  border-bottom: 1px solid var(--color-border);
+}
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.sectionIcon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--color-bg-subtle);
+  color: var(--color-link);
+  flex-shrink: 0;
+}
+.cardHeader h2 {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.cardHeader p {
+  margin: 7px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.7;
+}
+.cardHeader .editButton {
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 0.76rem;
+}
+.cardBody {
+  padding: 12px 26px 22px;
+}
+.loading {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  padding: 18px 0;
+}
+.declared {
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle);
+  border-radius: 6px;
+  font-size: 0.68rem;
+  padding: 6px 9px;
+}
+.academicBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding: 24px 26px;
+  gap: 28px;
+}
+.academicBody h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  margin: 0 0 18px;
+  font-weight: 600;
+}
+.academicBody h3 svg {
+  color: var(--color-text-muted);
+}
+.education {
+  grid-column: 1/-1;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+.education article {
+  border-left: 2px solid var(--color-accent-border);
+  padding: 2px 0 2px 14px;
+  margin-top: 18px;
+}
+.education article span {
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+}
+.education h4 {
+  margin: 7px 0;
+  font-size: 0.87rem;
+  font-weight: 600;
+}
+.education article p {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.7;
+}
+.knowledge,
+.availability {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.knowledge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.knowledge li {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.75rem;
+}
+.knowledge small {
+  color: var(--color-text-muted);
+  font-size: 0.64rem;
+}
+.availability li {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 9px 0;
+  font-size: 0.73rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.availability li:first-child {
+  padding-top: 0;
+}
+.availability strong {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.scheduleLink {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 40px;
+  margin-top: 8px;
+  color: var(--color-link);
+  font-size: 0.73rem;
+  text-underline-offset: 3px;
+}
+.empty {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.8;
+  margin: 0;
+}
+@media (max-width: 1050px) {
+  .layout {
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: 20px;
+  }
+  .academicBody {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .identityMain {
+    padding: 24px;
+  }
+  .identity h2 {
+    margin-top: 14px;
+  }
+  .anchors {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 8px 14px;
+  }
+  .session {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 16px 22px;
+  }
+  .session p {
+    margin: 0;
+  }
+  .session .signout {
+    margin: 0;
+  }
+  .identityMain > button {
+    width: 80px;
+    height: 80px;
+  }
+}
+@media (max-width: 480px) {
+  .cardHeader {
+    padding: 20px;
+    gap: 16px;
+  }
+  .cardBody {
+    padding: 8px 20px 20px;
+  }
+  .academicBody {
+    padding: 22px 20px;
+    gap: 24px;
+  }
+  .cardHeader .editButton {
+    margin-left: 51px;
+  }
+  .session {
+    flex-direction: column;
+    align-items: start;
+  }
+}

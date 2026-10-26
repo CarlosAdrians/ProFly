@@ -1,0 +1,87 @@
+.root {
+  position: relative;
+  display: inline-flex;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.trigger:hover,
+.trigger[aria-expanded='true'] {
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+}
+
+/* Três pontos verticais, como no protótipo. */
+.dots,
+.dots::before,
+.dots::after {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.dots {
+  position: relative;
+}
+
+.dots::before,
+.dots::after {
+  content: '';
+  position: absolute;
+  left: 0;
+}
+
+.dots::before {
+  top: -7px;
+}
+
+.dots::after {
+  top: 7px;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 160px;
+  margin: 0;
+  padding: var(--space-1) 0;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-md);
+}
+
+.item {
+  display: block;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+  text-align: left;
+  cursor: pointer;
+}
+
+.item:hover,
+.item:focus-visible {
+  background: var(--color-bg-subtle);
+  outline: none;
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}

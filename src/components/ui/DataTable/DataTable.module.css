@@ -1,0 +1,127 @@
+.wrapper {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+/* border-collapse: separate permite cantos arredondados sem cortar o menu de opções. */
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--font-size-md);
+}
+
+.table th {
+  height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table th:first-child {
+  border-top-left-radius: var(--radius-md);
+}
+
+.table th:last-child {
+  border-top-right-radius: var(--radius-md);
+}
+
+.table td {
+  height: 56px;
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: break-word;
+}
+
+.table tbody tr:hover td {
+  background: var(--color-row-hover);
+}
+
+.table .nowrap {
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table .center {
+  text-align: center;
+}
+
+.empty {
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+/* Telas pequenas: linhas como cartões. */
+@media (max-width: 900px) {
+  .wrapper {
+    border: 0;
+    background: transparent;
+  }
+
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+
+  .table tr {
+    margin-bottom: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .table tbody tr:hover td {
+    background: transparent;
+  }
+
+  .table td,
+  .table .center,
+  .table .nowrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    height: auto;
+    min-height: 2.25rem; /* o botão de opções mantém seus 44px */
+    padding: var(--space-1) 0;
+    border: 0;
+    text-align: right;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-regular);
+    font-size: var(--font-size-sm);
+    text-align: left;
+  }
+
+  .table td.empty {
+    justify-content: center;
+    text-align: center;
+  }
+}

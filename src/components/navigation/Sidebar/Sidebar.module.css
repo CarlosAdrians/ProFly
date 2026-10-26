@@ -1,0 +1,206 @@
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  height: 100vh;
+  height: 100dvh;
+  background: var(--color-navbar);
+  color: var(--color-text-inverse);
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-3) var(--space-2) var(--space-4);
+}
+
+.symbol {
+  width: 48px;
+  height: 56px;
+  object-fit: contain;
+}
+
+.menuToggle {
+  display: none;
+}
+
+.nav {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-1);
+  min-height: 76px;
+  justify-content: center;
+  color: var(--color-text-inverse);
+  text-decoration: none;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+}
+
+.item:hover {
+  background: var(--color-navbar-hover);
+}
+
+/* Foco branco: o azul de destaque não contrasta com a navbar. */
+.sidebar :focus-visible {
+  outline-color: var(--color-focus-inverse);
+}
+
+.item:focus-visible {
+  outline-offset: -4px;
+}
+
+/* Item selecionado: azul um pouco mais claro e barra branca à esquerda. */
+.itemActive,
+.itemActive:hover {
+  background: var(--color-navbar-active);
+  box-shadow: inset 4px 0 0 var(--color-text-inverse);
+}
+
+.icon {
+  width: 32px;
+  height: 32px;
+  background-color: currentColor;
+  mask: var(--icon-url) center / contain no-repeat;
+  -webkit-mask: var(--icon-url) center / contain no-repeat;
+}
+
+/* Telas pequenas: barra superior com menu recolhível. */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+  }
+
+  .brand {
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-1) var(--space-4);
+    min-height: var(--topbar-height);
+  }
+
+  .symbol {
+    width: 36px;
+    height: 42px;
+    padding: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  .menuToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--touch-target);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-navbar-outline);
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--color-text-inverse);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+  }
+
+  .menuToggleBars,
+  .menuToggleBars::before,
+  .menuToggleBars::after {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: currentColor;
+    position: relative;
+  }
+
+  .menuToggleBars::before,
+  .menuToggleBars::after {
+    content: '';
+    position: absolute;
+  }
+
+  .menuToggleBars::before {
+    top: -6px;
+  }
+
+  .menuToggleBars::after {
+    top: 6px;
+  }
+
+  .nav {
+    display: none;
+    border-top: 1px solid var(--color-navbar-divider);
+  }
+
+  .nav[data-open='true'] {
+    display: block;
+  }
+
+  .list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .item {
+    min-height: 64px;
+  }
+
+  .itemActive,
+  .itemActive:hover {
+    box-shadow: inset 0 -4px 0 var(--color-text-inverse);
+  }
+
+  .icon {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.nav {
+  min-height: 0;
+}
+.utilities {
+  padding-bottom: 18px;
+  border-top: 1px solid var(--color-navbar-divider);
+}
+.utilities .item {
+  min-height: 68px;
+  font-size: 0.72rem;
+}
+.settingsIcon {
+  width: 25px;
+  height: 25px;
+}
+@media (max-width: 768px) {
+  .utilities {
+    display: none;
+    padding: 8px 16px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar[data-menu-open='true'] .utilities {
+    display: flex;
+  }
+  .utilities .item {
+    flex-direction: row;
+    gap: 10px;
+    padding: 8px 10px;
+    min-height: 44px;
+    font-size: 0.85rem;
+    border-radius: 10px;
+  }
+}

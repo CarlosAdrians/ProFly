@@ -1,0 +1,97 @@
+.schedule {
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+.schedule > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 22px;
+}
+.schedule h2 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+.schedule header p {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.7;
+  margin: 8px 0 0;
+}
+.schedule a {
+  color: var(--color-link);
+  font-size: 0.78rem;
+}
+.scroll {
+  overflow-x: auto;
+}
+.days {
+  display: grid;
+}
+.day {
+  min-height: 245px;
+  border-left: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border);
+  padding: 0 10px 16px;
+}
+.day:first-child {
+  border-left: 0;
+}
+.day h3 {
+  min-height: 86px;
+  padding: 16px 2px 14px;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 400;
+}
+.day h3 span {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+.day h3 strong {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.day h3 small {
+  font-size: 0.6rem;
+  color: var(--color-link);
+}
+.day[data-today='true'] {
+  background: var(--color-row-hover);
+}
+.window {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 9px;
+  padding: 12px 10px;
+  margin: 10px 0;
+  background: var(--color-bg-subtle);
+}
+.window > span {
+  color: var(--color-text-muted);
+  font-size: 0.64rem;
+}
+.window strong {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+.window small {
+  color: var(--color-text-muted);
+  font-size: 0.63rem;
+  line-height: 1.6;
+}
+.empty {
+  color: var(--color-text-muted);
+  font-size: 0.73rem;
+  line-height: 1.7;
+  padding: 10px 2px;
+}

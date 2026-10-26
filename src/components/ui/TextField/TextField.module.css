@@ -1,0 +1,85 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--field-label-gap);
+}
+
+.label {
+  font-size: var(--label-font-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Campo branco com contorno discreto e a faixa à esquerda, marca do ProFly. */
+.control {
+  display: flex;
+  align-items: center;
+  min-height: var(--field-height);
+  border: 1px solid var(--color-border-strong);
+  border-left: var(--field-accent-width) solid var(--color-field-accent);
+  border-radius: var(--control-radius);
+  background: var(--color-bg);
+  transition: border-color 0.15s ease;
+}
+
+.control:hover {
+  border-color: var(--color-text-muted);
+  border-left-color: var(--color-field-accent);
+}
+
+.control:focus-within {
+  border-color: var(--color-primary);
+  border-left-color: var(--color-field-accent);
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.control[data-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.control[data-readonly='true'] {
+  border-color: var(--color-border);
+  border-left-color: var(--color-border-strong);
+  background: var(--color-bg-subtle);
+}
+
+.control[data-readonly='true'] .input {
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: calc(var(--field-height) - 2px);
+  padding: 0 var(--control-padding-x);
+  border: 0;
+  border-radius: var(--control-radius);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--control-font-size);
+}
+
+.input:focus,
+.input:focus-visible {
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.hint,
+.error {
+  margin: calc(var(--field-message-gap) - var(--field-label-gap)) 0 0;
+  font-size: var(--font-size-sm);
+}
+
+.hint {
+  color: var(--color-text-muted);
+}
+
+.error {
+  color: var(--color-danger);
+  font-weight: var(--font-weight-semibold);
+}

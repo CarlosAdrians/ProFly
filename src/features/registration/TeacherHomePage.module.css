@@ -1,0 +1,318 @@
+.page {
+  max-width: var(--content-max-width);
+  margin: auto;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 8px 0 28px;
+}
+.header h1 {
+  font-size: 1.65rem;
+  margin: 10px 0;
+  letter-spacing: -0.035em;
+}
+.header p {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  line-height: 1.65;
+  margin: 0;
+}
+.header .date {
+  font-size: 0.75rem;
+}
+.calendarLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 17px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  color: var(--color-link);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(290px, 1fr);
+  gap: 24px;
+  margin-top: 24px;
+  align-items: start;
+}
+.primary,
+.secondary {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.panel {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.panelHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 23px 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+.panelHeading h2 {
+  font-size: 0.98rem;
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+.panelHeading p {
+  font-size: 0.74rem;
+  margin: 7px 0 0;
+  color: var(--color-text-muted);
+}
+.badge {
+  font-size: 0.68rem;
+  border-radius: 6px;
+  padding: 5px 8px;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+}
+.badge[data-status='APPROVED'] {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+.badge[data-status='CHANGES_REQUESTED'] {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+.empty {
+  display: flex;
+  gap: 18px;
+  padding: 30px 24px;
+  align-items: start;
+}
+.emptyIcon {
+  font-size: 1.65rem;
+  color: var(--color-link);
+  line-height: 1;
+}
+.empty h3,
+.historyEmpty h3 {
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin: 0 0 9px;
+}
+.empty p,
+.historyEmpty p {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.8;
+  margin: 0;
+  max-width: 55ch;
+}
+.panelFooter {
+  border-top: 1px solid var(--color-border);
+  padding: 16px 24px;
+}
+.panelFooter a,
+.requests a {
+  color: var(--color-link);
+  font-size: 0.8rem;
+  text-underline-offset: 3px;
+}
+.historyColumns {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.6fr;
+  gap: 8px;
+  background: var(--color-bg-subtle);
+  padding: 13px 24px;
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+}
+.historyEmpty {
+  padding: 30px 24px;
+}
+.availabilityBody {
+  padding: 20px 24px;
+}
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.weekdays button {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 9px 2px;
+  min-height: 48px;
+  cursor: pointer;
+  font-size: 0.68rem;
+}
+.weekdays button[aria-pressed='true'] {
+  color: var(--color-link);
+  background: var(--color-accent-bg);
+  border-color: var(--color-accent-border);
+  font-weight: 600;
+}
+.weekdays i {
+  width: 4px;
+  height: 4px;
+  background: var(--color-border-strong);
+  border-radius: 50%;
+}
+.weekdays i[data-available='true'] {
+  background: var(--color-link);
+}
+.dayLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin: 20px 0 12px;
+}
+.window {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.window strong {
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+}
+.window span {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+}
+.note {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+  margin: 17px 0 0;
+}
+.muted {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+}
+.education {
+  padding: 0 24px 22px;
+}
+.education article {
+  padding: 20px 0 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+.education article span {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+.education h3 {
+  font-size: 0.88rem;
+  margin: 7px 0;
+}
+.education article p {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+.requests {
+  margin-top: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-bg);
+  padding: 0 24px;
+  scroll-margin-top: 20px;
+}
+.requests summary {
+  padding: 20px 0;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.requests summary > span + span {
+  float: right;
+  font-size: 0.73rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+.requestIntro {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.8;
+  margin: 0 0 14px;
+}
+.courses {
+  display: grid;
+  gap: 0;
+  padding-bottom: 8px;
+}
+.course {
+  padding: 18px 0;
+  border-top: 1px solid var(--color-border);
+}
+.course > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.course h3 {
+  font-size: 0.86rem;
+  margin: 0;
+}
+.course p {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+  margin: 10px 0 0;
+}
+.reason {
+  background: var(--color-bg-subtle);
+  padding: 12px;
+  border-radius: 8px;
+}
+@media (max-width: 1000px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+  .secondary {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+@media (max-width: 650px) {
+  .header {
+    align-items: start;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .header h1 {
+    font-size: 1.45rem;
+  }
+  .secondary {
+    grid-template-columns: 1fr;
+  }
+  .panelHeading,
+  .empty,
+  .historyEmpty {
+    padding: 20px;
+  }
+  .course > div {
+    align-items: start;
+    flex-direction: column;
+  }
+  .requests summary > span + span {
+    float: none;
+    margin-left: 14px;
+  }
+}

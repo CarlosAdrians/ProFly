@@ -1,0 +1,104 @@
+.wrap {
+  display: flex;
+  align-items: end;
+  flex-direction: column;
+  gap: 4px;
+}
+.wrap small {
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  max-width: 210px;
+}
+.button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  padding: 5px 10px 5px 15px;
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.track {
+  position: relative;
+  flex-shrink: 0;
+  width: 58px;
+  height: 30px;
+  border-radius: 20px;
+  background: #dce7f7;
+  color: #2a538b;
+  padding: 4px 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: inset 0 0 0 1px #193b7426;
+}
+.thumb {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  display: grid;
+  place-items: center;
+  color: #234c86;
+  background: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  box-shadow: 0 1px 3px #0003;
+  transition: transform 0.15s;
+}
+.button[aria-checked='true'] .track {
+  background: #15284b;
+  color: #e1ebff;
+}
+.button[aria-checked='true'] .thumb {
+  transform: translateX(28px);
+}
+.button:focus-visible {
+  outline: 3px solid var(--color-link);
+  outline-offset: 3px;
+}
+.wrap[data-sidebar='true'] .button:focus-visible {
+  outline-color: white;
+}
+@media (prefers-reduced-motion: reduce) {
+  .thumb {
+    transition: none;
+  }
+}
+
+.wrap[data-sidebar='true'] {
+  align-items: center;
+  padding: 8px 4px 0;
+}
+.wrap[data-sidebar='true'] .button {
+  flex-direction: column-reverse;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: white;
+  gap: 5px;
+  padding: 4px 8px;
+  font-size: 0.68rem;
+  min-width: 60px;
+}
+.wrap[data-sidebar='true'] small {
+  color: white;
+  max-width: 78px;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .wrap[data-sidebar='true'] {
+    padding: 0;
+  }
+  .wrap[data-sidebar='true'] .button {
+    flex-direction: row;
+    font-size: 0.78rem;
+    gap: 10px;
+  }
+}

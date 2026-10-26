@@ -1,0 +1,222 @@
+.page {
+  max-width: var(--content-max-width);
+  margin: auto;
+}
+.intro {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 20px 0 28px;
+  line-height: 1.7;
+}
+.back {
+  color: var(--color-link);
+  font-size: 0.84rem;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  margin-top: 20px;
+  align-items: start;
+}
+.week,
+.editor,
+.missing {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.week header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 26px;
+  border-bottom: 1px solid var(--color-border);
+  gap: 20px;
+}
+.week h2,
+.editor h2 {
+  font-size: 1rem;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.week header p,
+.editor > p {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  line-height: 1.8;
+  margin: 6px 0 0;
+}
+.week header > span {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.day {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  align-items: center;
+  gap: 18px;
+  margin: 0 26px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--color-border);
+  min-height: 80px;
+}
+.day > strong {
+  font-size: 0.83rem;
+  font-weight: 500;
+}
+.day > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.none {
+  color: var(--color-text-muted);
+  font-size: 0.76rem;
+}
+.window {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-accent-bg);
+  color: var(--color-link);
+  padding-left: 12px;
+  border-radius: 9px;
+  font-size: 0.8rem;
+}
+.window button {
+  border: 0;
+  background: transparent;
+  color: var(--color-link);
+  min-height: 38px;
+  min-width: 36px;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: end;
+  padding: 24px;
+  flex-wrap: wrap;
+}
+.actions button {
+  min-width: 0;
+  font-size: 0.8rem;
+}
+.editor {
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.editor > p {
+  margin: -12px 0 0;
+}
+.select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.select select {
+  min-height: 48px;
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+.times {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.times label {
+  font-size: 0.75rem;
+}
+.times input {
+  padding: 0 7px;
+}
+.hours {
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+.editor .note {
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  margin: 0;
+}
+.missing {
+  padding: 30px;
+}
+.missing a {
+  color: var(--color-link);
+}
+@media (max-width: 1050px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .editor {
+    max-width: none;
+  }
+  .times {
+    max-width: 450px;
+  }
+}
+@media (max-width: 500px) {
+  .day {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin: 0 18px;
+  }
+  .week header {
+    padding: 22px 18px;
+  }
+  .actions {
+    padding: 20px 18px;
+  }
+  .actions button {
+    width: 100%;
+  }
+  .editor {
+    padding: 22px 18px;
+  }
+}
+.layout[data-editing='false'] .window {
+  padding-right: 12px;
+  min-height: 38px;
+}
+.week header > button {
+  font-size: 0.75rem;
+  min-width: 0;
+}
+.calendarLink {
+  display: inline-flex;
+  color: var(--color-link);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  text-underline-offset: 3px;
+}
+.guide {
+  border-top: 1px solid var(--color-border);
+  padding-top: 18px;
+}
+.guide strong {
+  font-size: 0.8rem;
+}
+.guide p {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.8;
+  margin: 5px 0 20px;
+}
+@media (max-width: 600px) {
+  .week header {
+    align-items: start;
+    flex-direction: column;
+  }
+}
