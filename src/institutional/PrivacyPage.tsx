@@ -132,49 +132,57 @@ export function PrivacyPage({ admin = false }: { admin?: boolean }) {
             <Link to="/conta">Corrigir meus dados</Link>
             <Link to="/privacidade">Ler aviso de privacidade</Link>
           </div>
+        </Panel>
+      )}
+      {admin && (
+        <Panel title="Gestão institucional de privacidade">
           <PrivacyInformation />
         </Panel>
       )}
       {!admin && (
-        <Panel title="Exercer um direito">
-          <p>
-            A abertura é gratuita e gera um protocolo. Pedidos de eliminação, bloqueio ou revisão
-            serão analisados; o envio não apaga registros nem altera sua escala.
-          </p>
-          <form
-            className={`${s.stack} ${s.privacyForm}`}
-            onSubmit={(e) => {
-              e.preventDefault();
-              void action.run(async () => {
-                await api('/me/privacy/requests', { method: 'POST', body: { kind, message } });
-                setMessage('');
-                setCursor(null);
-                result.refresh();
-              }, 'Pedido registrado. Acompanhe o protocolo abaixo.');
-            }}
-          >
-            <Select label="Quero solicitar" items={kinds} value={kind} onChange={setKind} />
-            <label className={s.privacyMessage}>
-              Descreva o pedido
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                required
-                minLength={10}
-                maxLength={1200}
-                rows={3}
-                aria-describedby="privacy-message-help"
-              />
-            </label>
-            <small id="privacy-message-help" className={s.muted}>
-              Informe somente o necessário. Não inclua senha, CPF, diagnóstico ou documento médico.
-            </small>
-            <ActionFeedback action={action} />
-            <Button type="submit" loading={action.busy}>
-              <Icon name="document" />
-              Registrar pedido
-            </Button>
-          </form>
+        <Panel>
+          <details className={s.privacyRequestToggle}>
+            <summary>Novo pedido de privacidade</summary>
+            <p>
+              A abertura é gratuita e gera um protocolo. Pedidos de eliminação, bloqueio ou revisão
+              serão analisados; o envio não apaga registros nem altera sua escala.
+            </p>
+            <form
+              className={`${s.stack} ${s.privacyForm}`}
+              onSubmit={(e) => {
+                e.preventDefault();
+                void action.run(async () => {
+                  await api('/me/privacy/requests', { method: 'POST', body: { kind, message } });
+                  setMessage('');
+                  setCursor(null);
+                  result.refresh();
+                }, 'Pedido registrado. Acompanhe o protocolo abaixo.');
+              }}
+            >
+              <Select label="Quero solicitar" items={kinds} value={kind} onChange={setKind} />
+              <label className={s.privacyMessage}>
+                Descreva o pedido
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  required
+                  minLength={10}
+                  maxLength={1200}
+                  rows={3}
+                  aria-describedby="privacy-message-help"
+                />
+              </label>
+              <small id="privacy-message-help" className={s.muted}>
+                Informe somente o necessário. Não inclua senha, CPF, diagnóstico ou documento
+                médico.
+              </small>
+              <ActionFeedback action={action} />
+              <Button type="submit" loading={action.busy}>
+                <Icon name="document" />
+                Registrar pedido
+              </Button>
+            </form>
+          </details>
         </Panel>
       )}
       <Panel title={admin ? 'Protocolos recebidos' : 'Meus protocolos'}>

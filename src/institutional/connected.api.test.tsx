@@ -1,7 +1,8 @@
+import type { Occurrence as StoredOccurrence } from '../../backend/src/scheduling/models';
 import { Buffer } from 'node:buffer';
 import { StrictMode } from 'react';
 import { beforeAll, afterAll, beforeEach, describe, it, expect, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { createUiFixture } from '../../backend/test/ui-fixture';
@@ -550,13 +551,94 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     );
     expect(after!.data.desiredWeeklyMinutes).toBe(before!.data.desiredWeeklyMinutes);
   }, 30000);
-  it('privacidade registra pedido proprio e informa pendencias sem inventar contato', async () => {
+  it('calendario docente mostra cinco aulas diurnas publicadas com dias livres e filtros', async () => {
+    const dateAt = (offset: number) => {
+      const day = new Date(`${fixture.from}T12:00:00Z`);
+      day.setUTCDate(day.getUTCDate() + offset);
+      return day.toISOString().slice(0, 10);
+    };
+    const now = new Date().toISOString();
+    const meetings = [
+      [0, '11:00', '11:50'],
+      [0, '17:00', '17:50'],
+      [1, '12:00', '12:50'],
+      [3, '17:00', '17:50'],
+      [4, '18:00', '18:50'],
+    ] as const;
+    const records: StoredOccurrence[] = meetings.map(([offset, start, end], i) => ({
+      _id: crypto.randomUUID(),
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+      allocationId: crypto.randomUUID(),
+      teacherId: fixture.teacherId,
+      courseId: fixture.courseA.id,
+      periodId: fixture.period.id,
+      subjectId: fixture.subjectA.id,
+      groupId: fixture.group.id,
+      date: dateAt(offset),
+      startsAt: `${dateAt(offset)}T${start}:00.000Z`,
+      endsAt: `${dateAt(offset)}T${end}:00.000Z`,
+      minutes: 50,
+      status: 'PLANNED',
+      courseName: 'Direito visual API',
+      groupName: 'Turma visual API',
+      subjectName: `Visual aula ${i + 1}`,
+    }));
+    const foreign = {
+      ...records[0],
+      _id: crypto.randomUUID(),
+      teacherId: crypto.randomUUID(),
+      subjectName: 'Visual alheia',
+    };
+    await fixture.database.db
+      .collection<StoredOccurrence>('occurrences')
+      .insertMany([...records, foreign]);
+    try {
+      open('/login');
+      const user = await signIn(fixture.teacherEmail);
+      await user.click(screen.getByRole('link', { name: 'Calendário' }));
+      expect(screen.getByRole('combobox', { name: 'Turno' })).toHaveValue('ALL');
+      await user.selectOptions(screen.getByRole('combobox', { name: 'Visualização' }), 'WEEK');
+      fireEvent.change(screen.getByLabelText('Data de referência'), {
+        target: { value: fixture.from },
+      });
+      expect(await screen.findAllByRole('button', { name: /Visual aula/ })).toHaveLength(5);
+      expect(screen.queryByRole('button', { name: /Visual alheia/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Nova alocação' })).not.toBeInTheDocument();
+      const morning = screen.getByRole('button', { name: /Visual aula 1/ });
+      expect(morning).toHaveAttribute('draggable', 'false');
+      expect(morning).toHaveTextContent('Direito visual API');
+      const freeDay = new Date(`${dateAt(2)}T12:00:00Z`).toLocaleDateString('pt-BR');
+      expect(
+        within(screen.getByRole('region', { name: freeDay })).getByText('Sem aulas'),
+      ).toBeInTheDocument();
+      await user.click(morning);
+      const details = screen.getByRole('dialog', { name: 'Detalhes da aula' });
+      expect(within(details).getByRole('heading', { name: 'Visual aula 1' })).toBeInTheDocument();
+      await user.click(within(details).getByRole('button', { name: 'Fechar' }));
+      await user.selectOptions(screen.getByRole('combobox', { name: 'Turno' }), 'MORNING');
+      expect(screen.getAllByRole('button', { name: /Visual aula/ })).toHaveLength(2);
+      await user.selectOptions(screen.getByRole('combobox', { name: 'Turno' }), 'AFTERNOON');
+      expect(screen.getAllByRole('button', { name: /Visual aula/ })).toHaveLength(3);
+      await user.selectOptions(screen.getByRole('combobox', { name: 'Turno' }), 'NIGHT');
+      expect(screen.queryByRole('button', { name: /Visual aula/ })).not.toBeInTheDocument();
+    } finally {
+      await fixture.database.db
+        .collection<StoredOccurrence>('occurrences')
+        .deleteMany({ _id: { $in: [...records, foreign].map((record) => record._id) } });
+    }
+  }, 30000);
+  it('privacidade pessoal simplificada registra pedido sem expor gestao institucional', async () => {
     open('/login');
     const user = await signIn(fixture.teacherEmail);
     await user.click(screen.getByRole('link', { name: /^Conta$/ }));
     await user.click(screen.getByRole('link', { name: 'Gerenciar meus dados' }));
     await screen.findByRole('heading', { name: 'Meus dados e privacidade' });
-    expect(await screen.findAllByText('Ainda não definido pela faculdade')).toHaveLength(2);
+    expect(
+      screen.queryByRole('heading', { name: 'Responsabilidade e atendimento' }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByText('Novo pedido de privacidade'));
     await user.selectOptions(
       screen.getByRole('combobox', { name: 'Quero solicitar' }),
       'CORRECTION',
@@ -588,6 +670,7 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     const user = await signIn(fixture.adminEmail);
     await router.navigate('/administracao/privacidade');
     await screen.findByRole('heading', { name: 'Atendimento de privacidade' });
+    expect(await screen.findAllByText('Ainda não definido pela faculdade')).toHaveLength(2);
     const entry = (
       await screen.findByText('Solicito acesso completo para conferencia sintetica.')
     ).closest('article')!;

@@ -23,6 +23,7 @@ interface Pin {
   endsAt: string;
   subject: string;
   teacher: string;
+  course?: string;
   status: string;
   allocation?: Allocation;
   occurrence?: Occurrence;
@@ -33,7 +34,7 @@ export function ApiCalendarPage() {
     teacher = useScope().asTeacher,
     [date, setDate] = useState(today),
     [view, setView] = useState('MONTH'),
-    [shift, setShift] = useState('NIGHT'),
+    [shift, setShift] = useState(teacher ? 'ALL' : 'NIGHT'),
     [showHolidays, setHolidays] = useState(true),
     [editing, setEditing] = useState<Allocation | null | undefined>(),
     [selected, setSelected] = useState<Occurrence | null>(null),
@@ -79,6 +80,7 @@ export function ApiCalendarPage() {
         endsAt: o.endsAt,
         subject: o.subjectName,
         teacher: o.groupName,
+        course: o.courseName,
         status: o.status,
         occurrence: o,
       }))
@@ -131,7 +133,7 @@ export function ApiCalendarPage() {
         title={teacher ? 'Meu calendário' : 'Calendário do curso'}
         description={
           teacher
-            ? 'Aulas da escala publicada e suas situações.'
+            ? 'Sua escala publicada pela coordenação. Selecione uma aula para consultar os detalhes.'
             : 'Arraste um encontro ou abra o cartão para editar. A publicação é feita em Alocações.'
         }
       >
@@ -201,9 +203,19 @@ export function ApiCalendarPage() {
           retry={teacher ? schedule.refresh : planning.refresh}
         />
         <ActionFeedback action={action} />
+        {teacher && schedule.data && !schedule.error && (
+          <p className={s.calendarSummary}>
+            <Icon name="calendar" size={18} />
+            {pins.filter((p) => inShift(p.startsAt)).length}{' '}
+            {pins.filter((p) => inShift(p.startsAt)).length === 1
+              ? 'aula no período'
+              : 'aulas no período'}
+            <span>Somente sua escala publicada</span>
+          </p>
+        )}
         <div className={s.calendarScroll}>
           <div
-            className={s.calendar}
+            className={`${s.calendar} ${teacher && view !== 'MONTH' ? s.teacherWeek : ''}`}
             style={
               view === 'DAY'
                 ? { gridTemplateColumns: 'minmax(260px,1fr)', minWidth: 260 }
@@ -221,6 +233,7 @@ export function ApiCalendarPage() {
                 className={s.day}
                 key={day}
                 data-today={day === today}
+                data-outside-month={view === 'MONTH' && day.slice(0, 7) !== date.slice(0, 7)}
                 aria-label={dayLabel(day)}
                 onDragOver={(e) => {
                   if (drag && day >= today) e.preventDefault();
@@ -266,6 +279,7 @@ export function ApiCalendarPage() {
                         {timeLabel(p.startsAt)}–{timeLabel(p.endsAt)}
                       </strong>
                       <span>{p.subject}</span>
+                      {p.course && <small>{p.course}</small>}
                       <small>{p.teacher}</small>
                       <small>
                         {p.status === 'DRAFT'
@@ -282,6 +296,15 @@ export function ApiCalendarPage() {
                       </small>
                     </button>
                   ))}
+                {teacher &&
+                  view !== 'MONTH' &&
+                  !schedule.loading &&
+                  !schedule.error &&
+                  !pins.some((p) => p.date === day && inShift(p.startsAt)) && (
+                    <span className={s.freeDay}>
+                      {shift === 'ALL' ? 'Sem aulas' : 'Sem aulas neste turno'}
+                    </span>
+                  )}
               </section>
             ))}
           </div>

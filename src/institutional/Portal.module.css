@@ -1366,3 +1366,35 @@ fieldset.subsection > button {
     left: 0;
   }
 }
+
+.privacyRequestToggle > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 8px 0;
+}
+.privacyRequestToggle[open] > summary {
+  margin-bottom: 16px;
+}
+.teacherWeek .day {
+  min-height: 270px;
+}
+.freeDay {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  margin-top: 12px;
+}
+.calendarSummary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+  color: var(--color-text);
+}
+.calendarSummary span {
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+.day[data-outside-month='true'] {
+  background: var(--color-bg-subtle);
+}
