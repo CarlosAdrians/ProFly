@@ -1,6 +1,6 @@
 # Revisão dos perfis do ProFly
 
-Atualizado em 26/10/2026, branch feat/backend-institucional. Backend implementado e validado localmente para demonstração acadêmica; operação institucional ainda depende dos itens externos abaixo. [Aceitação e rastreabilidade dos 66 cenários](validation/BACKEND_ACCEPTANCE.md); [histórico das verificações](validation/STATUS.md).
+Atualizado em 26/10/2026, branch feat/backend-institucional. Backend implementado e validado localmente para demonstração acadêmica; operação institucional ainda depende dos itens externos abaixo. [Aceitação e rastreabilidade dos 68 cenários](validation/BACKEND_ACCEPTANCE.md); [histórico das verificações](validation/STATUS.md).
 
 ## Professor
 

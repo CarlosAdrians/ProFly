@@ -6,6 +6,22 @@ O ProFly organiza informações de professores, disciplinas, competências e dis
 
 O projeto nasceu no curso de Direito e está sendo ampliado para atender aos demais cursos da faculdade. Este README apresenta a visão do produto completo. A implementação disponível e o trabalho ainda pendente estão identificados na seção [Estado de desenvolvimento](#estado-de-desenvolvimento).
 
+## Conheça as telas
+
+Capturas de **26/10/2026**, com a interface conectada à API e contas fictícias de professor e coordenador. As imagens mostram a área visível da tela; páginas e modais mais longos continuam pela rolagem.
+
+| Acesso ao ProFly | Cadastro do professor |
+| --- | --- |
+| ![Login com a fachada e a marca UNIFACISA](docs/assets/screenshots/01-login.jpg) | ![Primeira etapa do cadastro docente](docs/assets/screenshots/02-cadastro-professor.jpg) |
+
+| Disponibilidade do professor | Calendário do professor |
+| --- | --- |
+| ![Quadro semanal dos horários pretendidos](docs/assets/screenshots/07-professor-disponibilidade.jpg) | ![Aulas publicadas com cores por disciplina e ilustrações dos turnos](docs/assets/screenshots/09-professor-calendario-semana.jpg) |
+
+| Início da coordenação | Calendário do curso |
+| --- | --- |
+| ![Próximas aulas e tarefas da coordenação do curso](docs/assets/screenshots/14-coordenador-inicio.jpg) | ![Grade semanal do curso para a coordenação](docs/assets/screenshots/19-coordenador-calendario.jpg) |
+
 ## O problema que queremos resolver
 
 Distribuir aulas exige combinar o conteúdo de cada disciplina com os conhecimentos do professor, seus horários e sua carga de trabalho. A mesma pessoa pode atuar em vários cursos, o que torna necessário conferir compromissos de forma compartilhada, respeitando os limites de acesso de cada coordenação.
@@ -162,6 +178,19 @@ Atualizado em **26/10/2026**. Branch local: `feat/backend-institucional`. A inte
 A implementação está validada para demonstração acadêmica local e não equivale à homologação institucional. O MongoDB configurado ainda falhou na conexão TLS na conferência desta etapa, sem desativar validação de certificados. Ainda faltam remetente real, configuração inicial da administração, revisão de critérios/grade/limites e políticas de privacidade/retenção, infraestrutura HTTPS e verificações de produção. Não inserir atestados reais na prévia de desenvolvimento.
 
 A base de implementação foi localizada em `claude/pensive-dirac-5rithn`, no commit `6e78ca6`. Na leitura inicial, a `main` continha apenas referências e protótipos. Esses dados registram a origem da etapa, sem presumir publicação desta branch no remoto.
+
+## O que falta para a entrega
+
+A base está validada para **demonstração acadêmica local** nos cenários documentados. A última verificação registrou **74 testes de backend, 18 da interface conectada e 220 gerais de frontend aprovados**, além de tipos, lint e build. O código do backend foi comparado novamente ao relatório nesta revisão e permanece igual. A captura das telas não substitui testes de fluxo nem homologação de produção.
+
+Antes de considerar a operação institucional concluída:
+
+- [ ] Conectar os controles de **comprovantes acadêmicos**, a tela geral de **gestão de usuários** e a navegação das listas adicionais que ainda usam só uma página. As APIs correspondentes já existem.
+- [ ] Resolver e validar a conexão com o **MongoDB definitivo**. A última conferência dessa configuração falhou em TLS; os testes aprovados usam MongoDB local descartável.
+- [ ] Configurar e verificar **remetente real de e-mail, domínio/HTTPS, backup e restauração e capacidade de produção**. A caixa fictícia local não entrega mensagens ao Gmail.
+- [ ] Homologar **grade, carga, requisitos e pesos do score**, além de responsáveis, canal, bases e retenção de dados. Dados clínicos reais continuam bloqueados na prévia.
+
+O detalhe por perfil está no [checklist de entrega](docs/CHECKLIST_PERFIS.md), e as evidências estão na [aceitação do backend](docs/validation/BACKEND_ACCEPTANCE.md). Os pesos demonstrativos, a aprovação da conta fictícia e os registros históricos de teste não representam decisões da instituição.
 
 ## Executar a aplicação conectada
 
