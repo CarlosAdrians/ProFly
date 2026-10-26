@@ -1,6 +1,6 @@
 # Revisão dos perfis do ProFly
 
-Revisão de25/10/2026, na branch feat/backend-institucional. Este checklist compara o código e as verificações disponíveis com os pedidos do projeto. Implementado não significa homologado pela faculdade. A matriz de cenários permanece planejamento; resultados executados constam em [STATUS.md](validation/STATUS.md).
+Revisão atualizada em 26/10/2026, na branch feat/backend-institucional. Este checklist compara o código e as verificações disponíveis com os pedidos do projeto. Implementado não significa homologado pela faculdade. A matriz de cenários permanece planejamento; resultados executados constam em [STATUS.md](validation/STATUS.md).
 
 ## Professor
 
@@ -46,10 +46,21 @@ Revisão de25/10/2026, na branch feat/backend-institucional. Este checklist comp
 
 **P2 — escala da faculdade.** Paginar as listas e verificar totais institucionais. Histórico docente já usa cursor; catálogos100, agenda da coordenação500 e comparação200 não devem ser apresentados como volume ilimitado.
 
+## O que falta para fechar a entrega acadêmica
+
+1. **Corrigir a aprovação acadêmica (REQ-02/03).** Exigir papel e vínculo ativo de coordenador no curso analisado, inclusive para pessoa que acumula o papel de administrador. Cobrir administrador sem vínculo, coordenador de outro curso, professor e coordenador responsável; confirmar recusa sem alterar solicitação ou criar vínculo. A suíte atual passa, mas não prova essa regra mais restrita.
+2. **Consolidar a aceitação final.** Revisar os 62 cenários planejados e ligar cada requisito à evidência executada, mantendo lacunas explícitas. Repassar os três perfis no fluxo cadastro -> confirmação -> análise -> elegibilidade/score -> alocação/publicação -> consulta/histórico/ausência. Revalidar os testes afetados depois da correção de permissões. Critérios acadêmicos e pesos continuam propostas configuráveis, até validação pelo professor da disciplina/projeto.
+3. **Fechar o escopo incompleto.** Gestão geral de usuários na interface administrativa, anexos de certificados/diplomas, PDF de atestados e paginação institucional estão descritos acima. Ainda precisam de implementação se exigidos na entrega completa; a versão atual não deve apresentá-los como prontos. Separar no material da apresentação o que foi entregue do que fica como evolução acordada com o grupo/professor.
+4. **Preparar demonstração reproduzível.** Documentar inicialização, variáveis sem valores secretos, dados fictícios dos três perfis e sequência de demonstração. Manter uma agenda publicada preenchida, explicar dados desconhecidos versus score pendente, ausência temporária e controle de concorrência. Conferir ambiente após reiniciar; não usar o banco efêmero como armazenamento permanente.
+
+Validação repetida em 26/10: 59 testes do backend (unidade, SMTP local e integração MongoDB descartável), 14 da interface conectada e 6 de cliente/modelo aprovados. Tipos, lint direcionado e build aprovados. Nenhum desses resultados implica entrega real ao Gmail, conexão Atlas homologada ou teste de volume institucional.
+
+Para uso real pela faculdade, há uma etapa adicional: provisionar primeiro administrador, conexão de banco e recuperação de backup, remetente SMTP real, domínio/HTTPS e definições institucionais de privacidade/retenção. Essas dependências de operação não são necessárias para mostrar um protótipo com dados fictícios, mas impedem declará-lo pronto para produção. Não instalar certificados raiz de desenvolvimento no Windows como parte da demonstração.
+
 ## Cenário visual preparado nesta etapa
 
 Na conta fictícia docente.ui@profly.test da prévia5175, cinco aulas futuras foram publicadas pela API na semana26/10 a01/11/2026: segunda08:00 e14:00; terça09:00; quinta14:00; sexta15:00. Cada encontro tem50 minutos. Quarta, sábado e domingo ficaram livres. Cursos/turmas/disciplinas e critérios deste cenário são fictícios e não representam currículo homologado.
 
 Disponibilidade anterior noturna preservada; acrescentadas cinco janelas diurnas, perfil reenviado e analisado pelo coordenador do curso, ofertas/alocações criadas e escala publicada. Não foram inseridas ocorrências diretamente no banco do checklist. O script explícito seed-preview-week.mjs recusa destino externo/institucional, não lê.env e usa somente identidades @profly.test em modo SYNTHETIC_ONLY. Não é comando de dados iniciais de produção.
 
-O calendário agora inicia em Todos para o professor, mostra curso/turma, contador do período e dias livres na visão semanal. A coordenação mantém seu filtro inicial e editor de alocações; o professor continua sem criar/arrastar aulas.
+O calendário agora inicia em Semana/Todos para o professor, mostra horário/disciplina/turma, contador, legenda e dias livres. Paleta de oito tons consistente pelo nome normalizado do curso/disciplina, preservada entre datas/turnos/visões; as três matérias do cenário usam cores distintas. Curso e demais dados estão no modal da aula. Controles compactos, destaque de hoje e temas claro/escuro; mês/semana/dia exibem segunda a sábado. A coordenação mantém seu filtro inicial, apresentação e editor de alocações; o professor continua sem criar/arrastar aulas.
