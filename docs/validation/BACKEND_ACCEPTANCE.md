@@ -17,11 +17,11 @@ Evidencia automatica em backend/.data/validation/last-run.json (ignorada pelo Gi
 ## Resultado consolidado
 
 - Comando de aceitacao: PASS em tipos, lint completo, build, runtime e documentos.
-- Backend: **72 testes aprovados, zero falhas, zero pulos, zero todo** na execucao final consolidada.
-- Codigo permaneceu inalterado durante a verificacao; digest SHA-256: db65c4514e9abab83cefcbb1c26d5ffd8f7e03bc62333d0962a5577bc225d6a5.
-- Interface conectada: 15 testes aprovados; suite geral frontend: 217 testes/35 arquivos aprovados; tipos, lint direcionado e build aprovados.
-- API da previa atualizada na porta 3337, frontend 5175; mesmas cinco aulas preservadas, sem seed nem leitura de .env. Professor consulta agenda/documentos, administrador sem coordenacao recebe 403 na analise, coordenador responsavel consulta solicitacoes. Tres sessoes temporarias encerradas; sessao do navegador preservada.
-- Checagem documental posterior ao relatorio: 22 documentos e 160 links locais; 15 requisitos/66 cenarios. O artefato de execucao e local e ignorado pelo Git.
+- Backend: **74 testes aprovados, zero falhas, zero pulos, zero todo** na execucao final consolidada.
+- Codigo permaneceu inalterado durante a verificacao; digest SHA-256: 91c6429a09fbda68df54f594e17ffc6ba56043755017592ee5fbfc55e4f72824.
+- Interface conectada: 18 testes aprovados; suite geral frontend: 220 testes/36 arquivos aprovados; tipos, lint direcionado e build aprovados.
+- API da previa atualizada na porta 3337, frontend 5175; cinco aulas da semana preservadas e cinco registros historicos ficticios acrescentados por rotina explicita/idempotente, sem leitura de .env. Professor consulta agenda/documentos, administrador sem coordenacao recebe 403 na analise, coordenador responsavel consulta solicitacoes. Tres sessoes temporarias encerradas; sessao do navegador preservada.
+- Checagem documental posterior ao relatorio: 22 documentos e 162 links locais; 15 requisitos/68 cenarios. O artefato de execucao e local e ignorado pelo Git.
 
 ## Cenarios e testes
 
@@ -93,6 +93,8 @@ Evidencia automatica em backend/.data/validation/last-run.json (ignorada pelo Gi
 | CASE-064 | REQ-10, REQ-12, REQ-15 | [CASE-064: PDF passivo preservado; scripts, anexos, formularios, excesso e MIME falso recusados](../../backend/test/documents.test.ts) | PASS |
 | CASE-065 | REQ-04, REQ-12, REQ-14, REQ-15 | [CASE-065: comprovantes vinculados ao perfil, privados, imutaveis e retirados com versao](../../backend/test/documents.test.ts) | PASS |
 | CASE-066 | REQ-02, REQ-05, REQ-09, REQ-11, REQ-12 | [CASE-066: planejamento grande recusa truncamento e oferece periodo e listagens paginadas](../../backend/test/pagination.test.ts) | PASS |
+| CASE-067 | REQ-12, REQ-14 | [CASE-067: manutencao recusa operacoes antes dos handlers, preserva dados e recupera sem revogar sessao](../../backend/test/maintenance.test.ts) | PASS |
+| CASE-068 | REQ-11, REQ-12, REQ-14 | [CASE-068: historico sintetico restrito, transacional e idempotente preserva perfil, criterios e aulas existentes](../../backend/test/preview-history.test.ts) | PASS |
 
 ## Limites da entrega e integracao institucional
 

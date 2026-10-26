@@ -153,11 +153,11 @@ Atualizado em **26/10/2026**. Branch local: `feat/backend-institucional`. A inte
 | Elegibilidade e score | Árvore explicável e comparação consistente de candidatos, com dados desconhecidos pendentes e pesos/requisitos configuráveis como proposta. |
 | Planejamento | Rascunhos, arraste/formulário, reservas globais, versão esperada e publicação atômica; escala anterior preservada em falha. |
 | Professor | Agenda publicada, últimas 10 aulas, histórico paginado, horas realizadas confirmadas versus meta opcional. |
-| Ausências | Comunicação e decisão por curso, sinalização temporária e atestado privado JPG/PNG/WebP e PDF passivo na API; o controle de seleção de PDF no frontend ainda precisa ser conectado. |
+| Ausências | Comunicação e decisão por curso, sinalização temporária e atestado privado JPG/PNG/WebP e PDF passivo pela interface conectada; retomada de upload, download privado e paginação. |
 | Comprovantes acadêmicos | API de documentos privados por versão/item do perfil, imutáveis, auditados, com quotas e retirada sem apagar o original; integração dos novos controles no frontend pendente. |
 | Notificações | Avisos internos, paginação, total não lido e preferência persistida; e-mails de segurança independentes. |
 | E-mail | SMTP implementado e testado em captura fictícia local. Entrega externa depende de remetente autenticado. |
-| Validação | Fechamento local com comando backend/scripts/verify.mjs; rastreabilidade dos 66 cenários em [aceitação do backend](docs/validation/BACKEND_ACCEPTANCE.md), histórico em [STATUS.md](docs/validation/STATUS.md). |
+| Validação | Fechamento local com comando backend/scripts/verify.mjs; rastreabilidade dos 68 cenários em [aceitação do backend](docs/validation/BACKEND_ACCEPTANCE.md), histórico em [STATUS.md](docs/validation/STATUS.md). |
 
 A implementação está validada para demonstração acadêmica local e não equivale à homologação institucional. O MongoDB configurado ainda falhou na conexão TLS na conferência desta etapa, sem desativar validação de certificados. Ainda faltam remetente real, configuração inicial da administração, revisão de critérios/grade/limites e políticas de privacidade/retenção, infraestrutura HTTPS e verificações de produção. Não inserir atestados reais na prévia de desenvolvimento.
 
@@ -214,3 +214,9 @@ A estrutura do servidor está em [backend](backend/README.md). Modelos, índices
 Privacidade e atendimento ao titular: [controles e pendências de LGPD](docs/LGPD.md). O uso real permanece dependente das definições institucionais; somente os controles documentados/testados são considerados implementados.
 
 Revisão de funcionalidades e pendências de professor, coordenador e administrador: [checklist dos perfis](docs/CHECKLIST_PERFIS.md).
+
+### Experiência docente e estados de serviço
+
+Calendário pessoal com cadernos ilustrados para manhã/tarde/noite e cores estáveis por disciplina; disponibilidade em quadro semanal com edição em modal; histórico em linha do tempo com filtros da página e detalhes consultivos. Atestados aceitam PDF passivo e imagens pelo mesmo fluxo autenticado, mantendo análise por curso. Há telas institucionais de 404, carregamento e manutenção, com SVGs próprios e identidade UNIFACISA; animações respeitam a preferência de movimento reduzido.
+
+Na prévia local, consulte `/404`, `/carregando` e `/manutencao` para visualizar os estados. A manutenção real é controlada por `MAINTENANCE_MODE` no backend e está desligada por padrão; o bootstrap trata `503 MAINTENANCE` sem invalidar a sessão. A conta fictícia recebeu cinco registros históricos adicionais, sem alterar as cinco aulas publicadas da semana. Esses registros são exclusivamente demonstrativos; não habilitam importação de aulas passadas em contas institucionais.

@@ -10,7 +10,7 @@ Atualizado em 26/10/2026, branch feat/backend-institucional. Backend implementad
 | Entrada | Conta criada não aprova entrada; solicitação independente por curso e versão do perfil | Análise pelo coordenador responsável; nenhuma aula criada pela aprovação |
 | Perfil e disponibilidade | Formação, conhecimentos, experiências, vigência e dedicação opcional | Dados ausentes permanecem pendentes; parâmetros acadêmicos reais precisam de homologação |
 | Comprovantes | API privada por versão/item, PDF/imagens, arquivo imutável, paginação, quotas e retirada da análise | Conectar novos controles no frontend; comprovante não confirma conhecimento nem aumenta score automaticamente |
-| Atestados | Imagem/PDF passivo privado, análise por curso, auditoria e sinalização temporária | Atualizar controle de arquivo no frontend para PDF; saúde real bloqueada até definição institucional |
+| Atestados | Imagem/PDF passivo privado, análise por curso, auditoria e sinalização temporária | PDF conectado no frontend com retomada de upload; saúde real bloqueada até definição institucional |
 | Agenda e histórico | Somente aulas próprias publicadas, últimas dez de vários cursos, histórico com cursor e confirmação explícita de realização | Não é relógio de ponto; fluxo real de confirmação depende da faculdade |
 | Privacidade | Cópia própria com senha, metadados/links privados separados e protocolos | Retenção, descarte e responsáveis ainda dependem da instituição |
 
@@ -41,7 +41,7 @@ O backend tem gates reproduzíveis em node scripts/verify.mjs, executado no dire
 - SMTP local de captura: PASS; entrega externa/remetente institucional: NOT_TESTED. Não houve envio real ao Gmail.
 - Critérios/grade/carga, responsáveis e políticas de privacidade: pendentes de homologação; dados clínicos reais não liberados.
 - Backup/restore, domínio/HTTPS e carga institucional: ainda não homologados. Não instalar certificados raiz de desenvolvimento para apresentação.
-- Próximo frontend: ligar comprovantes, seleção de PDF, gestão geral de usuários e navegação de mais páginas. A mudança de autorização foi refletida nos controles de análise existentes, sem redesenhar as telas.
+- Próximo frontend: ligar comprovantes acadêmicos, gestão geral de usuários e navegação de mais páginas. A mudança de autorização foi refletida nos controles de análise existentes, sem redesenhar as telas.
 
 ## Cenário visual preparado nesta etapa
 
@@ -50,3 +50,5 @@ Na conta fictícia docente.ui@profly.test da prévia5175, cinco aulas futuras fo
 Disponibilidade anterior noturna preservada; acrescentadas cinco janelas diurnas, perfil reenviado e analisado pelo coordenador do curso, ofertas/alocações criadas e escala publicada. Não foram inseridas ocorrências diretamente no banco do checklist. O script explícito seed-preview-week.mjs recusa destino externo/institucional, não lê.env e usa somente identidades @profly.test em modo SYNTHETIC_ONLY. Não é comando de dados iniciais de produção.
 
 O calendário agora inicia em Semana/Todos para o professor, mostra horário/disciplina/turma, contador, legenda e dias livres. Paleta de oito tons consistente pelo nome normalizado do curso/disciplina, preservada entre datas/turnos/visões; as três matérias do cenário usam cores distintas. Curso e demais dados estão no modal da aula. Controles compactos, destaque de hoje e temas claro/escuro; mês/semana/dia exibem segunda a sábado. A coordenação mantém seu filtro inicial, apresentação e editor de alocações; o professor continua sem criar/arrastar aulas.
+
+Incremento visual de 26/10: cadernos de turnos no calendário, quadro semanal de disponibilidade, linha do tempo consultiva e atestados com PDF no formulário. Cinco registros históricos da semana 19..23/10 acrescentados apenas à conta sintética (3 realizados, 1 cancelado, 1 a confirmar), por rotina transacional restrita ao banco efêmero local; repetição não duplica. Aulas publicadas da semana 26..31 e perfil/critérios preservados. 404/carregamento/manutenção com marca institucional; pausa operacional configurável sem revogar sessões. Testes atuais: 74 de backend, 18 da interface conectada e 220 gerais do frontend, com limites externos conservados.
