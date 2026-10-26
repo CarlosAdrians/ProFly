@@ -788,6 +788,27 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
         .statusCode,
     ).toBe(401);
   }, 30000);
+  it('administrador sem coordenacao consulta docentes sem carregar analise academica', async () => {
+    const observer = vi.spyOn(globalThis, 'fetch');
+    try {
+      open('/login');
+      const user = await signIn(fixture.adminEmail);
+      await user.click(screen.getByRole('link', { name: /^Professores$/ }));
+      await screen.findByRole('heading', { name: 'Vínculos aprovados' }, { timeout: 10000 });
+      await screen.findByText(fixture.teacherEmail, {}, { timeout: 10000 });
+      expect(
+        screen.queryByRole('heading', { name: 'Solicitações por curso' }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Analisar perfil' })).not.toBeInTheDocument();
+      expect(
+        observer.mock.calls.some(([url]) =>
+          /\/courses\/[^/]+\/applications(?:\?|$)/.test(String(url)),
+        ),
+      ).toBe(false);
+    } finally {
+      observer.mockRestore();
+    }
+  }, 30000);
   it('recuperação usa fragmento, confirma nova senha e revoga a sessão anterior', async () => {
     const old = await fixture.login(fixture.teacherEmail);
     open('/esqueceu-senha');
@@ -826,6 +847,6 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     await user.type(screen.getByLabelText('E-mail:'), fixture.teacherEmail);
     await user.type(screen.getByLabelText('Senha:'), 'NovoAcesso2026');
     await user.click(screen.getByRole('button', { name: 'Login' }));
-    await screen.findByRole('heading', { name: 'Meu início' });
+    await screen.findByRole('heading', { name: 'Meu início' }, { timeout: 10000 });
   }, 30000);
 });

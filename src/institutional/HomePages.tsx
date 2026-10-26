@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { Icon } from '../components/ui/Icon/Icon';
 import { useApi, useApiSession } from './hooks';
-import { useScope } from './scope';
+import { useScope, useAcademicReviewer } from './scope';
 import { today, dayLabel, timeLabel } from './dates';
 import { addDate } from './calendarModel';
 import { Heading, LoadingError, Panel } from './ui';
@@ -44,10 +44,11 @@ export function UpcomingClasses({ items }: { items: UpcomingClass[] }) {
   );
 }
 export function CoordinatorOverview() {
+  const canReview = useAcademicReviewer();
   const { courseId, courses } = useScope();
   const { user } = useApiSession();
   const applications = useApi<Items<Application>>(
-    courseId ? `/courses/${courseId}/applications` : null,
+    canReview ? `/courses/${courseId}/applications` : null,
   );
   const planning = useApi<Planning>(courseId ? `/courses/${courseId}/planning` : null);
   const occurrences = useApi<Items<Occurrence>>(
@@ -110,23 +111,25 @@ export function CoordinatorOverview() {
               )}
             </Panel>
             <Panel title="Para cuidar agora">
-              <LoadingError {...applications} retry={applications.refresh} />
+              {canReview && <LoadingError {...applications} retry={applications.refresh} />}
               <LoadingError {...occurrences} retry={occurrences.refresh} />
               <div className={s.workList}>
-                <Link to="/professores">
-                  <Icon name="userPlus" size={24} />
-                  <div>
-                    <strong>Cadastros docentes</strong>
-                    <p>
-                      {pending
-                        ? pending.length
-                          ? `${pending.length} ${pending.length === 1 ? 'solicitação aguarda' : 'solicitações aguardam'} sua análise.`
-                          : 'Nenhuma solicitação pendente na lista.'
-                        : 'Consultando solicitações…'}
-                    </p>
-                  </div>
-                  <Icon name="arrowRight" />
-                </Link>
+                {canReview && (
+                  <Link to="/professores">
+                    <Icon name="userPlus" size={24} />
+                    <div>
+                      <strong>Cadastros docentes</strong>
+                      <p>
+                        {pending
+                          ? pending.length
+                            ? `${pending.length} ${pending.length === 1 ? 'solicitação aguarda' : 'solicitações aguardam'} sua análise.`
+                            : 'Nenhuma solicitação pendente na lista.'
+                          : 'Consultando solicitações…'}
+                      </p>
+                    </div>
+                    <Icon name="arrowRight" />
+                  </Link>
+                )}
                 <Link to="/alocacoes">
                   <Icon name="calendar" size={24} />
                   <div>

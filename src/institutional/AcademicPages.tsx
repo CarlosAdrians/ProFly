@@ -7,7 +7,7 @@ import { TextField } from '../components/ui/TextField/TextField';
 import { Icon } from '../components/ui/Icon/Icon';
 import { api } from './api';
 import { useApi } from './hooks';
-import { useScope } from './scope';
+import { useScope, useAcademicReviewer } from './scope';
 import { ProfileSummary } from './AccountPages';
 import { educationLevels } from './profileModel';
 import type {
@@ -22,9 +22,10 @@ import type {
 import { ActionFeedback, Badge, Heading, LoadingError, Panel, Select } from './ui';
 import s from './Portal.module.css';
 export function ApiTeachersPage() {
+  const canReview = useAcademicReviewer();
   const { courseId } = useScope(),
     applications = useApi<Items<Application>>(
-      courseId ? `/courses/${courseId}/applications` : null,
+      canReview ? `/courses/${courseId}/applications` : null,
     ),
     teachers = useApi<Items<User>>(courseId ? `/courses/${courseId}/teachers` : null),
     [selected, setSelected] = useState('');
@@ -35,27 +36,29 @@ export function ApiTeachersPage() {
         description="O próprio professor se cadastra. A coordenação analisa a entrada e os dados do seu curso."
       />
       {!courseId && <p className={s.empty}>Nenhum curso atribuído a esta conta.</p>}
-      <Panel title="Solicitações por curso">
-        <LoadingError {...applications} retry={applications.refresh} />
-        {applications.data?.items.length === 0 && (
-          <p className={s.empty}>Nenhuma solicitação recebida neste curso.</p>
-        )}
-        {applications.data?.items.map((a) => (
-          <div className={s.row} key={a.id}>
-            <div>
-              <Badge value={a.status} />
-              <p>
-                Recebida em {new Date(a.createdAt).toLocaleDateString('pt-BR')} · Perfil v
-                {a.profileVersion}
-              </p>
+      {canReview && (
+        <Panel title="Solicitações por curso">
+          <LoadingError {...applications} retry={applications.refresh} />
+          {applications.data?.items.length === 0 && (
+            <p className={s.empty}>Nenhuma solicitação recebida neste curso.</p>
+          )}
+          {applications.data?.items.map((a) => (
+            <div className={s.row} key={a.id}>
+              <div>
+                <Badge value={a.status} />
+                <p>
+                  Recebida em {new Date(a.createdAt).toLocaleDateString('pt-BR')} · Perfil v
+                  {a.profileVersion}
+                </p>
+              </div>
+              <Button variant="secondary" onClick={() => setSelected(a.id)}>
+                <Icon name="edit" />
+                Analisar perfil
+              </Button>
             </div>
-            <Button variant="secondary" onClick={() => setSelected(a.id)}>
-              <Icon name="edit" />
-              Analisar perfil
-            </Button>
-          </div>
-        ))}
-      </Panel>
+          ))}
+        </Panel>
+      )}
       <Panel title="Vínculos aprovados">
         <LoadingError {...teachers} retry={teachers.refresh} />
         {teachers.data?.items.length === 0 && (
@@ -72,12 +75,12 @@ export function ApiTeachersPage() {
         ))}
       </Panel>
       <Modal
-        open={!!selected}
+        open={canReview && !!selected}
         size="wide"
         title="Análise docente por curso"
         onClose={() => setSelected('')}
       >
-        {selected && (
+        {canReview && selected && (
           <ReviewForm
             key={`${courseId}:${selected}`}
             courseId={courseId}
