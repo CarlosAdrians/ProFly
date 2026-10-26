@@ -260,12 +260,13 @@ export function privacyRoutes(app: FastifyInstance, identity: IdentityService) {
               courseName: 1,
               subjectName: 1,
               groupName: 1,
+              room: 1,
             },
           ],
           [
             'publishedAllocations',
             own,
-            { courseId: 1, periodId: 1, offeringId: 1, meetings: 1, createdAt: 1 },
+            { courseId: 1, periodId: 1, offeringId: 1, meetings: 1, room: 1, createdAt: 1 },
           ],
           ['absences', own, { startsOn: 1, endsOn: 1, courseIds: 1, attachment: 1, createdAt: 1 }],
           [

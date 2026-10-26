@@ -3,6 +3,7 @@ import { id } from '../shared/http.js';
 import { date } from '../shared/temporal.js';
 import { offeringInput } from '../academics/contracts.js';
 import type { Entity } from '../shared/model.js';
+import { roomInput } from './rooms.js';
 
 export const meetingsInput = offeringInput.shape.meetings;
 export type Meeting = z.infer<typeof meetingsInput>[number];
@@ -11,14 +12,18 @@ export interface Slot {
   endsAt: string;
   date: string;
   minutes: number;
+  room?: string | null;
+  roomKey?: string | null;
 }
 export const allocationInput = z.strictObject({
   offeringId: id,
   teacherId: id,
+  room: roomInput,
   meetings: meetingsInput.min(1),
 });
 export type AllocationData = z.infer<typeof allocationInput>;
 export interface Allocation extends Entity, AllocationData {
+  roomKey?: string | null;
   courseId: string;
   periodId: string;
   subjectId: string;
@@ -85,6 +90,7 @@ export interface Absence extends Entity {
   attachment?: { bytes: number; type: string };
 }
 export interface Occurrence extends Entity {
+  room?: string | null;
   allocationId: string;
   courseId: string;
   periodId: string;

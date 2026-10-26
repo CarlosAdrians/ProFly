@@ -233,3 +233,12 @@ node scripts/seed-preview-history.mjs
 ```
 
 A interface de atestados agora aceita PDF passivo e imagens pelo contrato privado existente, com retomada de upload e paginacao. O bloqueio de documentos reais na previa permanece. Comprovantes academicos possuem API propria; seus controles completos de interface continuam fora desta melhoria visual.
+
+
+## Sala da alocacao
+
+CASE-069/070: POST/PUT de alocacoes, elegibilidade e comparacao recebem room opcional (texto de1..80caracteres ou null), identificado por nome/numero, sem bloco. Nome vazio, objeto, tipo numerico, excesso de tamanho e caracteres fora do contrato sao recusados. Ausencia em criacao significa local a definir; omissao em edicao conserva a sala atual e null explicito remove. Reservas usam chave normalizada de caixa/acentos/espacos/prefixo Sala e valem entre todos os cursos/periodos. O compromisso alheio nao e exposto no erro. Nome consistente identifica o mesmo local; nao ha catalogo de enderecos ou geolocalizacao.
+
+Salvar reserva em rascunho; somente publicar atualiza a escala docente. Tanto rascunho quanto publicacao vigente reservam o local. Mudar/remover rascunho nao libera o local publicado antes de republicar. Serializacao pelo guard academics cobre duas pessoas/turmas/cursos disputando a mesma sala; horarios adjacentes usam a regra temporal existente de interseccao aberta no fim. A sala nao altera os fatores academicos do score.
+
+Snapshot de sala e chave por slot permitem atualizar a recorrencia futura sem liberar a sala de uma aula em andamento antes do seu fim. Ocorrencias passadas/ja iniciadas mantem local e versao; futuras planejadas recebem o local da nova revisao. Nome antigo ausente continua ausente, exibido como Sala a definir. Consulta docente/historico e exportacao propria incluem room. Indices de roomKey e slots.roomKey sao criados sem substituir registros.

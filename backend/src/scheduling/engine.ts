@@ -24,6 +24,8 @@ export interface EvaluationInput {
   slots: Slot[];
   occupied: Slot[];
   groupConflict?: boolean;
+  room?: string | null;
+  roomConflict?: boolean;
   reservedLoad?: Slot[];
   workload: Workload | null;
   absences: Absence[];
@@ -210,6 +212,14 @@ export function evaluate(input: EvaluationInput) {
     input.groupConflict ? 'Turma ocupada neste intervalo.' : 'Turma livre em todos os encontros.',
   );
   const limit = input.workload;
+  if (input.room || input.roomConflict !== undefined)
+    add(
+      'room',
+      input.roomConflict ? 'FAIL' : 'PASS',
+      input.roomConflict
+        ? 'Sala informada ocupada neste intervalo, considerando todos os cursos.'
+        : 'Sala informada livre em todos os encontros.',
+    );
   const targetWeeks = new Set(
     input.slots.map((slot) => weekKey(slot.startsAt, limit?.timeZone ?? input.period.timeZone)),
   );

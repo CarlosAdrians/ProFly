@@ -8,6 +8,7 @@ import { AppError, conflict, missing } from '../shared/errors.js';
 import { audit, entity, lock, view } from '../shared/model.js';
 import { evaluate } from './engine.js';
 import { expand, overlaps } from './temporal.js';
+import { roomKey } from './rooms.js';
 import type {
   Absence,
   Allocation,
@@ -17,8 +18,20 @@ import type {
   Plan,
   Preference,
   PublishedAllocation,
+  Slot,
   Workload,
 } from './models.js';
+
+const slotRoom = (slot: Slot, allocation: Allocation) =>
+  slot.room === undefined ? (allocation.room ?? null) : slot.room;
+const historicalSlots = (allocation: Allocation) =>
+  allocation.slots.map((slot) => ({
+    date: slot.date,
+    startsAt: slot.startsAt,
+    endsAt: slot.endsAt,
+    minutes: slot.minutes,
+    room: slotRoom(slot, allocation),
+  }));
 
 export async function notify(
   identity: IdentityService,
@@ -123,6 +136,32 @@ export class SchedulingService {
   ) {
     const context = await this.context(courseId, data, session);
     const db = this.database.db;
+    const previousAllocation = excludeId
+      ? await this.allocations.findOne({ _id: excludeId, courseId }, { session })
+      : null;
+    const room = data.room === undefined ? (previousAllocation?.room ?? null) : data.room;
+    const now = this.now().toISOString();
+    const targetRoom = (slot: Slot) => {
+      const old = previousAllocation?.slots.find(
+        (value) => value.startsAt === slot.startsAt && value.endsAt === slot.endsAt,
+      );
+      return old && previousAllocation && slot.startsAt <= now
+        ? slotRoom(old, previousAllocation)
+        : room;
+    };
+    const keys = [
+      ...new Set(
+        context.slots
+          .filter((slot) => slot.endsAt > now)
+          .map((slot) => roomKey(targetRoom(slot)))
+          .filter((key): key is string => !!key),
+      ),
+    ];
+    const resources = [
+      { teacherId: data.teacherId },
+      { groupId: context.group._id },
+      ...keys.flatMap((key) => [{ roomKey: key }, { 'slots.roomKey': key }]),
+    ];
     if (
       !(await this.identity.memberships.findOne(
         { userId: data.teacherId, courseId, role: 'teacher', active: true },
@@ -167,7 +206,7 @@ export class SchedulingService {
         {
           _id: { $ne: excludeId ?? '' },
           state: { $ne: 'CANCELLED' },
-          $or: [{ teacherId: data.teacherId }, { groupId: context.group._id }],
+          $or: resources,
         },
         { session },
       )
@@ -177,7 +216,7 @@ export class SchedulingService {
         {
           allocationId: { $ne: excludeId ?? '' },
           ...(ignorePublishedPlan ? { planId: { $ne: ignorePublishedPlan } } : {}),
-          $or: [{ teacherId: data.teacherId }, { groupId: context.group._id }],
+          $or: resources,
         },
         { session },
       )
@@ -199,6 +238,22 @@ export class SchedulingService {
       profile: profile?.data ?? null,
       review,
       member: !!user && !!membership,
+      room,
+      roomConflict: keys.length
+        ? context.slots
+            .filter((slot) => slot.endsAt > now)
+            .some((slot) => {
+              const key = roomKey(targetRoom(slot));
+              return (
+                !!key &&
+                occupied.some((record) =>
+                  record.slots.some(
+                    (other) => roomKey(slotRoom(other, record)) === key && overlaps(slot, other),
+                  ),
+                )
+              );
+            })
+        : undefined,
       groupConflict: context.slots
         .filter((slot) => slot.endsAt > this.now().toISOString())
         .some((s) =>
@@ -219,13 +274,14 @@ export class SchedulingService {
     return {
       result: {
         ...result,
+        room,
         evaluationScope: 'FUTURE_MEETINGS',
         evaluatedSlotCount: context.slots.filter((slot) => slot.endsAt > this.now().toISOString())
           .length,
         excludedPastCount: context.slots.filter((slot) => slot.endsAt <= this.now().toISOString())
           .length,
       },
-      context,
+      context: { ...context, room },
     };
   }
   async save(
@@ -255,6 +311,9 @@ export class SchedulingService {
         b: { startsAt: string; endsAt: string },
       ) => a.startsAt === b.startsAt && a.endsAt === b.endsAt;
       if (
+        (old &&
+          old.slots.every((slot) => slot.startsAt <= now) &&
+          (old.room ?? null) !== context.room) ||
         context.slots.some(
           (s) =>
             s.startsAt <= now &&
@@ -275,12 +334,19 @@ export class SchedulingService {
       const record: Allocation = {
         ...(old ?? entity()),
         ...data,
+        room: context.room,
+        roomKey: roomKey(context.room),
         courseId,
         periodId: context.offering.periodId,
         subjectId: context.subject._id,
         groupId: context.group._id,
         state: 'DRAFT',
-        slots: context.slots,
+        slots: context.slots.map((slot) => {
+          const previous = old?.slots.find((candidate) => samePast(slot, candidate));
+          const room =
+            previous && old && slot.startsAt <= now ? slotRoom(previous, old) : context.room;
+          return { ...slot, room, roomKey: roomKey(room) };
+        }),
         version: (old?.version ?? 0) + 1,
         updatedAt: new Date().toISOString(),
       };
@@ -332,7 +398,11 @@ export class SchedulingService {
             },
             { session },
           );
-          if (!previous || JSON.stringify(previous.slots) !== JSON.stringify(record.slots))
+          if (
+            !previous ||
+            JSON.stringify(historicalSlots(previous)) !== JSON.stringify(historicalSlots(record)) ||
+            (previous.room ?? null) !== (record.room ?? null)
+          )
             conflict(
               'PAST_PUBLICATION',
               'Encontros encerrados so podem ser preservados da publicacao anterior.',
@@ -425,10 +495,12 @@ export class SchedulingService {
                 periodId,
                 subjectId: record.subjectId,
                 groupId: record.groupId,
-                ...slot,
+                date: slot.date,
+                minutes: slot.minutes,
                 courseName: course!.name,
                 subjectName: subject!.name,
                 groupName: group!.name,
+                room: slot.room !== undefined ? slot.room : (record.room ?? null),
                 status: 'PLANNED',
               },
               { session },
@@ -441,7 +513,20 @@ export class SchedulingService {
               );
             await this.occurrences.updateOne(
               { _id: existing._id },
-              { $set: { status: 'PLANNED', updatedAt: now }, $inc: { version: 1 } },
+              {
+                $set: { status: 'PLANNED', room: record.room ?? null, updatedAt: now },
+                $inc: { version: 1 },
+              },
+              { session },
+            );
+          } else if (
+            existing.status === 'PLANNED' &&
+            existing.startsAt > now &&
+            (existing.room ?? null) !== (record.room ?? null)
+          ) {
+            await this.occurrences.updateOne(
+              { _id: existing._id },
+              { $set: { room: record.room ?? null, updatedAt: now }, $inc: { version: 1 } },
               { session },
             );
           }

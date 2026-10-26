@@ -52,6 +52,10 @@ export class Database {
       .collection('reviews')
       .createIndex({ teacherId: 1, courseId: 1, profileVersion: 1 }, { unique: true });
     await this.db.collection('allocations').createIndex({ courseId: 1, periodId: 1, state: 1 });
+    await this.db.collection('allocations').createIndex({ roomKey: 1, state: 1 });
+    await this.db.collection('publishedAllocations').createIndex({ roomKey: 1 });
+    await this.db.collection('allocations').createIndex({ 'slots.roomKey': 1, state: 1 });
+    await this.db.collection('publishedAllocations').createIndex({ 'slots.roomKey': 1 });
     await this.db.collection('occurrences').createIndex({ teacherId: 1, startsAt: -1, _id: -1 });
     await this.db
       .collection('occurrences')

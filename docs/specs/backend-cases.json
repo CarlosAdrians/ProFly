@@ -803,6 +803,33 @@
       "scenario": "Preparacao explicita de cinco aulas historicas na previa sintetica isolada; repeticao e destinos nao permitidos.",
       "expected": "Somente banco efemero local e identidades ficticias vinculadas; uma transacao idempotente, sem sobrescrever perfil, criterios, alocacoes ou registros existentes; sem rota publica para importar passado.",
       "status": "PLANNED"
+    },
+    {
+      "id": "CASE-069",
+      "requirements": [
+        "REQ-06",
+        "REQ-07",
+        "REQ-09",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "concurrency",
+      "scenario": "Sala informada com tipo/formato invalido; reserva da mesma sala em dois cursos, periodos e professores distintos; variacoes de escrita e cancelamento de rascunho.",
+      "expected": "Validacao no servidor; identidade global normalizada; somente uma reserva concorrente vence e conflito retorna motivo sem dados alheios; outro horario/sala permitido; publicacao anterior conserva reserva ate republicar cancelamento; fatores academicos nao alterados.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-070",
+      "requirements": [
+        "REQ-09",
+        "REQ-11",
+        "REQ-14",
+        "REQ-15"
+      ],
+      "layer": "integration",
+      "scenario": "Alocacao com sala, consulta docente antes/depois de publicar, alteracao e republicacao com encontros passados, cliente anterior omitindo sala e versao obsoleta.",
+      "expected": "Sala no rascunho, calendario e ocorrencias publicadas; professor so recebe revisao publicada; alteracao atualiza somente encontros futuros, preserva local/versao do passado; omissao conserva sala, null explicito remove, versao obsoleta recusada; exportacao propria inclui local.",
+      "status": "PLANNED"
     }
   ]
 }

@@ -155,3 +155,12 @@ Exportacao propria exige senha atual, CSRF, sessao ativa, projecoes de inclusao 
 REQ-12/14, CASE-067: modo de manutencao configuravel no servidor, desligado por padrao; 503 estruturado e recuperacao sem revogar sessao, status/liveness consultaveis. O portal apresenta tela de manutencao no bootstrap e preserva formularios em erros locais.
 
 REQ-11/12/14, CASE-068: rotina offline de cinco registros historicos restrita a replica set efemero local e identidades sinteticas da previa. Importacao atomica/idempotente, sem autorizacao para registrar aulas reais no passado. Regras publicas de alocacao, confirmacao e score conservadas.
+
+
+## Sala da alocacao — 26/10/2026
+
+REQ-06/07/09/11/12/14/15, CASE-069/070. Sala e identificada pelo nome ou numero, sem bloco. room aceita texto de1..80caracteres, letras/numeros e separadores simples; null ou ausencia na criacao representam local ainda nao definido. Nao atribuir uma sala ficticia a dados anteriores. Em alteracao, campo omitido preserva o valor atual; null explicito remove. Alocacao inteira utiliza uma sala; slot e ocorrencia conservam snapshot do local para historico.
+
+Reservas de sala abrangem todos os cursos/periodos, pela mesma interseccao de instantes UTC usada na grade. Chave de identidade normaliza caixa, acentos, espacos e prefixo Sala; sala nao entra nos fatores academicos do score. Conflito consta na arvore de elegibilidade e impede gravacao/publicacao. Consulta nao revela o compromisso alheio. Lock global academics existente serializa verificacao e reserva, incluindo disputas entre professores/turmas/cursos diferentes. Rascunho e ultima publicacao reservam o local; remover/alterar rascunho nao libera a sala da publicacao anterior ate republicar.
+
+Somente publicacao atualiza a escala do professor. Republicacao de sala atualiza ocorrencias futuras planejadas; local e versao de ocorrencias passadas ou ja iniciadas sao preservados. A reserva por slot conserva a sala da aula em andamento ate o fim, mesmo que a sala da recorrencia futura seja alterada. Registro antigo sem sala e apresentado como Sala a definir. Campo room integra a exportacao autenticada de ocorrencias proprias. A interface apresenta o local em alocacoes, calendarios/detalhes, proximas aulas e historico.

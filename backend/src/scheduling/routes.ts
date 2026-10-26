@@ -207,6 +207,7 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
     z.strictObject({
       offeringId: id,
       meetings: allocationInput.shape.meetings,
+      room: allocationInput.shape.room,
       allocationId: id.optional(),
     }),
     async (request, _reply, body) => {
@@ -242,7 +243,12 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
           if (!teacher) continue;
           const { result } = await service.assessment(
             courseId,
-            { offeringId: body.offeringId, teacherId: member.userId, meetings: body.meetings },
+            {
+              offeringId: body.offeringId,
+              teacherId: member.userId,
+              meetings: body.meetings,
+              room: body.room,
+            },
             session,
             body.allocationId,
           );
