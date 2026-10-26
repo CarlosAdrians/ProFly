@@ -22,6 +22,11 @@ const shapes = {
   circle: <circle cx="12" cy="12" r="8" />,
   plus: <path d="M12 5v14M5 12h14" />,
   arrowLeft: <path d="M20 12H4m6-6-6 6 6 6" />,
+  sunrise: (
+    <>
+      <path d="M2 17h20M2 21h20M7 17a5 5 0 0 1 10 0M12 3v3M4.5 8.5 6.6 10.6M17.4 10.6l2.1-2.1M2 13h2m16 0h2" />
+    </>
+  ),
   sun: (
     <>
       <circle cx="12" cy="12" r="4" />

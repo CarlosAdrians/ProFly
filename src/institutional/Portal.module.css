@@ -281,10 +281,10 @@
 }
 .calendar {
   display: grid;
-  grid-template-columns: repeat(7, minmax(125px, 1fr));
+  grid-template-columns: repeat(6, minmax(125px, 1fr));
   border-top: 1px solid var(--color-border);
   border-left: 1px solid var(--color-border);
-  min-width: 875px;
+  min-width: 750px;
 }
 .calendarScroll {
   overflow-x: auto;
@@ -1397,4 +1397,87 @@ fieldset.subsection > button {
 }
 .day[data-outside-month='true'] {
   background: var(--color-bg-subtle);
+}
+
+.shiftFilter {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.shiftFilter legend {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.shiftSegments {
+  display: flex;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg-subtle);
+}
+.shiftSegments button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--color-text-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.shiftSegments button[aria-pressed='true'] {
+  color: var(--color-link);
+  background: var(--color-bg);
+  box-shadow: 0 1px 4px #0002;
+  font-weight: 600;
+}
+.shiftSegments button:hover {
+  color: var(--color-link);
+}
+.pinTime {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pinTime > span {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--color-link);
+}
+@media (max-width: 700px) {
+  .calendarControls .shiftFilter {
+    flex-basis: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+  .shiftSegments {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .shiftSegments button {
+    padding: 7px 3px;
+    gap: 5px;
+    min-width: 0;
+    min-height: 44px;
+  }
+}
+
+.shiftSegments svg {
+  flex-shrink: 0;
+}
+@media (max-width: 380px) {
+  .shiftSegments button {
+    flex-direction: column;
+    gap: 3px;
+    min-height: 56px;
+  }
 }

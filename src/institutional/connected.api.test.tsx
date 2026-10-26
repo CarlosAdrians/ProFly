@@ -277,8 +277,9 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     await screen.findByRole('heading', { name: 'Próximas aulas' });
     await screen.findAllByText('Direito Civil I');
     await user.click(screen.getByRole('link', { name: 'Calendário' }));
-    await user.clear(screen.getByLabelText('Data de referência'));
-    await user.type(screen.getByLabelText('Data de referência'), fixture.from);
+    fireEvent.change(screen.getByLabelText('Data de referência'), {
+      target: { value: fixture.from },
+    });
     await screen.findAllByText('Direito Civil I');
     expect(screen.queryByRole('button', { name: 'Nova alocação' })).not.toBeInTheDocument();
   }, 30000);
@@ -585,6 +586,15 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
       groupName: 'Turma visual API',
       subjectName: `Visual aula ${i + 1}`,
     }));
+    const sundayRecord: StoredOccurrence = {
+      ...records[0]!,
+      _id: crypto.randomUUID(),
+      allocationId: crypto.randomUUID(),
+      date: dateAt(6),
+      startsAt: `${dateAt(6)}T11:00:00.000Z`,
+      endsAt: `${dateAt(6)}T11:50:00.000Z`,
+      subjectName: 'Visual domingo',
+    };
     const foreign = {
       ...records[0],
       _id: crypto.randomUUID(),
@@ -593,20 +603,38 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     };
     await fixture.database.db
       .collection<StoredOccurrence>('occurrences')
-      .insertMany([...records, foreign]);
+      .insertMany([...records, foreign, sundayRecord]);
     try {
       open('/login');
       const user = await signIn(fixture.teacherEmail);
       await user.click(screen.getByRole('link', { name: 'Calendário' }));
-      expect(screen.getByRole('combobox', { name: 'Turno' })).toHaveValue('ALL');
+      expect(screen.getByRole('button', { name: /^Todos$/ })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
       await user.selectOptions(screen.getByRole('combobox', { name: 'Visualização' }), 'WEEK');
       fireEvent.change(screen.getByLabelText('Data de referência'), {
         target: { value: fixture.from },
       });
       expect(await screen.findAllByRole('button', { name: /Visual aula/ })).toHaveLength(5);
+      expect(screen.queryByText('Domingo', { exact: true })).not.toBeInTheDocument();
+      const sunday = new Date(`${dateAt(6)}T12:00:00Z`).toLocaleDateString('pt-BR');
+      expect(screen.queryByRole('region', { name: sunday })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /Visual alheia/ })).not.toBeInTheDocument();
+      await user.selectOptions(screen.getByRole('combobox', { name: 'Visualização' }), 'MONTH');
+      expect(await screen.findAllByRole('button', { name: /Visual aula/ })).toHaveLength(5);
+      expect(screen.queryByText('Domingo', { exact: true })).not.toBeInTheDocument();
+      expect(screen.getByText('Sábado', { exact: true })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Visual domingo/ })).not.toBeInTheDocument();
+      expect(
+        await fixture.database.db
+          .collection<StoredOccurrence>('occurrences')
+          .findOne({ _id: sundayRecord._id }),
+      ).not.toBeNull();
+      await user.selectOptions(screen.getByRole('combobox', { name: 'Visualização' }), 'WEEK');
+
       expect(screen.queryByRole('button', { name: 'Nova alocação' })).not.toBeInTheDocument();
-      const morning = screen.getByRole('button', { name: /Visual aula 1/ });
+      const morning = await screen.findByRole('button', { name: /Visual aula 1/ });
       expect(morning).toHaveAttribute('draggable', 'false');
       expect(morning).toHaveTextContent('Direito visual API');
       const freeDay = new Date(`${dateAt(2)}T12:00:00Z`).toLocaleDateString('pt-BR');
@@ -617,16 +645,28 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
       const details = screen.getByRole('dialog', { name: 'Detalhes da aula' });
       expect(within(details).getByRole('heading', { name: 'Visual aula 1' })).toBeInTheDocument();
       await user.click(within(details).getByRole('button', { name: 'Fechar' }));
-      await user.selectOptions(screen.getByRole('combobox', { name: 'Turno' }), 'MORNING');
+      await user.click(screen.getByRole('button', { name: /^Manhã$/ }));
       expect(screen.getAllByRole('button', { name: /Visual aula/ })).toHaveLength(2);
-      await user.selectOptions(screen.getByRole('combobox', { name: 'Turno' }), 'AFTERNOON');
+      await user.click(screen.getByRole('button', { name: /^Tarde$/ }));
       expect(screen.getAllByRole('button', { name: /Visual aula/ })).toHaveLength(3);
-      await user.selectOptions(screen.getByRole('combobox', { name: 'Turno' }), 'NIGHT');
+      await user.click(screen.getByRole('button', { name: /^Noite$/ }));
       expect(screen.queryByRole('button', { name: /Visual aula/ })).not.toBeInTheDocument();
+      await user.selectOptions(screen.getByRole('combobox', { name: 'Visualização' }), 'DAY');
+      fireEvent.change(screen.getByLabelText('Data de referência'), {
+        target: { value: dateAt(6) },
+      });
+      expect(
+        screen.getByText('Selecione uma data de segunda a sábado para consultar as aulas.'),
+      ).toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText('Data de referência'), {
+        target: { value: dateAt(5) },
+      });
+      await user.click(screen.getByRole('button', { name: 'Próximo período' }));
+      expect(screen.getByLabelText('Data de referência')).toHaveValue(dateAt(7));
     } finally {
-      await fixture.database.db
-        .collection<StoredOccurrence>('occurrences')
-        .deleteMany({ _id: { $in: [...records, foreign].map((record) => record._id) } });
+      await fixture.database.db.collection<StoredOccurrence>('occurrences').deleteMany({
+        _id: { $in: [...records, foreign, sundayRecord].map((record) => record._id) },
+      });
     }
   }, 30000);
   it('privacidade pessoal simplificada registra pedido sem expor gestao institucional', async () => {

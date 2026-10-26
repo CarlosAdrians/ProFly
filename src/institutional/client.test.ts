@@ -1,3 +1,4 @@
+import { lessonDayPart } from './calendarShifts';
 import { describe, it, expect, vi } from 'vitest';
 import { api, ApiError, setCsrf } from './api';
 import { addDate, moveMeeting } from './calendarModel';
@@ -90,5 +91,20 @@ describe('movimentação de um encontro recorrente', () => {
     expect(moveMeeting(record, '2030-01-07', '2030-01-07')).toBe(record.meetings);
     expect(moveMeeting(record, '2030-01-07', '2030-01-08')).toHaveLength(1);
     expect(() => moveMeeting(record, '2030-01-08', '2030-01-09')).toThrow('encontro mudou');
+  });
+});
+
+describe('icones dos turnos no fuso institucional', () => {
+  it('mantem os limites de meio-dia, noite e meia-noite em America/Fortaleza', () => {
+    expect(lessonDayPart('2026-10-26T14:59:00Z')).toMatchObject({
+      id: 'MORNING',
+      icon: 'sunrise',
+      label: 'Manhã',
+    });
+    expect(lessonDayPart('2026-10-26T15:00:00Z')).toMatchObject({ id: 'AFTERNOON', icon: 'sun' });
+    expect(lessonDayPart('2026-10-26T20:59:00Z').id).toBe('AFTERNOON');
+    expect(lessonDayPart('2026-10-26T21:00:00Z')).toMatchObject({ id: 'NIGHT', icon: 'moon' });
+    expect(lessonDayPart('2026-10-27T02:59:00Z').id).toBe('NIGHT');
+    expect(lessonDayPart('2026-10-27T03:00:00Z').id).toBe('MORNING');
   });
 });

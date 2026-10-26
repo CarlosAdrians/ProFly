@@ -84,3 +84,9 @@ No professor, o turno inicial é Todos; iniciar exclusivamente em Noite ocultava
 Conta/privacidade conserva cópia/correção, aviso público e protocolos, com Novo pedido de privacidade recolhido. As informações institucionais de responsável/canal/base/retenção saíram da tela pessoal e ficam em Gestão institucional de privacidade do administrador; permanecem também no aviso público/cadastro. Isso não concede ao professor poderes de gestão nem remove o canal pessoal de direitos.
 
 Cenário preparado no mesmo banco de teste já usado na5175: cinco aulas entre26 e30/10/2026, com quarta e fim de semana livres. Dados e critérios fictícios, publicados pela API com o coordenador responsável. Scripts e limites em backend/README.md; revisão e pendências em [CHECKLIST_PERFIS.md](CHECKLIST_PERFIS.md).
+
+## Calendário de segunda a sábado e ícones de turno
+
+Pedido de26/10/2026: removida a coluna de domingo nas visões de mês e semana, com seis colunas alinhadas. A consulta diária pula domingo ao navegar com as setas; escolher explicitamente domingo informa que a visualização cobre segunda a sábado. Essa alteração é de apresentação: não exclui registros ou modifica as regras de dias válidos da API.
+
+Filtros Todos/Manhã/Tarde/Noite usam botões com estado pressionado, ícones SVG e rótulos visíveis. Manhã usa sol nascendo, tarde sol e noite lua; o mesmo símbolo identifica o turno em cada cartão, com nome acessível e tooltip. Classificação usa America/Fortaleza e preserva os limites já existentes: antes de12h,12h a antes de18h e a partir de18h. Contador inclui apenas datas e turno visíveis. Em telas estreitas, ícone fica acima do rótulo para continuar legível.
