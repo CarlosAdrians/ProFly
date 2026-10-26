@@ -617,15 +617,37 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
         target: { value: fixture.from },
       });
       expect(await screen.findAllByRole('button', { name: /Visual aula/ })).toHaveLength(5);
+      const initialTone = screen
+        .getByRole('button', { name: /Visual aula 1/ })
+        .getAttribute('data-tone');
+      expect(initialTone).toBeTruthy();
+      expect(
+        new Set(
+          screen
+            .getAllByRole('button', { name: /Visual aula/ })
+            .map((card) => card.getAttribute('data-tone')),
+        ).size,
+      ).toBeGreaterThan(2);
+      const legend = screen.getByRole('list', { name: 'Disciplinas no período' });
+      expect(within(legend).getByText('Visual aula 1')).toHaveAttribute('data-tone', initialTone);
       expect(screen.queryByText('Domingo', { exact: true })).not.toBeInTheDocument();
       const sunday = new Date(`${dateAt(6)}T12:00:00Z`).toLocaleDateString('pt-BR');
       expect(screen.queryByRole('region', { name: sunday })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /Visual alheia/ })).not.toBeInTheDocument();
       await user.selectOptions(screen.getByRole('combobox', { name: 'Visualização' }), 'MONTH');
       expect(await screen.findAllByRole('button', { name: /Visual aula/ })).toHaveLength(5);
+      expect(screen.getByRole('button', { name: /Visual aula 1/ })).toHaveAttribute(
+        'data-tone',
+        initialTone,
+      );
       expect(screen.queryByText('Domingo', { exact: true })).not.toBeInTheDocument();
       expect(screen.getByText('Sábado', { exact: true })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /Visual domingo/ })).not.toBeInTheDocument();
+      expect(
+        within(screen.getByRole('list', { name: 'Disciplinas no período' })).queryByText(
+          'Visual domingo',
+        ),
+      ).not.toBeInTheDocument();
       expect(
         await fixture.database.db
           .collection<StoredOccurrence>('occurrences')
@@ -636,7 +658,7 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
       expect(screen.queryByRole('button', { name: 'Nova alocação' })).not.toBeInTheDocument();
       const morning = await screen.findByRole('button', { name: /Visual aula 1/ });
       expect(morning).toHaveAttribute('draggable', 'false');
-      expect(morning).toHaveTextContent('Direito visual API');
+      expect(morning).toHaveTextContent('Turma visual API');
       const freeDay = new Date(`${dateAt(2)}T12:00:00Z`).toLocaleDateString('pt-BR');
       expect(
         within(screen.getByRole('region', { name: freeDay })).getByText('Sem aulas'),
@@ -644,9 +666,14 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
       await user.click(morning);
       const details = screen.getByRole('dialog', { name: 'Detalhes da aula' });
       expect(within(details).getByRole('heading', { name: 'Visual aula 1' })).toBeInTheDocument();
+      expect(within(details).getByText(/Direito visual API/)).toBeInTheDocument();
       await user.click(within(details).getByRole('button', { name: 'Fechar' }));
       await user.click(screen.getByRole('button', { name: /^Manhã$/ }));
       expect(screen.getAllByRole('button', { name: /Visual aula/ })).toHaveLength(2);
+      expect(screen.getByRole('button', { name: /Visual aula 1/ })).toHaveAttribute(
+        'data-tone',
+        initialTone,
+      );
       await user.click(screen.getByRole('button', { name: /^Tarde$/ }));
       expect(screen.getAllByRole('button', { name: /Visual aula/ })).toHaveLength(3);
       await user.click(screen.getByRole('button', { name: /^Noite$/ }));

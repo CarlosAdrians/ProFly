@@ -1,0 +1,326 @@
+.surface {
+  --field-height: 44px;
+  --field-accent-width: 1px;
+  --color-field-accent: var(--color-border-strong);
+  --control-font-size: 0.875rem;
+  --label-font-size: 0.75rem;
+}
+.surface > section {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 20px;
+  box-shadow:
+    0 6px 24px #182c4810,
+    0 1px 2px #182c4808;
+}
+.controls {
+  padding: 22px 24px;
+  margin-bottom: 0;
+  gap: 16px;
+  background: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--color-border);
+}
+.controls > * {
+  min-width: 0;
+}
+.controls > div:first-child {
+  gap: 4px;
+  margin-right: auto;
+}
+.controls button {
+  min-height: 44px;
+}
+.controls > div:first-child button {
+  min-width: 44px;
+  padding: 8px 12px;
+  border-color: var(--color-border);
+  background: var(--color-bg);
+  box-shadow: 0 1px 2px #00000008;
+}
+.controls > div:first-child button:nth-child(2) {
+  min-width: 64px;
+}
+.controls > label {
+  width: 112px;
+  font-size: 0.75rem;
+}
+.controls > div:nth-child(2) {
+  width: 150px;
+}
+.controls input[type='date'] {
+  padding-inline: 8px;
+}
+.controls select {
+  min-width: 110px;
+  height: 44px;
+  font-size: 0.875rem;
+  border-color: var(--color-border-strong);
+}
+.controls legend {
+  font-size: 0.75rem;
+}
+.period {
+  padding: 24px 24px 18px;
+}
+.period h2 {
+  margin: 0;
+  font-size: clamp(1.15rem, 2vw, 1.6rem);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+}
+.summary {
+  margin: 12px 0 0;
+  font-size: 0.8rem;
+}
+.summary > span {
+  font-size: 0.75rem;
+}
+.legend {
+  display: flex;
+  gap: 10px 20px;
+  flex-wrap: wrap;
+  padding: 0;
+  margin: 20px 0 0;
+  list-style: none;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--lesson-accent);
+}
+.grid {
+  border-left: 0;
+  grid-template-columns: repeat(6, minmax(148px, 1fr));
+  min-width: 888px;
+}
+.weekday {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--color-bg-subtle);
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+.day {
+  padding: 12px 9px;
+  gap: 10px;
+  background: var(--color-bg);
+  min-height: 152px;
+}
+.day:nth-child(6n) {
+  border-right: 0;
+}
+.week .day {
+  min-height: 320px;
+}
+.day[data-today='true'] {
+  background: color-mix(in srgb, var(--color-accent-bg) 32%, var(--color-bg));
+}
+.day[data-outside-month='true'] .dayNumber {
+  opacity: 0.45;
+}
+.dateRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 30px;
+  padding: 0 2px 3px;
+  color: var(--color-text-muted);
+}
+.dateRow small {
+  font-size: 0.65rem;
+  color: var(--color-link);
+}
+.dayNumber {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  border-radius: 50%;
+}
+.day[data-today='true'] .dayNumber {
+  color: white;
+  background: var(--color-primary);
+}
+.card {
+  position: relative;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--lesson-accent) 18%, transparent);
+  border-left: 3px solid var(--lesson-accent);
+  border-radius: 10px;
+  padding: 10px 10px 9px;
+  background: var(--lesson-bg);
+  color: var(--lesson-text);
+  box-shadow: 0 1px 2px #00000005;
+  transition:
+    box-shadow 120ms ease,
+    border-color 120ms ease;
+}
+.card:hover {
+  border-color: var(--lesson-accent);
+  box-shadow: 0 3px 9px #00000012;
+}
+.card:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+  z-index: 1;
+}
+.card > strong {
+  font-size: 0.75rem;
+  font-weight: 550;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.card > strong > span {
+  color: var(--lesson-text);
+}
+.card .subject {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.card .group {
+  color: var(--lesson-text);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  opacity: 0.85;
+}
+.card .status {
+  color: var(--lesson-text);
+  border-top: 1px solid color-mix(in srgb, var(--lesson-accent) 20%, transparent);
+  padding-top: 6px;
+  font-size: 0.65rem;
+}
+.card[data-status='CANCELLED'] .subject {
+  text-decoration: line-through;
+}
+.empty {
+  padding: 16px 5px;
+  margin: 0;
+  font-size: 0.75rem;
+}
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 20px;
+  padding: 16px 24px;
+}
+.footer label,
+.footer p {
+  margin: 0;
+  font-size: 0.75rem;
+}
+.scrollHint {
+  display: none;
+}
+.surface [data-tone='blue'] {
+  --lesson-accent: #397ee5;
+  --lesson-bg: #eaf2ff;
+  --lesson-text: #174584;
+}
+.surface [data-tone='mint'] {
+  --lesson-accent: #219178;
+  --lesson-bg: #e4f5ee;
+  --lesson-text: #165a48;
+}
+.surface [data-tone='violet'] {
+  --lesson-accent: #8d5cce;
+  --lesson-bg: #f0eafb;
+  --lesson-text: #62368b;
+}
+.surface [data-tone='orange'] {
+  --lesson-accent: #c77e23;
+  --lesson-bg: #fff2db;
+  --lesson-text: #7b4c0f;
+}
+.surface [data-tone='pink'] {
+  --lesson-accent: #cf5891;
+  --lesson-bg: #fce9f1;
+  --lesson-text: #903660;
+}
+.surface [data-tone='cyan'] {
+  --lesson-accent: #258caa;
+  --lesson-bg: #e5f4f9;
+  --lesson-text: #17576e;
+}
+.surface [data-tone='olive'] {
+  --lesson-accent: #808c2d;
+  --lesson-bg: #f2f4df;
+  --lesson-text: #4e581b;
+}
+.surface [data-tone='indigo'] {
+  --lesson-accent: #6264cf;
+  --lesson-bg: #ececfc;
+  --lesson-text: #424391;
+}
+:global(:root[data-theme='dark']) .surface [data-tone] {
+  --lesson-bg: color-mix(in srgb, var(--lesson-accent) 19%, var(--color-bg));
+  --lesson-text: color-mix(in srgb, var(--lesson-accent) 28%, #ffffff);
+}
+@media (max-width: 1000px) {
+  .scrollHint {
+    display: block;
+    padding: 0 24px 12px;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    margin: 0;
+  }
+}
+@media (max-width: 700px) {
+  .controls {
+    padding: 16px;
+    gap: 14px 10px;
+  }
+  .controls > div:first-child {
+    flex-basis: 100%;
+  }
+  .controls > label,
+  .controls > div:nth-child(2) {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+  .controls input,
+  .controls select {
+    width: 100%;
+    min-width: 0;
+  }
+  .period {
+    padding: 20px 16px 16px;
+  }
+  .summary > span {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+  .legend {
+    gap: 10px 14px;
+    margin-top: 16px;
+  }
+  .footer {
+    padding: 16px;
+  }
+  .scrollHint {
+    padding-left: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}

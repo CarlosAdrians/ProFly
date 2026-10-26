@@ -16,6 +16,8 @@ import { AllocationForm } from './PlanningPages';
 import { ActionFeedback, Badge, Heading, LoadingError, Panel, Select } from './ui';
 import { calendarShiftOptions, lessonDayPart, type CalendarShift } from './calendarShifts';
 import { addDate, monday, monthDates, moveMeeting, weekday } from './calendarModel';
+import { calendarSubjectTone } from './calendarColors';
+import c from './TeacherCalendar.module.css';
 import s from './Portal.module.css';
 interface Pin {
   id: string;
@@ -34,7 +36,7 @@ export function ApiCalendarPage() {
     today = useInstitutionToday(),
     teacher = useScope().asTeacher,
     [date, setDate] = useState(today),
-    [view, setView] = useState('MONTH'),
+    [view, setView] = useState(teacher ? 'WEEK' : 'MONTH'),
     [shift, setShift] = useState<CalendarShift>(teacher ? 'ALL' : 'NIGHT'),
     [showHolidays, setHolidays] = useState(true),
     [editing, setEditing] = useState<Allocation | null | undefined>(),
@@ -87,6 +89,15 @@ export function ApiCalendarPage() {
           })),
       );
   const shownPins = pins.filter((pin) => dates.includes(pin.date) && inShift(pin.startsAt));
+  const disciplines = teacher
+    ? [
+        ...new Map(
+          pins
+            .filter((pin) => dates.includes(pin.date))
+            .map((pin) => [`${pin.course}:${pin.subject}`, pin]),
+        ).values(),
+      ].sort((a, b) => a.subject.localeCompare(b.subject, 'pt-BR'))
+    : [];
   async function drop(to: string) {
     const source = drag;
     setDrag(null);
@@ -136,200 +147,249 @@ export function ApiCalendarPage() {
           </Button>
         )}
       </Heading>
-      <Panel>
-        <div className={s.calendarControls}>
-          <div className={s.calendarNavigation}>
-            <Button variant="secondary" aria-label="Período anterior" onClick={() => navigate(-1)}>
-              <Icon name="arrowLeft" />
-            </Button>
-            <Button variant="secondary" onClick={() => setDate(today)}>
-              Hoje
-            </Button>
-            <Button variant="secondary" aria-label="Próximo período" onClick={() => navigate(1)}>
-              <Icon name="arrowRight" />
-            </Button>
-          </div>
-          <TextField
-            label="Data de referência"
-            type="date"
-            value={date}
-            onChange={(e) => {
-              if (e.target.value) setDate(e.target.value);
-            }}
-          />
-          <Select
-            label="Visualização"
-            value={view}
-            items={[
-              { id: 'MONTH', name: 'Mês' },
-              { id: 'WEEK', name: 'Semana' },
-              { id: 'DAY', name: 'Dia' },
-            ]}
-            onChange={setView}
-          />
-          <fieldset className={s.shiftFilter}>
-            <legend>Turno</legend>
-            <div className={s.shiftSegments}>
-              {calendarShiftOptions.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={shift === option.id}
-                  onClick={() => setShift(option.id)}
-                >
-                  <Icon name={option.icon} size={18} />
-                  {option.label}
-                </button>
-              ))}
+      <div className={teacher ? c.surface : undefined}>
+        <Panel>
+          <div className={`${s.calendarControls} ${teacher ? c.controls : ''}`}>
+            <div className={s.calendarNavigation}>
+              <Button
+                variant="secondary"
+                aria-label="Período anterior"
+                onClick={() => navigate(-1)}
+              >
+                <Icon name="arrowLeft" />
+              </Button>
+              <Button variant="secondary" onClick={() => setDate(today)}>
+                Hoje
+              </Button>
+              <Button variant="secondary" aria-label="Próximo período" onClick={() => navigate(1)}>
+                <Icon name="arrowRight" />
+              </Button>
             </div>
-          </fieldset>
-        </div>
-        <h2>
-          {view === 'WEEK'
-            ? `${dayLabel(from)} a ${dayLabel(until)}`
-            : view === 'DAY'
-              ? dayLabel(date)
-              : new Date(`${date}T12:00:00Z`).toLocaleDateString('pt-BR', {
-                  month: 'long',
-                  year: 'numeric',
-                })}
-        </h2>
-        <LoadingError
-          loading={teacher ? schedule.loading : planning.loading}
-          error={teacher ? schedule.error : planning.error}
-          retry={teacher ? schedule.refresh : planning.refresh}
-        />
-        <ActionFeedback action={action} />
-        {teacher && dates.length > 0 && schedule.data && !schedule.error && (
-          <p className={s.calendarSummary}>
-            <Icon name="calendar" size={18} />
-            {shownPins.length} {shownPins.length === 1 ? 'aula no período' : 'aulas no período'}
-            <span>Somente sua escala publicada</span>
-          </p>
-        )}
-        {dates.length === 0 && (
-          <p className={s.empty}>Selecione uma data de segunda a sábado para consultar as aulas.</p>
-        )}
-        {dates.length > 0 && (
-          <div className={s.calendarScroll}>
-            <div
-              className={`${s.calendar} ${teacher && view !== 'MONTH' ? s.teacherWeek : ''}`}
-              style={
-                view === 'DAY'
-                  ? { gridTemplateColumns: 'minmax(260px,1fr)', minWidth: 260 }
-                  : undefined
-              }
-            >
-              {view !== 'DAY' &&
-                ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'].map((day) => (
-                  <div className={s.dayHeader} key={day}>
-                    {day}
-                  </div>
+            <TextField
+              label="Data de referência"
+              type="date"
+              value={date}
+              onChange={(e) => {
+                if (e.target.value) setDate(e.target.value);
+              }}
+            />
+            <Select
+              label="Visualização"
+              value={view}
+              items={[
+                { id: 'MONTH', name: 'Mês' },
+                { id: 'WEEK', name: 'Semana' },
+                { id: 'DAY', name: 'Dia' },
+              ]}
+              onChange={setView}
+            />
+            <fieldset className={s.shiftFilter}>
+              <legend>Turno</legend>
+              <div className={s.shiftSegments}>
+                {calendarShiftOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={shift === option.id}
+                    onClick={() => setShift(option.id)}
+                  >
+                    <Icon name={option.icon} size={18} />
+                    {option.label}
+                  </button>
                 ))}
-              {dates.map((day) => (
-                <section
-                  className={s.day}
-                  key={day}
-                  data-today={day === today}
-                  data-outside-month={view === 'MONTH' && day.slice(0, 7) !== date.slice(0, 7)}
-                  aria-label={dayLabel(day)}
-                  onDragOver={(e) => {
-                    if (drag && day >= today) e.preventDefault();
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    void drop(day);
-                  }}
-                >
-                  <span className={s.muted}>
-                    {Number(day.slice(8))}
-                    {day < today ? ' · Consulta' : ''}
-                  </span>
-                  {holidays.items
-                    .filter((h) => h.date === day)
-                    .map((h) => (
-                      <span key={h.name} className={s.holiday}>
-                        {h.name}
-                      </span>
-                    ))}
-                  {shownPins
-                    .filter((p) => p.date === day)
-                    .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
-                    .map((p) => (
-                      <button
-                        type="button"
-                        key={p.id}
-                        className={s.pin}
-                        draggable={!teacher && day >= today}
-                        onDragStart={(e) => {
-                          if (p.allocation) {
-                            setDrag({ allocation: p.allocation, date: day });
-                            e.dataTransfer.setData('text/plain', p.id);
-                            e.dataTransfer.effectAllowed = 'move';
-                          }
-                        }}
-                        onDragEnd={() => setDrag(null)}
-                        onClick={() =>
-                          p.allocation
-                            ? setEditing(p.allocation)
-                            : setSelected(p.occurrence ?? null)
-                        }
-                      >
-                        <strong className={s.pinTime}>
-                          <span
-                            role="img"
-                            aria-label={lessonDayPart(p.startsAt).label}
-                            title={lessonDayPart(p.startsAt).label}
-                          >
-                            <Icon name={lessonDayPart(p.startsAt).icon} size={16} />
-                          </span>
-                          {timeLabel(p.startsAt)}–{timeLabel(p.endsAt)}
-                        </strong>
-                        <span>{p.subject}</span>
-                        {p.course && <small>{p.course}</small>}
-                        <small>{p.teacher}</small>
-                        <small>
-                          {p.status === 'DRAFT'
-                            ? 'Rascunho'
-                            : p.status === 'PUBLISHED'
-                              ? 'Publicado'
-                              : p.status === 'PLANNED'
-                                ? 'Prevista'
-                                : p.status === 'CANCELLED'
-                                  ? 'Cancelada'
-                                  : p.status === 'COMPLETED'
-                                    ? 'Realizada'
-                                    : 'Remarcada'}
-                        </small>
-                      </button>
-                    ))}
-                  {teacher &&
-                    view !== 'MONTH' &&
-                    !schedule.loading &&
-                    !schedule.error &&
-                    !shownPins.some((p) => p.date === day) && (
-                      <span className={s.freeDay}>
-                        {shift === 'ALL' ? 'Sem aulas' : 'Sem aulas neste turno'}
-                      </span>
-                    )}
-                </section>
-              ))}
-            </div>
+              </div>
+            </fieldset>
           </div>
-        )}
-        <label className={s.check}>
-          <input
-            type="checkbox"
-            checked={showHolidays}
-            onChange={(e) => setHolidays(e.target.checked)}
-          />
-          Mostrar feriados de referência
-        </label>
-        <p className={s.muted}>
-          Exibição de segunda a sábado. Feriados não cancelam aulas automaticamente. Fuso
-          America/Fortaleza.
-        </p>
-      </Panel>
+          <div className={teacher ? c.period : undefined}>
+            <h2>
+              {view === 'WEEK'
+                ? teacher && from.slice(0, 7) === until.slice(0, 7)
+                  ? `${Number(from.slice(8))}–${new Date(`${until}T12:00:00Z`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                  : `${dayLabel(from)} a ${dayLabel(until)}`
+                : view === 'DAY'
+                  ? dayLabel(date)
+                  : new Date(`${date}T12:00:00Z`).toLocaleDateString('pt-BR', {
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+            </h2>
+            <LoadingError
+              loading={teacher ? schedule.loading : planning.loading}
+              error={teacher ? schedule.error : planning.error}
+              retry={teacher ? schedule.refresh : planning.refresh}
+            />
+            <ActionFeedback action={action} />
+            {teacher && dates.length > 0 && schedule.data && !schedule.error && (
+              <p className={`${s.calendarSummary} ${c.summary}`}>
+                <Icon name="calendar" size={18} />
+                {shownPins.length} {shownPins.length === 1 ? 'aula no período' : 'aulas no período'}
+                <span>Somente sua escala publicada</span>
+              </p>
+            )}
+            {teacher && disciplines.length > 0 && !schedule.loading && !schedule.error && (
+              <ul className={c.legend} aria-label="Disciplinas no período">
+                {disciplines.map((pin) => (
+                  <li
+                    key={`${pin.course}:${pin.subject}`}
+                    data-tone={calendarSubjectTone(pin.course ?? '', pin.subject)}
+                    title={pin.course}
+                  >
+                    <i aria-hidden="true" />
+                    {pin.subject}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {dates.length === 0 && (
+            <p className={s.empty}>
+              Selecione uma data de segunda a sábado para consultar as aulas.
+            </p>
+          )}
+          {dates.length > 0 && (
+            <>
+              {teacher && view !== 'DAY' && (
+                <p className={c.scrollHint}>Deslize o calendário para consultar os outros dias.</p>
+              )}
+              <div className={s.calendarScroll}>
+                <div
+                  className={`${s.calendar} ${teacher ? c.grid : ''} ${teacher && view !== 'MONTH' ? c.week : ''}`}
+                  style={
+                    view === 'DAY'
+                      ? { gridTemplateColumns: 'minmax(260px,1fr)', minWidth: 260 }
+                      : undefined
+                  }
+                >
+                  {view !== 'DAY' &&
+                    ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'].map((day) => (
+                      <div className={`${s.dayHeader} ${teacher ? c.weekday : ''}`} key={day}>
+                        {day}
+                      </div>
+                    ))}
+                  {dates.map((day) => (
+                    <section
+                      className={`${s.day} ${teacher ? c.day : ''}`}
+                      key={day}
+                      data-today={day === today}
+                      data-outside-month={view === 'MONTH' && day.slice(0, 7) !== date.slice(0, 7)}
+                      aria-label={dayLabel(day)}
+                      onDragOver={(e) => {
+                        if (drag && day >= today) e.preventDefault();
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        void drop(day);
+                      }}
+                    >
+                      {teacher ? (
+                        <div className={c.dateRow}>
+                          <span
+                            className={c.dayNumber}
+                            aria-current={day === today ? 'date' : undefined}
+                          >
+                            {Number(day.slice(8))}
+                          </span>
+                          {day === today && <small>Hoje</small>}
+                        </div>
+                      ) : (
+                        <span className={s.muted}>
+                          {Number(day.slice(8))}
+                          {day < today ? ' · Consulta' : ''}
+                        </span>
+                      )}
+                      {holidays.items
+                        .filter((h) => h.date === day)
+                        .map((h) => (
+                          <span key={h.name} className={s.holiday}>
+                            {h.name}
+                          </span>
+                        ))}
+                      {shownPins
+                        .filter((p) => p.date === day)
+                        .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+                        .map((p) => (
+                          <button
+                            type="button"
+                            key={p.id}
+                            className={`${s.pin} ${teacher ? c.card : ''}`}
+                            data-tone={
+                              teacher ? calendarSubjectTone(p.course ?? '', p.subject) : undefined
+                            }
+                            data-status={p.status}
+                            draggable={!teacher && day >= today}
+                            onDragStart={(e) => {
+                              if (p.allocation) {
+                                setDrag({ allocation: p.allocation, date: day });
+                                e.dataTransfer.setData('text/plain', p.id);
+                                e.dataTransfer.effectAllowed = 'move';
+                              }
+                            }}
+                            onDragEnd={() => setDrag(null)}
+                            onClick={() =>
+                              p.allocation
+                                ? setEditing(p.allocation)
+                                : setSelected(p.occurrence ?? null)
+                            }
+                          >
+                            <strong className={s.pinTime}>
+                              <span
+                                role="img"
+                                aria-label={lessonDayPart(p.startsAt).label}
+                                title={lessonDayPart(p.startsAt).label}
+                              >
+                                <Icon name={lessonDayPart(p.startsAt).icon} size={16} />
+                              </span>
+                              {timeLabel(p.startsAt)}–{timeLabel(p.endsAt)}
+                            </strong>
+                            <span className={teacher ? c.subject : undefined}>{p.subject}</span>
+                            {p.course && !teacher && <small>{p.course}</small>}
+                            <small className={teacher ? c.group : undefined}>{p.teacher}</small>
+                            <small className={teacher ? c.status : undefined}>
+                              {p.status === 'DRAFT'
+                                ? 'Rascunho'
+                                : p.status === 'PUBLISHED'
+                                  ? 'Publicado'
+                                  : p.status === 'PLANNED'
+                                    ? 'Prevista'
+                                    : p.status === 'CANCELLED'
+                                      ? 'Cancelada'
+                                      : p.status === 'COMPLETED'
+                                        ? 'Realizada'
+                                        : 'Remarcada'}
+                            </small>
+                          </button>
+                        ))}
+                      {teacher &&
+                        view !== 'MONTH' &&
+                        !schedule.loading &&
+                        !schedule.error &&
+                        !shownPins.some((p) => p.date === day) && (
+                          <span className={`${s.freeDay} ${c.empty}`}>
+                            {shift === 'ALL' ? 'Sem aulas' : 'Sem aulas neste turno'}
+                          </span>
+                        )}
+                    </section>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+          <div className={teacher ? c.footer : undefined}>
+            <label className={s.check}>
+              <input
+                type="checkbox"
+                checked={showHolidays}
+                onChange={(e) => setHolidays(e.target.checked)}
+              />
+              Mostrar feriados de referência
+            </label>
+            <p className={s.muted}>
+              Exibição de segunda a sábado. Feriados não cancelam aulas automaticamente. Fuso
+              America/Fortaleza.
+            </p>
+          </div>
+        </Panel>
+      </div>
       {showHolidays && (
         <HolidayNotice
           items={holidays.items.filter((h) => h.date >= from && h.date <= until)}

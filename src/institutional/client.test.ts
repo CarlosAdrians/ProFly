@@ -1,4 +1,5 @@
 import { lessonDayPart } from './calendarShifts';
+import { calendarSubjectTone } from './calendarColors';
 import { describe, it, expect, vi } from 'vitest';
 import { api, ApiError, setCsrf } from './api';
 import { addDate, moveMeeting } from './calendarModel';
@@ -106,5 +107,19 @@ describe('icones dos turnos no fuso institucional', () => {
     expect(lessonDayPart('2026-10-26T21:00:00Z')).toMatchObject({ id: 'NIGHT', icon: 'moon' });
     expect(lessonDayPart('2026-10-27T02:59:00Z').id).toBe('NIGHT');
     expect(lessonDayPart('2026-10-27T03:00:00Z').id).toBe('MORNING');
+  });
+});
+
+describe('cores das disciplinas no calendario pessoal', () => {
+  it('distingue as tres disciplinas do checklist e preserva identidade sem depender da ordem', () => {
+    const subjects = ['Direito Civil I', 'Direito Civil II', 'Prática Contratual'];
+    const forward = subjects.map((subject) => calendarSubjectTone('Direito', subject));
+    expect(new Set(forward).size).toBe(3);
+    expect(
+      [...subjects].reverse().map((subject) => calendarSubjectTone('Direito', subject)),
+    ).toEqual([...forward].reverse());
+    expect(calendarSubjectTone(' Direito ', ' PRATICA  CONTRATUAL ')).toBe(
+      calendarSubjectTone('Direito', 'Prática Contratual'),
+    );
   });
 });
