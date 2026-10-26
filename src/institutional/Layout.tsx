@@ -1,10 +1,10 @@
+import { StatusPage } from '../app/StatusPage';
 import { ProfileMenu } from './ProfileMenu';
 import { Scope } from './scope';
 import { useState, type CSSProperties } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router';
 import { ThemeToggle } from '../components/ui/ThemeToggle/ThemeToggle';
 import { Icon } from '../components/ui/Icon/Icon';
-import { Button } from '../components/ui/Button/Button';
 import { NotificationsBell } from './NotificationsBell';
 import { useApi, useApiSession } from './hooks';
 import type { CatalogItem, Items } from './types';
@@ -14,22 +14,13 @@ import s from './Portal.module.css';
 export function ApiGuard() {
   const auth = useApiSession();
 
-  if (auth.loading)
-    return (
-      <main className="environmentNotice" role="status">
-        Conferindo sua sessão…
-      </main>
-    );
-
+  if (auth.loading) return <StatusPage state="loading" />;
   if (auth.error)
     return (
-      <main className="environmentNotice">
-        <h1>Servidor indisponível</h1>
-
-        <p role="alert">{auth.error}</p>
-
-        <Button onClick={() => void auth.refresh()}>Tentar novamente</Button>
-      </main>
+      <StatusPage
+        state={auth.maintenance ? 'maintenance' : 'unavailable'}
+        onRetry={() => void auth.refresh()}
+      />
     );
 
   return auth.user ? <Outlet /> : <Navigate to="/login" replace />;

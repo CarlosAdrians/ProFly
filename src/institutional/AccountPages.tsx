@@ -1,3 +1,5 @@
+import { AvailabilityBoard, TeacherNote, HistoryTimeline } from './TeacherAgenda';
+import agenda from './TeacherAgenda.module.css';
 import { useAction } from './actions';
 import { dayLabel, timeLabel, today } from './dates';
 import { addDate } from './calendarModel';
@@ -321,22 +323,45 @@ function EmailForm({ user }: { user: User }) {
 }
 export function ApiAvailabilityPage() {
   const profile = useApi<Profile>('/me/profile');
+  const [editing, setEditing] = useState(false);
   return (
     <>
       <Heading
         title="Minha disponibilidade"
-        description="Horários pretendidos, separados da escala publicada."
-      />
+        description="Seus horários pretendidos, separados da escala publicada."
+      >
+        <Button disabled={!profile.data} onClick={() => setEditing(true)}>
+          <Icon name="edit" />
+          Editar disponibilidade
+        </Button>
+      </Heading>
       <LoadingError {...profile} retry={profile.refresh} />
       {profile.data && (
-        <Panel>
-          <ProfileEdit
-            key={profile.data.version}
-            profile={profile.data}
-            availability
-            onSaved={profile.refresh}
-          />
-        </Panel>
+        <>
+          <TeacherNote scene="morning" title="Sua semana começa com os horários que você informa.">
+            Defina os dias, as faixas de horário e a vigência. Você pode revisar sua disponibilidade
+            sempre que precisar.
+          </TeacherNote>
+          <AvailabilityBoard data={profile.data.data} />
+          <Modal
+            open={editing}
+            size="wide"
+            title="Editar disponibilidade"
+            onClose={() => setEditing(false)}
+          >
+            {editing && (
+              <ProfileEdit
+                key={profile.data.version}
+                profile={profile.data}
+                availability
+                onSaved={() => {
+                  setEditing(false);
+                  profile.refresh();
+                }}
+              />
+            )}
+          </Modal>
+        </>
       )}
     </>
   );
@@ -582,21 +607,36 @@ export function HistoryPage() {
         description="Aula planejada com data passada permanece a confirmar."
       />
       {teacher && (
-        <Select
-          label="Filtrar por curso"
-          empty="Todos os cursos"
-          value={course}
-          items={catalog.data?.items ?? []}
-          onChange={(value) => {
-            setCourse(value);
-            setCursor('');
-          }}
-        />
+        <TeacherNote scene="history" title="Cada aula tem seu registro.">
+          Consulte os encontros anteriores e acompanhe o que foi realizado, cancelado ou ainda
+          aguarda confirmação da coordenação.
+        </TeacherNote>
+      )}
+      {teacher && (
+        <div className={agenda.historyFilter}>
+          <Select
+            label="Filtrar por curso"
+            empty="Todos os cursos"
+            value={course}
+            items={catalog.data?.items ?? []}
+            onChange={(value) => {
+              setCourse(value);
+              setCursor('');
+            }}
+          />
+        </div>
       )}
       <LoadingError {...result} retry={result.refresh} />
       <ActionFeedback action={action} />
       <Panel>
-        <OccurrenceList items={result.data?.items ?? []} />
+        {teacher ? (
+          !result.loading &&
+          !result.error && (
+            <HistoryTimeline key={`${cursor}:${course}`} items={result.data?.items ?? []} />
+          )
+        ) : (
+          <OccurrenceList items={result.data?.items ?? []} />
+        )}
         {!teacher &&
           result.data?.items
             .filter((o) => o.status === 'PLANNED')

@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { StatusPage } from './StatusPage';
 import { demoEnvironmentAllowed } from './demoEnvironment';
 const DemoApp = lazy(() => import('./App').then((m) => ({ default: m.App })));
 const ConnectedApp = lazy(() =>
@@ -6,7 +7,7 @@ const ConnectedApp = lazy(() =>
 );
 export function EntryApp() {
   return demoEnvironmentAllowed(window.location.hostname) ? (
-    <Suspense fallback={<p role="status">Carregando ProFly…</p>}>
+    <Suspense fallback={<StatusPage state="loading" />}>
       {import.meta.env.VITE_DEMO_MODE === 'true' ? <DemoApp /> : <ConnectedApp />}
     </Suspense>
   ) : (

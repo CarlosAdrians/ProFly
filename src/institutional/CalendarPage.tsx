@@ -1,3 +1,4 @@
+import { StudyIllustration } from '../components/illustrations/StudyIllustration';
 import { useAction } from './actions';
 import { dayLabel, timeLabel } from './dates';
 import { useState } from 'react';
@@ -331,6 +332,20 @@ export function ApiCalendarPage() {
                                 : setSelected(p.occurrence ?? null)
                             }
                           >
+                            {teacher && (
+                              <div className={c.paperIllustration} aria-hidden="true">
+                                <StudyIllustration
+                                  scene={
+                                    lessonDayPart(p.startsAt).id === 'MORNING'
+                                      ? 'morning'
+                                      : lessonDayPart(p.startsAt).id === 'AFTERNOON'
+                                        ? 'afternoon'
+                                        : 'night'
+                                  }
+                                />
+                                <span>{lessonDayPart(p.startsAt).label}</span>
+                              </div>
+                            )}
                             <strong className={s.pinTime}>
                               <span
                                 role="img"

@@ -1,3 +1,4 @@
+import { StatusPage } from '../app/StatusPage';
 import { PrivacyPage, PrivacyInformation } from './PrivacyPage';
 import { Navigate, type RouteObject } from 'react-router';
 import { ForRole } from './RoleGuard';
@@ -23,6 +24,9 @@ export const apiRoutes: RouteObject[] = [
     errorElement: <RouteErrorPage />,
     children: [
       { path: '/', element: <Navigate to="/inicio" replace /> },
+      { path: '/404', element: <StatusPage state="notFound" /> },
+      { path: '/carregando', element: <StatusPage state="loading" /> },
+      { path: '/manutencao', element: <StatusPage state="maintenance" /> },
       { path: '/login', element: <ApiLoginPage /> },
       { path: '/cadastro', element: <ApiRegisterPage /> },
       { path: '/esqueceu-senha', element: <ApiForgotPage /> },
@@ -105,7 +109,7 @@ export const apiRoutes: RouteObject[] = [
           },
         ],
       },
-      { path: '*', element: <Navigate to="/inicio" replace /> },
+      { path: '*', element: <StatusPage state="notFound" /> },
     ],
   },
 ];

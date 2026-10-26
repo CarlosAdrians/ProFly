@@ -1,3 +1,4 @@
+import { LoadingPlaceholder } from '../app/StatusPage';
 import { ModalBusy, useAction } from './actions';
 import { Modal as SharedModal } from '../components/ui/Modal/Modal';
 import { useState, type ComponentProps, type ReactNode } from 'react';
@@ -129,11 +130,7 @@ export function LoadingError({
 }) {
   return (
     <>
-      {loading && (
-        <p role="status" className={s.muted}>
-          Carregando…
-        </p>
-      )}
+      {loading && <LoadingPlaceholder />}
       <ErrorMessage error={error} />
       {error && (
         <Button variant="secondary" onClick={retry}>

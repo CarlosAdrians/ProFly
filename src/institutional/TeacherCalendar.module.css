@@ -120,7 +120,8 @@
   border-right: 0;
 }
 .week .day {
-  min-height: 320px;
+  min-height: 410px;
+  gap: 14px;
 }
 .day[data-today='true'] {
   background: color-mix(in srgb, var(--color-accent-bg) 32%, var(--color-bg));
@@ -156,21 +157,26 @@
 }
 .card {
   position: relative;
-  gap: 8px;
-  border: 1px solid color-mix(in srgb, var(--lesson-accent) 18%, transparent);
+  gap: 9px;
+  border: 1px solid var(--color-border);
   border-left: 3px solid var(--lesson-accent);
   border-radius: 10px;
-  padding: 10px 10px 9px;
-  background: var(--lesson-bg);
-  color: var(--lesson-text);
-  box-shadow: 0 1px 2px #00000005;
+  padding: 7px 11px 12px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  margin-bottom: 4px;
+  box-shadow:
+    0 3px 0 color-mix(in srgb, var(--lesson-accent) 14%, var(--color-bg)),
+    0 4px 0 var(--color-border);
   transition:
     box-shadow 120ms ease,
     border-color 120ms ease;
 }
 .card:hover {
   border-color: var(--lesson-accent);
-  box-shadow: 0 3px 9px #00000012;
+  box-shadow:
+    0 3px 0 var(--lesson-bg),
+    0 4px 0 var(--lesson-accent);
 }
 .card:focus-visible {
   outline: 3px solid var(--color-focus);
@@ -188,20 +194,21 @@
   color: var(--lesson-text);
 }
 .card .subject {
+  color: var(--lesson-text);
   font-size: 0.875rem;
   line-height: 1.4;
   font-weight: 650;
   overflow-wrap: anywhere;
 }
 .card .group {
-  color: var(--lesson-text);
+  color: var(--color-text-muted);
   font-size: 0.75rem;
   line-height: 1.4;
-  opacity: 0.85;
+  opacity: 1;
 }
 .card .status {
-  color: var(--lesson-text);
-  border-top: 1px solid color-mix(in srgb, var(--lesson-accent) 20%, transparent);
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
   padding-top: 6px;
   font-size: 0.65rem;
 }
@@ -322,5 +329,34 @@
 @media (prefers-reduced-motion: reduce) {
   .card {
     transition: none;
+  }
+}
+
+/* Subject color stays on the binding; the shift is illustrated on the cover. */
+.paperIllustration {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--color-border);
+}
+.paperIllustration svg {
+  width: 74px;
+  height: 54px;
+  flex-shrink: 0;
+}
+.paperIllustration > span {
+  color: var(--color-text-muted);
+  font-size: 0.625rem;
+  font-weight: 500;
+}
+@media (max-width: 700px) {
+  .paperIllustration {
+    gap: 2px;
+  }
+  .paperIllustration svg {
+    width: 65px;
+    height: 50px;
   }
 }

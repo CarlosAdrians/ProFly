@@ -1,3 +1,4 @@
+import { seedPreviewHistory } from '../../backend/src/testing/previewHistory';
 import type { Occurrence as StoredOccurrence } from '../../backend/src/scheduling/models';
 import { Buffer } from 'node:buffer';
 import { StrictMode } from 'react';
@@ -522,6 +523,7 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     open('/login');
     const user = await signIn(fixture.teacherEmail);
     await user.click(screen.getByRole('link', { name: 'Disponibilidade' }));
+    await user.click(await screen.findByRole('button', { name: 'Editar disponibilidade' }));
     const summary = await screen.findByText(/Segunda · 18:00–21:00/);
     const details = summary.closest('details')!;
     expect(details).not.toHaveAttribute('open');
@@ -809,6 +811,95 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
       observer.mockRestore();
     }
   }, 30000);
+  it('historico consulta cinco registros reais da previa e filtra sem confirmar aulas', async () => {
+    await seedPreviewHistory(fixture.database, fixture.identity.config, fixture.teacherId);
+    open('/login');
+    const user = await signIn(fixture.teacherEmail);
+    await user.click(screen.getByRole('link', { name: 'Histórico' }));
+    await screen.findByText('5 aulas nesta página');
+    await user.click(screen.getByRole('button', { name: /^Realizadas$/ }));
+    const entries = screen
+      .getAllByRole('button')
+      .filter((button) => button.textContent?.includes('Turma de teste · Histórico'));
+    expect(entries).toHaveLength(3);
+    await user.click(entries[0]);
+    const dialog = screen.getByRole('dialog', { name: 'Registro da aula' });
+    expect(
+      within(dialog).getByText('Realização confirmada no registro da coordenação.'),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole('button', { name: /Confirmar realização/ }),
+    ).not.toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByRole('button', { name: /^A confirmar$/ }));
+    const pending = screen
+      .getAllByRole('button')
+      .filter((button) => button.textContent?.includes('Turma de teste · Histórico'));
+    expect(pending).toHaveLength(1);
+    expect(
+      await fixture.database.db
+        .collection('occurrences')
+        .countDocuments({ teacherId: fixture.teacherId, status: 'COMPLETED' }),
+    ).toBe(3);
+  }, 30000);
+
+  it('manutencao na sessao mostra estado institucional e tentar novamente recupera o acesso', async () => {
+    cookie = (await fixture.login(fixture.teacherEmail)).cookie;
+    const actualFetch = globalThis.fetch;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+        if (String(input).endsWith('/auth/session'))
+          return new Response(
+            JSON.stringify({ error: { code: 'MAINTENANCE', message: 'Manutenção temporária.' } }),
+            { status: 503 },
+          );
+        return actualFetch(input, init);
+      }),
+    );
+    open('/calendario');
+    await screen.findByRole('heading', { name: 'Uma pausa para cuidar do seu espaço.' });
+    expect(screen.queryByRole('heading', { name: 'Acesso ao ProFly' })).not.toBeInTheDocument();
+    vi.stubGlobal('fetch', actualFetch);
+    await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    await screen.findByRole('heading', { name: 'Meu calendário' }, { timeout: 10000 });
+  }, 30000);
+
+  it('atestado PDF passa pelo formulario e parser real e fica privado no registro', async () => {
+    const { PDFDocument } = await import('../../backend/node_modules/pdf-lib');
+    const pdf = await PDFDocument.create();
+    pdf.addPage().drawText('DOCUMENTO FICTICIO - TESTE');
+    const bytes = await pdf.save();
+    open('/login');
+    const user = await signIn(fixture.teacherEmail);
+    await user.click(screen.getByRole('link', { name: 'Atestados' }));
+    await user.click(await screen.findByRole('button', { name: 'Enviar atestado' }));
+    const dialog = screen.getByRole('dialog', { name: 'Enviar atestado' });
+    await user.upload(
+      within(dialog).getByLabelText('Arquivo do atestado'),
+      new File([new Uint8Array(bytes)], 'ficticio.pdf', { type: 'application/pdf' }),
+    );
+    fireEvent.change(within(dialog).getByLabelText('Primeiro dia'), {
+      target: { value: fixture.from },
+    });
+    fireEvent.change(within(dialog).getByLabelText('Último dia'), {
+      target: { value: fixture.until },
+    });
+    await user.click(within(dialog).getByRole('checkbox', { name: 'Direito' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Enviar atestado para análise' }));
+    await waitFor(
+      () =>
+        expect(screen.queryByRole('dialog', { name: 'Enviar atestado' })).not.toBeInTheDocument(),
+      { timeout: 10000 },
+    );
+    expect(
+      await fixture.database.db
+        .collection('absences')
+        .countDocuments({ teacherId: fixture.teacherId, 'attachment.type': 'application/pdf' }),
+    ).toBe(1);
+    expect(await screen.findByText(/PDF ·/)).toBeInTheDocument();
+  }, 30000);
+
   it('recuperação usa fragmento, confirma nova senha e revoga a sessão anterior', async () => {
     const old = await fixture.login(fixture.teacherEmail);
     open('/esqueceu-senha');

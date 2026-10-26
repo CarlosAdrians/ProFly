@@ -7,8 +7,10 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
   const generation = useRef(0);
   const [user, setUser] = useState<User | null>(null),
     [loading, setLoading] = useState(true),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [maintenance, setMaintenance] = useState(false);
   const accept = useCallback((session: Session) => {
+    setMaintenance(false);
     setCsrf(session.csrfToken);
     setUser(session.user);
     setLoading(false);
@@ -18,6 +20,7 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
     try {
       accept(await api<Session>('/auth/session'));
     } catch (e) {
+      setMaintenance(e instanceof ApiError && e.code === 'MAINTENANCE');
       if (e instanceof ApiError && e.status === 401) {
         setCsrf('');
         setUser(null);
@@ -39,6 +42,7 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
       })
       .catch((e) => {
         if (controller.signal.aborted || epoch !== generation.current) return;
+        setMaintenance(e instanceof ApiError && e.code === 'MAINTENANCE');
         if (e instanceof ApiError && e.status === 401) {
           setCsrf('');
           setUser(null);
@@ -52,6 +56,7 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
       generation.current++;
       setCsrf('');
       setUser(null);
+      setMaintenance(false);
       setLoading(false);
       setError('');
     };
@@ -69,7 +74,7 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
   return (
-    <Auth.Provider value={{ user, loading, error, refresh, login, logout }}>
+    <Auth.Provider value={{ user, loading, error, maintenance, refresh, login, logout }}>
       {children}
     </Auth.Provider>
   );

@@ -75,7 +75,19 @@ export async function download(path: string) {
   const url = URL.createObjectURL(await response.blob());
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = 'atestado';
+  const disposition = response.headers.get('content-disposition') ?? '';
+  const filename = disposition.match(
+    /filename="?([a-zA-Z0-9_-]+\.(?:pdf|png|jpg|jpeg|webp))"?(?:;|$)/i,
+  )?.[1];
+  const extension = (
+    {
+      'application/pdf': 'pdf',
+      'image/png': 'png',
+      'image/jpeg': 'jpg',
+      'image/webp': 'webp',
+    } as Record<string, string>
+  )[response.headers.get('content-type')?.split(';')[0] ?? ''];
+  anchor.download = filename ?? `documento${extension ? `.${extension}` : ''}`;
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }

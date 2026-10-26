@@ -1,3 +1,5 @@
+import { StudyIllustration } from '../components/illustrations/StudyIllustration';
+import a from './AbsencesPage.module.css';
 import type { PrivacyPolicy } from './PrivacyPage';
 import { useAction } from './actions';
 import { dayLabel } from './dates';
@@ -10,13 +12,23 @@ import { api, download } from './api';
 import { useApi } from './hooks';
 import { useScope } from './scope';
 import type { Absence, CatalogItem, Items, User } from './types';
-import { ActionFeedback, Badge, Heading, LoadingError, Panel } from './ui';
+import { ActionFeedback, Badge, Heading, LoadingError } from './ui';
 import s from './Portal.module.css';
 export function ApiAbsencesPage() {
+  const { courseId, asTeacher } = useScope();
+  return <AbsencesContent key={asTeacher ? 'teacher' : courseId} />;
+}
+function AbsencesContent() {
   const { courseId } = useScope(),
     teacher = useScope().asTeacher,
-    result = useApi<Items<Absence>>(
-      teacher ? '/me/absences' : courseId ? `/courses/${courseId}/absences` : null,
+    [offset, setOffset] = useState(0),
+    [attachmentId, setAttachmentId] = useState(''),
+    result = useApi<Items<Absence> & { nextOffset: number | null }>(
+      teacher
+        ? `/me/absences?limit=10&offset=${offset}`
+        : courseId
+          ? `/courses/${courseId}/absences?limit=10&offset=${offset}`
+          : null,
     ),
     courses = useApi<Items<CatalogItem>>(teacher ? '/courses' : null),
     teachers = useApi<Items<User>>(!teacher && courseId ? `/courses/${courseId}/teachers` : null),
@@ -47,6 +59,28 @@ export function ApiAbsencesPage() {
           </div>
         )}
       </Heading>
+      <div className={a.overview}>
+        <div>
+          <StudyIllustration scene="document" />
+          <div>
+            <h2>
+              {teacher
+                ? 'Um envio reservado, do início à análise.'
+                : 'Documentos organizados para a análise do curso.'}
+            </h2>
+            <p>
+              {teacher
+                ? 'Informe o afastamento, anexe o documento quando necessário e acompanhe a resposta de cada curso.'
+                : 'Consulte o período informado e o documento privado. Cada coordenação registra somente a análise do seu curso.'}
+            </p>
+          </div>
+        </div>
+        <ol className={a.steps}>
+          <li>{teacher ? 'Informe o período' : 'Confira o período'}</li>
+          <li>{teacher ? 'Escolha os cursos responsáveis' : 'Leia o documento privado'}</li>
+          <li>{teacher ? 'Acompanhe a análise' : 'Registre a análise do curso'}</li>
+        </ol>
+      </div>
       <LoadingError {...privacy} retry={privacy.refresh} />
       {privacy.data?.healthUploads === 'BLOCKED' && (
         <p className={s.privacyPending}>
@@ -55,95 +89,155 @@ export function ApiAbsencesPage() {
         </p>
       )}
       {privacy.data?.healthUploads === 'SYNTHETIC_ONLY' && (
-        <p className={s.muted}>
+        <p className={a.privacy}>
+          <Icon name="shield" size={17} />
           Documentos habilitados somente para testes. Não envie atestados reais.
         </p>
       )}
       <LoadingError {...result} retry={result.refresh} />
       <ActionFeedback action={action} />
-      <Panel>
+      <div className={a.records}>
         {result.data?.items.length === 0 && (
-          <p className={s.empty}>Nenhuma comunicação de ausência recebida.</p>
+          <div className={a.empty}>
+            <StudyIllustration scene="document" />
+            <h2>Nenhuma comunicação de ausência recebida.</h2>
+            <p>
+              Quando você informar um afastamento, o período, o documento e o retorno da coordenação
+              ficam organizados aqui.
+            </p>
+          </div>
         )}
         {result.data?.items.map((record) => (
-          <article className={s.subsection} key={record.id}>
-            <h2>
-              {teacher
-                ? 'Comunicação de ausência'
-                : (teachers.data?.items.find((t) => t.id === record.teacherId)?.name ??
-                  'Professor do curso')}
-            </h2>
-            <p>
-              {dayLabel(record.startsOn)} a {dayLabel(record.endsOn)}
-            </p>
-            {Object.entries(record.decisions).map(([id, decision]) => (
-              <div className={s.row} key={id}>
+          <article className={a.record} key={record.id}>
+            <header className={a.recordHeader}>
+              <div className={a.dateIcon}>
+                <strong>{Number(record.startsOn.slice(8))}</strong>
                 <span>
-                  {courses.data?.items.find((c) => c.id === id)?.name ?? 'Análise do curso'}
+                  {new Date(`${record.startsOn}T12:00:00Z`)
+                    .toLocaleDateString('pt-BR', { month: 'short' })
+                    .replace('.', '')}
                 </span>
-                <Badge value={decision.status} />
               </div>
-            ))}
-            <div className={s.actions}>
-              {record.attachment ? (
-                <Button
-                  variant="secondary"
-                  loading={action.busy}
-                  onClick={() =>
-                    void action.run(() =>
-                      download(
-                        `${teacher ? '/me' : `/courses/${courseId}`}/absences/${record.id}/attachment`,
-                      ),
-                    )
-                  }
-                >
-                  <Icon name="shield" />
-                  Baixar atestado privado
-                </Button>
-              ) : teacher &&
-                canUpload &&
-                Object.values(record.decisions).every((d) => d.status === 'SUBMITTED') ? (
-                <AttachmentForm recordId={record.id} onSaved={result.refresh} />
-              ) : (
-                <span className={s.muted}>Sem atestado anexado.</span>
-              )}
-              {!teacher && record.decisions[courseId]?.status === 'SUBMITTED' && (
-                <>
-                  <Button
-                    loading={action.busy}
-                    onClick={() =>
-                      void action.run(async () => {
-                        await api(`/courses/${courseId}/absences/${record.id}/review`, {
-                          method: 'POST',
-                          body: { expectedVersion: record.version, decision: 'ACCEPTED' },
-                        });
-                        result.refresh();
-                      })
-                    }
-                  >
-                    Aceitar período informado
-                  </Button>
+              <div>
+                <h2>
+                  {teacher
+                    ? 'Comunicação de ausência'
+                    : (teachers.data?.items.find((t) => t.id === record.teacherId)?.name ??
+                      'Professor do curso')}
+                </h2>
+                <p>
+                  {dayLabel(record.startsOn)} a {dayLabel(record.endsOn)}
+                </p>
+              </div>
+              <span className={a.fileType}>
+                <Icon name={record.attachment ? 'document' : 'calendar'} size={17} />
+                {record.attachment
+                  ? `${record.attachment.type === 'application/pdf' ? 'PDF' : 'Imagem'} · ${Math.ceil(record.attachment.bytes / 1024)} KB`
+                  : 'Sem documento'}
+              </span>
+            </header>
+            <div className={a.recordBody}>
+              {Object.entries(record.decisions).map(([id, decision]) => (
+                <div className={s.row} key={id}>
+                  <span>
+                    {courses.data?.items.find((c) => c.id === id)?.name ?? 'Análise do curso'}
+                  </span>
+                  <Badge value={decision.status} />
+                </div>
+              ))}
+              <div className={s.actions}>
+                {record.attachment ? (
                   <Button
                     variant="secondary"
                     loading={action.busy}
                     onClick={() =>
-                      void action.run(async () => {
-                        await api(`/courses/${courseId}/absences/${record.id}/review`, {
-                          method: 'POST',
-                          body: { expectedVersion: record.version, decision: 'REJECTED' },
-                        });
-                        result.refresh();
-                      })
+                      void action.run(() =>
+                        download(
+                          `${teacher ? '/me' : `/courses/${courseId}`}/absences/${record.id}/attachment`,
+                        ),
+                      )
                     }
                   >
-                    Recusar comunicação
+                    <Icon name="shield" />
+                    Baixar atestado privado
                   </Button>
-                </>
-              )}
+                ) : teacher &&
+                  canUpload &&
+                  Object.values(record.decisions).every((d) => d.status === 'SUBMITTED') ? (
+                  <Button variant="secondary" onClick={() => setAttachmentId(record.id)}>
+                    <Icon name="upload" />
+                    Anexar atestado
+                  </Button>
+                ) : (
+                  <span className={s.muted}>Sem atestado anexado.</span>
+                )}
+                {!teacher && record.decisions[courseId]?.status === 'SUBMITTED' && (
+                  <>
+                    <Button
+                      loading={action.busy}
+                      onClick={() =>
+                        void action.run(async () => {
+                          await api(`/courses/${courseId}/absences/${record.id}/review`, {
+                            method: 'POST',
+                            body: { expectedVersion: record.version, decision: 'ACCEPTED' },
+                          });
+                          result.refresh();
+                        })
+                      }
+                    >
+                      Aceitar período informado
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      loading={action.busy}
+                      onClick={() =>
+                        void action.run(async () => {
+                          await api(`/courses/${courseId}/absences/${record.id}/review`, {
+                            method: 'POST',
+                            body: { expectedVersion: record.version, decision: 'REJECTED' },
+                          });
+                          result.refresh();
+                        })
+                      }
+                    >
+                      Recusar comunicação
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </article>
         ))}
-      </Panel>
+      </div>
+      <div className={a.pagination}>
+        <Button
+          variant="secondary"
+          disabled={offset === 0}
+          onClick={() => setOffset(Math.max(0, offset - 10))}
+        >
+          <Icon name="arrowLeft" />
+          Mais recentes
+        </Button>
+        <Button
+          variant="secondary"
+          disabled={result.data?.nextOffset == null}
+          onClick={() => setOffset(result.data?.nextOffset ?? offset)}
+        >
+          Mais antigas
+          <Icon name="arrowRight" />
+        </Button>
+      </div>
+      <Modal open={!!attachmentId} title="Anexar atestado" onClose={() => setAttachmentId('')}>
+        {attachmentId && (
+          <AttachmentForm
+            recordId={attachmentId}
+            onSaved={() => {
+              setAttachmentId('');
+              result.refresh();
+            }}
+          />
+        )}
+      </Modal>
       <Modal
         open={!!formMode}
         title={formMode === 'certificate' ? 'Enviar atestado' : 'Informar ausência'}
@@ -158,6 +252,7 @@ export function ApiAbsencesPage() {
             courses={courses.data?.items ?? []}
             onSaved={() => {
               setFormMode(null);
+              setOffset(0);
               result.refresh();
             }}
           />
@@ -167,10 +262,10 @@ export function ApiAbsencesPage() {
   );
 }
 function validateCertificate(file: File) {
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
-    throw new Error('Selecione um atestado em JPG, PNG ou WebP.');
+  if (!['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(file.type))
+    throw new Error('Selecione um atestado em PDF, JPG, PNG ou WebP.');
   if (!file.size || file.size > 5 * 1024 * 1024)
-    throw new Error('Selecione uma imagem válida de até 5 MB.');
+    throw new Error('Selecione um arquivo válido de até 5 MB.');
 }
 async function uploadCertificate(recordId: string, file: File) {
   validateCertificate(file);
@@ -190,20 +285,24 @@ function CertificateField({
   disabled?: boolean;
 }) {
   return (
-    <label className={s.certificateUpload}>
-      <Icon name="document" size={28} />
+    <label className={a.upload}>
+      <StudyIllustration scene="document" />
       <strong>Arquivo do atestado{required ? '' : ' (opcional)'}</strong>
-      <span className={s.muted}>JPG, PNG ou WebP, até 5 MB. PDF ainda não é aceito.</span>
+      <span className={s.muted}>
+        PDF, JPG, PNG ou WebP, até 5 MB. PDF sem senha, formulários ou links ativos, com até 50
+        páginas.
+      </span>
       <input
         type="file"
         aria-label="Arquivo do atestado"
-        accept="image/jpeg,image/png,image/webp"
+        accept="application/pdf,image/jpeg,image/png,image/webp"
         required={required && !file}
         disabled={disabled}
         onChange={(e) => onChange(e.target.files?.[0] ?? null)}
       />
       {file && (
-        <span>
+        <span className={a.chosen}>
+          <Icon name="check" size={16} />
           {file.name} · {Math.ceil(file.size / 1024)} KB
         </span>
       )}
