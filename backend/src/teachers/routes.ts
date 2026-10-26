@@ -24,6 +24,7 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
   const reviews = db.db.collection<Review>('reviews');
   const teacher = identity.guard(['teacher']);
   const coordinator = identity.guard(['coordinator', 'admin']);
+  const academicReviewer = identity.guard(['coordinator']);
   const snapshotId = (teacherId: string, version: number) => `${teacherId}:${version}`;
 
   command(
@@ -262,10 +263,10 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
 
   app.get(
     '/api/v1/courses/:courseId/applications',
-    { preHandler: coordinator, schema: { tags: ['applications'] } },
+    { preHandler: academicReviewer, schema: { tags: ['applications'] } },
     async (request) => {
       const courseId = routeId(request, 'courseId');
-      await identity.course(identity.actor(request), courseId);
+      await identity.coordinatedCourse(identity.actor(request), courseId);
       return {
         items: (
           await applications.find({ courseId }).sort({ updatedAt: -1, _id: 1 }).limit(100).toArray()
@@ -275,10 +276,10 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
   );
   app.get(
     '/api/v1/courses/:courseId/applications/:applicationId',
-    { preHandler: coordinator, schema: { tags: ['applications'] } },
+    { preHandler: academicReviewer, schema: { tags: ['applications'] } },
     async (request) => {
       const courseId = routeId(request, 'courseId');
-      await identity.course(identity.actor(request), courseId);
+      await identity.coordinatedCourse(identity.actor(request), courseId);
       const application = await applications.findOne({
         _id: routeId(request, 'applicationId'),
         courseId,
@@ -315,7 +316,7 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
       const courseId = routeId(request, 'courseId');
       const applicationId = routeId(request, 'applicationId');
       return db.transaction(async (session) => {
-        await identity.course(actor, courseId, session);
+        await identity.coordinatedCourse(actor, courseId, session);
         const application = await applications.findOne(
           { _id: applicationId, courseId },
           { session },
@@ -330,7 +331,7 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
           `user:${application.teacherId}`,
         );
         await active(actor, session);
-        await identity.course(actor, courseId, session);
+        await identity.coordinatedCourse(actor, courseId, session);
         if (application.version !== body.expectedVersion) conflict('STALE_VERSION');
         if (application.status !== 'SUBMITTED') conflict('APPLICATION_ALREADY_REVIEWED');
         const current = await profiles.findOne({ _id: application.teacherId }, { session });
@@ -441,7 +442,7 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
         return view(updated);
       });
     },
-    coordinator,
+    academicReviewer,
     'applications',
   );
 }

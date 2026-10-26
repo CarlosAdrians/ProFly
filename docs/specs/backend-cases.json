@@ -729,6 +729,18 @@
       "scenario": "Upload de atestado quando tratamento de saude nao esta habilitado.",
       "expected": "403 antes de ler arquivo/persistir bytes, sem alterar documentos anteriores ou score.",
       "status": "PLANNED"
+    },
+    {
+      "id": "CASE-063",
+      "requirements": [
+        "REQ-02",
+        "REQ-03",
+        "REQ-14"
+      ],
+      "layer": "authorization",
+      "scenario": "Administrador sem coordenacao, coordenador de outro curso, professor e papel simultaneo tentam analisar uma solicitacao; vinculo de coordenacao revogado com sessao existente.",
+      "expected": "Somente coordenador com vinculo ativo no curso consulta e analisa; administrador nao tem bypass academico; recusas nao alteram solicitacao/revisoes/vinculos; revogacao vale na proxima operacao.",
+      "status": "PLANNED"
     }
   ]
 }

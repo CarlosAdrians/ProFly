@@ -92,6 +92,7 @@ export async function createUiFixture(
     admin,
   );
   await call('/api/v1/auth/invites/accept', { token: coordinator.inviteToken, password });
+  const coordinatorHeaders = await login(coordinatorEmail);
   const competency = await call(
     '/api/v1/admin/competencies',
     { code: 'CIV-UI', name: 'Direito Civil', active: true },
@@ -235,7 +236,7 @@ export async function createUiFixture(
         status: 'CONFIRMED',
       })),
     },
-    admin,
+    coordinatorHeaders,
   );
   await call(
     `/api/v1/admin/teachers/${registration.user.id}/workload`,
@@ -272,6 +273,7 @@ export async function createUiFixture(
     until,
     teacherId: registration.user.id as string,
     admin,
+    coordinatorHeaders,
     teacher,
     login,
     call,

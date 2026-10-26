@@ -86,6 +86,19 @@ export class IdentityService {
     return course;
   }
 
+  /** Academic review requires a real coordination assignment, including for administrators. */
+  async coordinatedCourse(actor: Actor, courseId: string, session?: ClientSession) {
+    if (!actor.user.roles.includes('coordinator'))
+      throw new AppError(403, 'FORBIDDEN', 'A analise exige o coordenador responsavel.');
+    const course = await this.courses.findOne({ _id: courseId, active: true }, { session });
+    const membership = await this.memberships.findOne(
+      { userId: actor.user._id, courseId, role: 'coordinator', active: true },
+      { session },
+    );
+    if (!course || !membership) missing();
+    return course;
+  }
+
   async login(email: string, password: string) {
     const user = await this.users.findOne({ email });
     const valid = await verifyPassword(password, user?.passwordHash);

@@ -22,6 +22,7 @@ let config: ReturnType<typeof loadConfig>;
 let identity: IdentityService;
 let adminHeaders: Record<string, string>;
 let coordinatorHeaders: Record<string, string>;
+let secondCoordinatorHeaders: Record<string, string>;
 let courseA: string;
 let courseB: string;
 let coordinatorInvite: string;
@@ -209,6 +210,24 @@ before(
       200,
     );
     coordinatorHeaders = await loginClient('coordinator@profly.test');
+    const secondCoordinator = await app.inject({
+      method: 'POST',
+      url: '/api/v1/admin/coordinators',
+      headers: adminHeaders,
+      payload: {
+        name: 'Coordenador SI Teste',
+        email: 'coordinator-si@profly.test',
+        courseIds: [courseB],
+      },
+    });
+    assert.equal(secondCoordinator.statusCode, 201, secondCoordinator.body);
+    const activation = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/invites/accept',
+      payload: { token: secondCoordinator.json().inviteToken, password: 'ExampleTest2026' },
+    });
+    assert.equal(activation.statusCode, 200, activation.body);
+    secondCoordinatorHeaders = await loginClient('coordinator-si@profly.test');
   },
   { timeout: 300000 },
 );
@@ -942,7 +961,7 @@ test('CASE-009/010/011: aprovacao por curso exige analise, autoria real e nao cr
     app.inject({
       method: 'POST',
       url: `/api/v1/courses/${courseId}/applications/${applicationId}/review`,
-      headers: adminHeaders,
+      headers: courseId === courseA ? coordinatorHeaders : secondCoordinatorHeaders,
       payload: {
         expectedVersion: 1,
         profileVersion: 1,
@@ -970,8 +989,8 @@ test('CASE-009/010/011: aprovacao por curso exige analise, autoria real e nao cr
   const rejectedB = await review(second.json().id, courseB, 'REJECTED', []);
   assert.equal(rejectedB.statusCode, 200);
   assert.equal(rejectedB.json().reason, 'Analise sintetica de teste');
-  const admin = await identity.users.findOne({ email: 'admin@profly.test' });
-  assert.equal(rejectedB.json().reviewerId, admin!._id);
+  const reviewer = await identity.users.findOne({ email: 'coordinator-si@profly.test' });
+  assert.equal(rejectedB.json().reviewerId, reviewer!._id);
   assert.equal(
     await identity.memberships.countDocuments({
       userId: teacher.id,
@@ -1020,7 +1039,7 @@ test('CASE-011/016: edicao de perfil torna analise antiga obsoleta e exige nova 
   const stale = await app.inject({
     method: 'POST',
     url: `/api/v1/courses/${courseA}/applications/${first.json().id}/review`,
-    headers: adminHeaders,
+    headers: coordinatorHeaders,
     payload: {
       expectedVersion: 1,
       profileVersion: 1,
@@ -1034,7 +1053,7 @@ test('CASE-011/016: edicao de perfil torna analise antiga obsoleta e exige nova 
   assert.equal((await teacher.submit(courseA, teacher.subjectA, 1, 2)).statusCode, 201);
   const detail = await app.inject({
     url: `/api/v1/courses/${courseA}/applications/${first.json().id}`,
-    headers: adminHeaders,
+    headers: coordinatorHeaders,
   });
   assert.equal(detail.json().profile.profileVersion, 2);
   assert.equal(detail.json().profile.data.desiredWeeklyMinutes, 600);
@@ -1045,7 +1064,7 @@ test('CASE-011/016: edicao de perfil torna analise antiga obsoleta e exige nova 
   const changes = await app.inject({
     method: 'POST',
     url: `/api/v1/courses/${courseA}/applications/${first.json().id}/review`,
-    headers: adminHeaders,
+    headers: coordinatorHeaders,
     payload: {
       expectedVersion: 2,
       profileVersion: 2,
@@ -1372,7 +1391,7 @@ async function schedulingFixture(label: string) {
     const reviewed = await app.inject({
       method: 'POST',
       url: `/api/v1/courses/${courseId}/applications/${submission.json().id}/review`,
-      headers: adminHeaders,
+      headers: courseId === courseA ? coordinatorHeaders : secondCoordinatorHeaders,
       payload: {
         expectedVersion: 1,
         profileVersion: 1,
@@ -2172,4 +2191,74 @@ test('CASE-019/039/040/047: republicacao preserva passado e reavalia somente enc
     .findOne({ planId: plan.id, revision: 2 });
   assert.equal(archive!.assessments[0].evaluationScope, 'FUTURE_MEETINGS');
   assert.equal(archive!.assessments[0].excludedPastCount, 1);
+});
+
+test('CASE-063: analise exige coordenador ativo do curso mesmo com papel de administrador', async () => {
+  const teacher = await teacherFixture('exclusive-review');
+  assert.equal((await teacher.save(0, teacher.data)).statusCode, 200);
+  const a = (await teacher.submit(courseA, teacher.subjectA)).json();
+  const b = (await teacher.submit(courseB, teacher.subjectB)).json();
+  const url = (courseId: string, applicationId: string) =>
+    `/api/v1/courses/${courseId}/applications/${applicationId}`;
+  const review = (courseId: string, applicationId: string, headers: Record<string, string>) =>
+    app.inject({
+      method: 'POST',
+      url: `${url(courseId, applicationId)}/review`,
+      headers,
+      payload: {
+        expectedVersion: 1,
+        profileVersion: 1,
+        decision: 'APPROVED',
+        reason: 'Analise sintetica por responsavel',
+        items: [],
+      },
+    });
+  for (const headers of [adminHeaders, teacher.headers]) {
+    assert.equal((await app.inject({ url: url(courseA, a.id), headers })).statusCode, 403);
+    assert.equal((await review(courseA, a.id, headers)).statusCode, 403);
+  }
+  assert.equal((await review(courseB, b.id, coordinatorHeaders)).statusCode, 404);
+  assert.equal((await review(courseA, a.id, secondCoordinatorHeaders)).statusCode, 404);
+  assert.equal(
+    await database.db.collection('reviews').countDocuments({ teacherId: teacher.id }),
+    0,
+  );
+  assert.equal(
+    await identity.memberships.countDocuments({ userId: teacher.id, role: 'teacher' }),
+    0,
+  );
+  const unchanged = await database.db.collection('applications').findOne({ _id: a.id });
+  assert.equal(unchanged!.version, 1);
+  assert.equal(unchanged!.status, 'SUBMITTED');
+
+  // A real assignment grants academic authority only in that course, never through admin bypass.
+  const assignment = await app.inject({
+    method: 'POST',
+    url: '/api/v1/admin/coordinators',
+    headers: adminHeaders,
+    payload: { name: 'Administrador Teste', email: 'admin@profly.test', courseIds: [courseB] },
+  });
+  assert.equal(assignment.statusCode, 201, assignment.body);
+  assert.equal((await review(courseA, a.id, adminHeaders)).statusCode, 404);
+  const approved = await review(courseB, b.id, adminHeaders);
+  assert.equal(approved.statusCode, 200, approved.body);
+  assert.equal(approved.json().reviewerId, assignment.json().user.id);
+  assert.equal((await review(courseA, a.id, coordinatorHeaders)).statusCode, 200);
+  const member = await identity.memberships.findOne({
+    userId: assignment.json().user.id,
+    courseId: courseB,
+    role: 'coordinator',
+  });
+  const revoked = await app.inject({
+    method: 'PATCH',
+    url: `/api/v1/admin/courses/${courseB}/coordinators/${assignment.json().user.id}`,
+    headers: adminHeaders,
+    payload: { expectedVersion: member!.version, active: false },
+  });
+  assert.equal(revoked.statusCode, 200, revoked.body);
+  assert.equal(
+    (await app.inject({ url: url(courseB, b.id), headers: adminHeaders })).statusCode,
+    404,
+  );
+  assert.equal((await review(courseB, b.id, adminHeaders)).statusCode, 404);
 });

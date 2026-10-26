@@ -36,7 +36,7 @@ Os identificadores abaixo ligam a spec aos cenarios da [matriz JSON](backend-cas
 
 O servidor determina identidade, papel e escopo a partir de uma sessao autenticada e dos vinculos vigentes. Campos como role, approved, courseMemberships, reviewerId, score e teacherId de outra pessoa nao podem ser aceitos como alteracoes livres de um formulario de professor.
 
-Administrador cadastra cursos e coordenadores. Coordenador cadastra professores/disciplinas e decide no contexto de seus cursos. Professor solicita entrada para curso/disciplinas, completa os proprios dados e acompanha a analise. A conta para acompanhar uma solicitacao pendente nao concede acesso academico.
+Administrador cadastra cursos e coordenadores. Professor faz o proprio cadastro, solicita entrada para curso/disciplinas, completa os proprios dados e acompanha a analise. Coordenador gerencia disciplinas e pode iniciar um convite, sem dispensar a analise. Somente coordenador com vinculo ativo no curso consulta e analisa solicitacoes academicas; papel de administrador nao oferece bypass nessa operacao, inclusive para pessoas com papeis simultaneos. O vinculo e conferido novamente dentro da transacao, com serializacao contra revogacao. A conta para acompanhar uma solicitacao pendente nao concede acesso academico. Cenario de regressao: CASE-063, relacionado a REQ-02/03/14.
 
 Aprovacao para um curso nao aprova outro. A alteracao do identificador de recurso na URL, corpo ou filtro nao pode escapar desse limite. A desativacao de conta ou revogacao do vinculo tem efeito nas proximas operacoes protegidas, sem depender apenas de permissoes antigas no navegador.
 
