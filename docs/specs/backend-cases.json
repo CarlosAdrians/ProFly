@@ -780,6 +780,29 @@
       "scenario": "Listas maiores que a pagina, nomes/datas empatados, troca de curso/titular e planejamento com mais de500 alocacoes.",
       "expected": "Ordenacao com desempate, continuacao explicita sem ampliar escopo; usuarios sem hashes/senhas; papeis de curso refletem vinculos reais; planejamento agregado recusa truncamento e permite filtro por periodo/listas paginadas; notificacoes informam total nao lido.",
       "status": "PLANNED"
+    },
+    {
+      "id": "CASE-067",
+      "requirements": [
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "integration",
+      "scenario": "Manutencao planejada com sessao existente, consultas e escritas, readiness e liveness.",
+      "expected": "503 MAINTENANCE antes dos handlers, Retry-After e CORS preservados; live e status consultaveis; nenhum dado/sessao revogado e acesso recuperavel ao desativar.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-068",
+      "requirements": [
+        "REQ-11",
+        "REQ-12",
+        "REQ-14"
+      ],
+      "layer": "integration",
+      "scenario": "Preparacao explicita de cinco aulas historicas na previa sintetica isolada; repeticao e destinos nao permitidos.",
+      "expected": "Somente banco efemero local e identidades ficticias vinculadas; uma transacao idempotente, sem sobrescrever perfil, criterios, alocacoes ou registros existentes; sem rota publica para importar passado.",
+      "status": "PLANNED"
     }
   ]
 }

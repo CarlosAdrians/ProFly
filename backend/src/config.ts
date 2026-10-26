@@ -12,6 +12,7 @@ const environment = z.object({
   ALLOWED_ORIGINS: z.string().min(1),
   COOKIE_SECURE: z.enum(['true', 'false']).optional(),
   SESSION_HOURS: z.coerce.number().int().min(1).max(24).default(8),
+  MAINTENANCE_MODE: z.enum(['true', 'false']).default('false'),
   UPLOAD_MAX_BYTES: z.coerce
     .number()
     .int()
@@ -32,6 +33,7 @@ export interface Config {
   uploadMaxBytes: number;
   uploadDirectory: string;
   secureCookies: boolean;
+  maintenanceMode: boolean;
   mail?: MailConfig;
   privacy: PrivacyConfig;
 }
@@ -78,6 +80,7 @@ export function loadConfig(input: Record<string, string | undefined> = process.e
     uploadMaxBytes: env.UPLOAD_MAX_BYTES,
     uploadDirectory: path.resolve(env.UPLOAD_DIRECTORY),
     secureCookies: env.NODE_ENV === 'production' || env.COOKIE_SECURE === 'true',
+    maintenanceMode: env.MAINTENANCE_MODE === 'true',
     mail: loadMailConfig(input, env.NODE_ENV, origins),
     privacy: loadPrivacyConfig(input, env.NODE_ENV),
   };

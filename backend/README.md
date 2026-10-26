@@ -215,3 +215,21 @@ node scripts/verify.mjs
 ```
 
 O comando usa apenas testes sinteticos com MongoDB efemero/SMTP local. Valida tipos, lint completo, build, suites e documentos; escreve .data/validation/last-run.json fora do Git. Falha em teste, skip/todo, ausencia de resumo ou mudanca de codigo durante a execucao impede PASS. Consulte a [aceitacao do backend](../docs/validation/BACKEND_ACCEPTANCE.md) para evidencias por cenario e limites institucionais. Configuracao definitiva do banco, remetente, dominio, backup/restore e privacidade real nao e substituida por esse resultado local.
+
+
+## Manutencao planejada e historico ficticio
+
+CASE-067: MAINTENANCE_MODE=false por padrao. Para uma pausa planejada, defina true no ambiente e reinicie a API. Operacoes /api/v1 e readiness retornam 503 MAINTENANCE com Retry-After de300 segundos e CORS da origem permitida; /health/live e /api/v1/status continuam consultaveis. Voltar para false e reiniciar restabelece o acesso sem revogar sessoes ou apagar dados. Nao e uma ferramenta de migracao, drenagem de requisicoes em andamento ou manutencao sem MongoDB disponivel. A interface exibe a tela institucional quando a consulta de sessao recebe esse codigo; erros durante formularios permanecem locais para preservar campos.
+
+CASE-068: scripts/seed-preview-history.mjs acrescenta cinco ocorrencias da semana anterior somente a docente.ui@profly.test. Exige opt-in PROFLY_SEED_PREVIEW_HISTORY=1 e porta explicita PROFLY_PREVIEW_MONGO_PORT de um replica set testset em127.0.0.1. Nao le.env. Aceita exatamente um banco profly_ui_<32hex>_test; a funcao revalida ambiente test, politica SYNTHETIC_ONLY nao homologada, curso DIR-UI e vinculos ativos das identidades ficticias. Nao exponha essa rotina como endpoint.
+
+A importacao transacional representa registros antigos de uma turma/período ficticios arquivados, sem criar novas alocacoes publicas no passado: tres realizados, um cancelado e um planejado ainda a confirmar, com turnos diferentes. Identificadores estaveis tornam a repeticao idempotente; registro parcial interrompe sem sobrescrever. Preserva perfil, criterios, solicitacoes, escalas e ocorrencias existentes. A autoria e os estados sao dados sinteticos para demonstracao, nao confirmacao institucional de aulas reais.
+
+```powershell
+# Execute apenas no banco efemero da previa, depois do build.
+$env:PROFLY_SEED_PREVIEW_HISTORY='1'
+$env:PROFLY_PREVIEW_MONGO_PORT='<porta-local-do-replica-set-de-teste>'
+node scripts/seed-preview-history.mjs
+```
+
+A interface de atestados agora aceita PDF passivo e imagens pelo contrato privado existente, com retomada de upload e paginacao. O bloqueio de documentos reais na previa permanece. Comprovantes academicos possuem API propria; seus controles completos de interface continuam fora desta melhoria visual.

@@ -66,6 +66,20 @@ export async function buildApp(
     limits: { fileSize: config.uploadMaxBytes, files: 1, fields: 0 },
   });
   await app.register(swagger, { openapi: { info: { title: 'ProFly API', version: '0.1.0' } } });
+  app.addHook('preHandler', async (request, reply) => {
+    const path = request.url.split('?')[0];
+    if (
+      config.maintenanceMode &&
+      (path === '/health/ready' || (path?.startsWith('/api/v1/') && path !== '/api/v1/status'))
+    ) {
+      reply.header('Retry-After', '300');
+      throw new AppError(
+        503,
+        'MAINTENANCE',
+        'O ProFly esta em manutencao. Tente novamente em alguns instantes.',
+      );
+    }
+  });
 
   app.setErrorHandler((error, request, reply) => {
     const result = errorResponse(error, request.id);
@@ -76,6 +90,9 @@ export async function buildApp(
   });
 
   app.get('/health/live', { schema: { tags: ['health'] } }, async () => ({ status: 'ok' }));
+  app.get('/api/v1/status', { schema: { tags: ['health'] } }, async () => ({
+    state: config.maintenanceMode ? 'MAINTENANCE' : 'AVAILABLE',
+  }));
   app.get('/health/ready', { schema: { tags: ['health'] } }, async () => {
     await database.ping();
     return { status: 'ready' };

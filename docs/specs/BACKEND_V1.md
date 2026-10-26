@@ -148,3 +148,10 @@ Essas pendencias podem ser representadas por configuracao e estados explicitos d
 REQ-15, CASE-057..062. A politica operacional e a matriz de dados estao em [LGPD.md](../LGPD.md). Protocolo autenticado para direitos, consulta propria paginada, resposta administrativa versionada com eventos preservados e auditoria. Respondido nao significa exclusao/anonimizacao executada. Acesso/confirmacao completos possuem referencia de15 dias; demais direitos dependem da analise e das regras aplicaveis, sem aplicar15 dias indiscriminadamente.
 
 Exportacao propria exige senha atual, CSRF, sessao ativa, projecoes de inclusao e snapshot transacional. Sem hashes de senha, tokens, sessoes ou arquivos de terceiros; binarios privados baixados separadamente sob autorizacao existente. Limites de5000 itens por categoria/10MB, sem truncar silenciosamente; excedente orienta protocolo completo. Novos atestados bloqueados por padrao, com permissao sintetica em testes e habilitacao institucional explicita fora deles. Producao exige dados minimos de politica homologada; isso nao prova conformidade juridica. Nenhuma retencao ou base legal e inventada. Aceites antigos nao sao reescritos.
+
+
+## Estados operacionais e demonstracao docente — 26/10/2026
+
+REQ-12/14, CASE-067: modo de manutencao configuravel no servidor, desligado por padrao; 503 estruturado e recuperacao sem revogar sessao, status/liveness consultaveis. O portal apresenta tela de manutencao no bootstrap e preserva formularios em erros locais.
+
+REQ-11/12/14, CASE-068: rotina offline de cinco registros historicos restrita a replica set efemero local e identidades sinteticas da previa. Importacao atomica/idempotente, sem autorizacao para registrar aulas reais no passado. Regras publicas de alocacao, confirmacao e score conservadas.
