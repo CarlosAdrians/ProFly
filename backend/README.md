@@ -185,3 +185,19 @@ node scripts/seed-preview-week.mjs
 ```
 
 A semana é calculada em America/Fortaleza. Nesta preparação:26/10 a01/11/2026, aulas segunda08:00/14:00, terça09:00, quinta14:00 e sexta15:00,50 minutos cada. Esse conjunto é fictício, não currículo aprovado pela instituição. Não executar a rotina em conta real.
+
+## Comprovantes academicos e PDF
+
+Implementacao backend (CASE-064/065): atestados e comprovantes aceitam JPG/PNG/WebP e PDF passivo. Limite por documento: menor entre UPLOAD_MAX_BYTES e 5 MB; imagens com ate 16 megapixels, PDF com ate 50 paginas. PDF criptografado, formulario interativo, scripts, links ativos e anexos incorporados sao recusados. Parser [pdf-lib](https://pdf-lib.js.org/docs/api/classes/pdfdocument) com versao fixa, worker separado, prazo de 5 segundos, heap de 64 MB e no maximo dois parsers simultaneos; limite de heap nao representa limite de toda memoria nativa. Nao e antivirus nem validacao de assinatura/autenticidade. Downloads sempre autenticados, no-store, nosniff e Content-Disposition attachment, preservando bytes originais. Bloqueio institucional de atestados continua aplicado antes da leitura do arquivo.
+
+| Rota | Contrato |
+| --- | --- |
+| POST /api/v1/me/academic-documents | profileVersion, section (education/knowledge/teaching/professional), itemId e title; cria metadados para item proprio da versao atual. |
+| POST /api/v1/me/academic-documents/:documentId/file | Multipart com um arquivo; permite retomar envio incompleto, recusa substituir original ou enviar apos retirada. |
+| GET /api/v1/me/academic-documents | cursor UUID e limit de1 a100; items e nextCursor, inclui documentos retirados do proprio titular. |
+| GET /api/v1/me/academic-documents/:documentId/file | Baixa original proprio, inclusive apos retirada da analise. |
+| POST /api/v1/me/academic-documents/:documentId/withdraw | expectedVersion; retira da analise sem apagar original/auditoria nem mudar score. |
+| GET /api/v1/courses/:courseId/applications/:applicationId/documents | Somente coordenador responsavel; comprovantes ativos com arquivo ligados a versao submetida. |
+| GET /api/v1/courses/:courseId/academic-documents/:documentId/file | Revalida coordenacao ativa, solicitacao correspondente e documento ativo a cada acesso. |
+
+Quotas conservadoras: 100 metadados e 50 MB por conta, inclusive originais retirados, serializados contra uploads concorrentes. Retirada nao e eliminacao LGPD; descarte e retencao dependem de politica institucional. Exportacao propria inclui metadados e links privados separados, nunca bytes ou arquivos alheios. Anexar comprovante nao confirma automaticamente formacao, experiencia, elegibilidade ou score; a analise continua no fluxo do coordenador. Interfaces de envio/consulta desses novos comprovantes serao conectadas na etapa de frontend.

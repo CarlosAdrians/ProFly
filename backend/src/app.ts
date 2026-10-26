@@ -18,6 +18,7 @@ import { academicRoutes } from './academics/routes.js';
 import { createSmtpNotifications } from './notifications/smtp.js';
 import { schedulingRoutes } from './scheduling/routes.js';
 import { accountRoutes } from './identity/account.js';
+import { documentRoutes } from './documents/routes.js';
 
 export async function buildApp(
   config: Config,
@@ -89,6 +90,7 @@ export async function buildApp(
   accountRoutes(app, identity);
   privacyRoutes(app, identity);
   teacherRoutes(app, identity);
+  documentRoutes(app, identity);
   academicRoutes(app, identity);
   schedulingRoutes(app, identity);
   return app;

@@ -741,6 +741,31 @@
       "scenario": "Administrador sem coordenacao, coordenador de outro curso, professor e papel simultaneo tentam analisar uma solicitacao; vinculo de coordenacao revogado com sessao existente.",
       "expected": "Somente coordenador com vinculo ativo no curso consulta e analisa; administrador nao tem bypass academico; recusas nao alteram solicitacao/revisoes/vinculos; revogacao vale na proxima operacao.",
       "status": "PLANNED"
+    },
+    {
+      "id": "CASE-064",
+      "requirements": [
+        "REQ-10",
+        "REQ-12",
+        "REQ-15"
+      ],
+      "layer": "adversarial",
+      "scenario": "PDF passivo, MIME falso, arquivo truncado, script ou anexo incorporado, formulario, mais de50 paginas e varios uploads simultaneos.",
+      "expected": "Somente PDF passivo ou imagem valida; tamanho e paralelismo limitados; worker com prazo/heap limitado; original privado preservado e download autenticado como anexo; bloqueio institucional de saude mantido.",
+      "status": "PLANNED"
+    },
+    {
+      "id": "CASE-065",
+      "requirements": [
+        "REQ-04",
+        "REQ-12",
+        "REQ-14",
+        "REQ-15"
+      ],
+      "layer": "integration",
+      "scenario": "Comprovante de formacao/experiencia ligado ao perfil, tentativa alheia, uploads/retiradas concorrentes, versao antiga, quotas e paginacao.",
+      "expected": "Referencia ao item e versao atuais, arquivo imutavel; consulta propria ou coordenacao do curso/solicitacao correspondente; uma gravacao vence, retirada oculta da coordenacao sem eliminar original; sem aprovacao ou score automatico; exportacao sem bytes e limites explicitos.",
+      "status": "PLANNED"
     }
   ]
 }

@@ -268,6 +268,21 @@ export function privacyRoutes(app: FastifyInstance, identity: IdentityService) {
             { courseId: 1, periodId: 1, offeringId: 1, meetings: 1, createdAt: 1 },
           ],
           ['absences', own, { startsOn: 1, endsOn: 1, courseIds: 1, attachment: 1, createdAt: 1 }],
+          [
+            'academicDocuments',
+            own,
+            {
+              profileVersion: 1,
+              section: 1,
+              itemId: 1,
+              title: 1,
+              state: 1,
+              attachment: 1,
+              version: 1,
+              createdAt: 1,
+              updatedAt: 1,
+            },
+          ],
           ['preferences', sameId, { notifications: 1, updatedAt: 1 }],
           ['notices', { userId: user._id }, { kind: 1, title: 1, read: 1, createdAt: 1 }],
           [
@@ -288,6 +303,9 @@ export function privacyRoutes(app: FastifyInstance, identity: IdentityService) {
           },
           datasets,
           privateFiles: {
+            academicDocuments: datasets
+              .academicDocuments!.filter((document) => document.attachment)
+              .map((document) => `/api/v1/me/academic-documents/${String(document._id)}/file`),
             photo: (user.photoVersion ?? 0) > 0 ? '/api/v1/me/photo' : null,
             certificates: datasets
               .absences!.filter((a) => a.attachment)

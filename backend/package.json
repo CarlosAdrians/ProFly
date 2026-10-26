@@ -17,7 +17,7 @@
     "format:check": "prettier --check .",
     "test": "pnpm test:unit",
     "test:unit": "node --import tsx --test test/unit.test.ts test/mail.test.ts test/scheduling.test.ts",
-    "test:integration": "node --import tsx --test --test-concurrency=1 test/integration.test.ts test/privacy.test.ts",
+    "test:integration": "node --import tsx --test --test-concurrency=1 test/integration.test.ts test/privacy.test.ts test/documents.test.ts",
     "openapi": "tsx scripts/export-openapi.ts",
     "create-admin": "node --env-file-if-exists=.env --import tsx scripts/create-admin.ts"
   },
@@ -31,6 +31,7 @@
     "fastify": "^5.0.0",
     "mongodb": "^7.0.0",
     "nodemailer": "^10.2.1",
+    "pdf-lib": "1.17.1",
     "sharp": "^0.35.5",
     "zod": "^4.0.0"
   },

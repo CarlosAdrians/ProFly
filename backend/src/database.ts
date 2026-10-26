@@ -61,6 +61,10 @@ export class Database {
     await this.db.collection('privacyRequests').createIndex({ userId: 1, createdAt: -1, _id: -1 });
     await this.db.collection('privacyRequests').createIndex({ status: 1, accessDueAt: 1 });
     await this.db.collection('notices').createIndex({ userId: 1, createdAt: -1, _id: -1 });
+    await this.db.collection('academicDocuments').createIndex({ teacherId: 1, _id: 1 });
+    await this.db
+      .collection('academicDocuments')
+      .createIndex({ teacherId: 1, profileVersion: 1, state: 1 });
   }
 
   async transaction<T>(operation: (session: ClientSession) => Promise<T>): Promise<T> {

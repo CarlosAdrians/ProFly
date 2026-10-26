@@ -18,7 +18,7 @@ import {
   type Workload,
 } from './models.js';
 import { SchedulingService, notify } from './service.js';
-import { validateImage } from './media.js';
+import { validateDocument, documentExtension } from '../documents/validate.js';
 
 const version = z.number().int().min(1);
 const page = z
@@ -640,7 +640,7 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
         );
       const file = await request.file();
       if (!file) throw new AppError(422, 'FILE_REQUIRED', 'Selecione o atestado.');
-      const bytes = await validateImage(
+      const bytes = await validateDocument(
         await file.toBuffer(),
         file.mimetype,
         identity.config.uploadMaxBytes,
@@ -707,7 +707,7 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
           .type(file.type)
           .header(
             'Content-Disposition',
-            `attachment; filename="atestado.${file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'}"`,
+            `attachment; filename="atestado.${documentExtension(file.type)}"`,
           )
           .header('Content-Security-Policy', "default-src 'none'; sandbox")
           .send(Buffer.from(file.bytes.value()));
