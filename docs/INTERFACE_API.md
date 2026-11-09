@@ -24,10 +24,10 @@ A hospedagem futura precisa servir a SPA, encaminhar `/api`, aplicar HTTPS e os 
 | `/disciplinas` | Cadastro/edição e critérios completos, com requisitos e pesos identificados como proposta configurável. |
 | `/alocacoes` | Turmas/ofertas, criar/editar rascunhos, comparar candidatos no mesmo snapshot, árvore/score, versão esperada e publicação confirmada. |
 | `/calendario` | Mês/semana/dia, turnos, feriados públicos, pins por encontro, formulário e arraste que preserva os outros encontros da recorrência. Professor vê somente a escala publicada. |
-| `/historico` | Professor: consulta própria por cursor/curso. Coordenador: confirmar aula encerrada, cancelar ou vincular reposição publicada da mesma turma/disciplina/professor. |
-| `/ausencias` | Atestados e comunicações: arquivo, datas e cursos no mesmo formulário; retomada do upload sem duplicar o registro. Análise e download continuam autorizados por curso. |
+| `/historico` | Professor: consulta própria por cursor/curso. Coordenador: confirmar aula encerrada, cancelar ou vincular reposição publicada da mesma turma/disciplina/professor. A apresentação inicial prioriza disciplina, curso, turma, data, horário e situação. |
+| `/ausencias` | Rota descontinuada; redireciona ao início. Atestados e afastamentos são tratados pelo RH. |
 | `/configuracoes` | Compatibilidade: redireciona para Conta. Senha fica em Conta; tema permanece no menu e preferência de avisos no painel do sino. |
-| `/administracao` | Cursos/coordenadores, convites/revogação, competências, períodos/grade e carga máxima institucional. |
+| `/administracao` | Cursos/coordenadores, convites/revogação, quantidade e nomes de cursos vinculados, competências, períodos/grade e carga máxima institucional. |
 
 O sino abre um painel na tela atual, com lista e contador compartilhados, leitura persistida, fechamento por Escape/clique externo e preferência versionada de avisos internos. `/notificacoes` redireciona para o início; não existe tela separada de notificações. O menu usa os ícones originais para os itens existentes e não exibe Ajustes. Documentos legais ficam em Conta e no acesso público, sem link solto no rodapé global.
 
@@ -55,7 +55,7 @@ A previa isolada3334/5175 respondeu e exibiu escala publicada. A API principal33
 
 ## Limites da visão inicial
 
-O início da coordenação usa a lista autorizada de até 500 ocorrências já disponível na API. Cursos que ultrapassem esse volume precisam da paginação/filtro de período no servidor antes de interpretar a visão como total institucional. A agenda mostra somente ocorrências previstas ativas; canceladas/remarcadas não entram nas próximas aulas. Nenhum evento ou número foi inventado para preencher a apresentação.
+O início da coordenação usa a lista autorizada de até 500 ocorrências já disponível na API. Cursos que ultrapassem esse volume precisam da paginação/filtro de período no servidor antes de interpretar a visão como total institucional. A agenda mostra somente ocorrências previstas ativas; canceladas/remarcadas não entram nas próximas aulas. O calendário consulta ocorrências ao navegar para datas anteriores, inclusive antes de 26/10/2026, e diferencia previstas, realizadas, canceladas e remarcadas sem criar eventos. Datas atuais e futuras continuam ligadas ao planejamento editável.
 
 ## Disponibilidade compacta e HTTPS local
 
@@ -67,7 +67,15 @@ O comando opcional `npm run dev:https` e a prévia sintética separada estão em
 
 ## Central de privacidade
 
-Conta -> Gerenciar meus dados abre /conta/privacidade para a própria pessoa. A administração atende /administracao/privacidade; coordenadores não recebem permissão para protocolos de professores. Aviso público e modal do cadastro mostram configuração real do servidor, sem inventar responsável/canal. Foto e dedicação opcionais não viram consentimento de tratamento. Novos atestados obedecem ao gate do servidor; a prévia permite apenas arquivos sintéticos.
+Conta -> Gerenciar meus dados abre /conta/privacidade para a própria pessoa. A administração atende /administracao/privacidade; coordenadores não recebem permissão para protocolos de professores. Aviso público e modal do cadastro mostram configuração real do servidor, sem inventar responsável/canal. Foto e dedicação opcionais não viram consentimento de tratamento. O fluxo acadêmico de atestados foi retirado; registros antigos permanecem preservados para definição do RH.
+
+## Revisão final de 09/11/2026
+
+- O menu, atalhos, botões e tela de atestados/ausências foram removidos. A rota de interface redireciona ao início e as rotas antigas da API respondem `410 ABSENCE_FLOW_RETIRED`.
+- Sala deixou de aparecer em formulários, alocações, calendário, detalhes, próximas aulas e histórico. O valor antigo continua no contrato para que outras edições não apaguem dados persistidos.
+- A lista de professores informa a quantidade total de cursos vinculados. A coordenação vê nomes somente dos cursos que já pode administrar; a administração vê todos os nomes vinculados.
+- Cancelar alocação publicada exige confirmação. O cancelamento é preparado no rascunho, depende de republicação para retirar encontros futuros e preserva ocorrências anteriores.
+- Ações de editar/cancelar alocação usam ícones compactos com nome acessível e tooltip. A navegação e os painéis mantêm os pontos de quebra existentes para desktop, tablet e smartphone.
 
 A prévia LGPD separada usa API3336 e frontendlocalhost5177, preservando o checklist3334/5175. No backend: PROFLY_RUN_INTEGRATION=1, PROFLY_PREVIEW_PORT=3336 e PROFLY_PREVIEW_HTTPS=0, depois node --import tsx scripts/dev-isolated.ts. Na raiz: PROFLY_API_TARGET=http://127.0.0.1:3336 e Vite --host127.0.0.1 --port5177 --strictPort. Os mesmos acessos sintéticos já documentados são recriados em banco efêmero independente. Nenhuma conta real/institucional é criada. Bases, prazos e procedimentos em [LGPD.md](LGPD.md).
 
