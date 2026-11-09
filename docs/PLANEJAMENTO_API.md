@@ -6,19 +6,21 @@ MongoDB serializa comandos pela guarda academica, junto das guardas de usuario/c
 
 ## Arvore e score
 
-POST /api/v1/courses/:courseId/eligibility recebe professor, oferta, encontros e allocationId opcional. Servidor verifica vinculo ativo do professor no curso, perfil/revisao vigentes, formacao, cada conhecimento, experiencia minima, todos os encontros, compromissos globais, ausencia e limite semanal. Resposta inclui estados, motivos, perfil/regras, fatores e identificacao PROPOSAL_CONFIGURABLE. Dados desconhecidos mantem pontuacao null; ausencia declarada e confirmada pode valer zero. Falha conhecida prevalece sobre pendencia. Ficha DRAFT nao e criterio homologado.
+POST /api/v1/courses/:courseId/eligibility recebe professor, oferta, encontros e allocationId opcional. Servidor verifica vinculo ativo do professor no curso, perfil/revisao vigentes, formacao, cada conhecimento, experiencia minima, todos os encontros, compromissos globais, disponibilidade declarada e limite semanal. Resposta inclui estados, motivos, perfil/regras, fatores e identificacao PROPOSAL_CONFIGURABLE. Dados desconhecidos mantem pontuacao null; ausencia declarada de experiencia e confirmada pode valer zero. Falha conhecida prevalece sobre pendencia. Ficha DRAFT nao e criterio homologado. Registros legados de afastamento nao sao consultados; integracao operacional futura pertence ao RH.
 
 Pesos e niveis alvo sao configuraveis por disciplina. Nivel desejavel historicamente omitido usa 3 como proposta explicita do contrato. Historico confirmado considera todos os registros pertinentes, deduplica ocorrencias e exclui intervalos cobertos por experiencias declaradas. Sem equivalencia explicita confirmedMinutesPerTeachingSemester, experiencia historica adicional mantem score pendente. Declaracoes pertinentes sobrepostas exigem consolidacao, sem soma duplicada. Afastamentos nunca reduzem fatores academicos. O resultado nao reserva horario; salvar/publicar reavalia.
 
-## Historico, ausencias e documentos
+## Historico e documentos
 
-Somente publicacao cria ocorrencias. Professor consulta agenda publicada e historico proprio por cursor estavel (inicio e ID). Passagem do tempo mostra a confirmar; nao vira realizada. Coordenacao do curso confirma realizacao depois do fim, cancela ou vincula reposicao publicada posterior. Autoria e versoes ficam registradas. A dashboard pode solicitar as ultimas 10; a API permite filtros e paginacao.
+Somente publicacao cria ocorrencias. Professor consulta agenda publicada e historico proprio por cursor estavel (inicio e ID). Passagem do tempo mostra a confirmar; nao vira realizada. Coordenacao do curso confirma realizacao depois do fim, cancela ou vincula reposicao publicada posterior. Autoria e versoes ficam registradas. A dashboard pode solicitar as ultimas 10; a API permite filtros e paginacao. O calendario da coordenacao usa ocorrencias para datas anteriores e o planejamento para datas atuais/futuras.
+
+Atestados e afastamentos foram retirados do fluxo academico. Rotas anteriores de comunicacao, listagem, analise, upload e download retornam `410 ABSENCE_FLOW_RETIRED`; registros existentes nao sao apagados. O tratamento futuro depende de contrato e autorizacao do RH.
 
 Ausencia registra datas e cursos autorizados escolhidos pelo professor. Cada coordenacao decide somente seu curso; pendencia bloqueia nova alocacao como PENDING, aceite em qualquer curso sinaliza indisponibilidade global temporaria e recusas nao penalizam score. Nenhuma exclusao/redistribuicao automatica. Documento opcional privado em colecao MongoDB separada, sem URL publica. JPG/PNG/WebP ate o limite configurado (padrao 5 MB) e 16 megapixels; formato declarado deve corresponder ao conteudo decodificado por sharp. PDF ainda nao e aceito neste fluxo. Original e preservado byte a byte e recebe hash SHA-256; nomes de arquivos nao sao armazenados. Documento so pode ser anexado uma vez antes de analise; correcoes exigem nova comunicacao. Downloads autorizados sao auditados e enviados como attachment/no-store. A politica institucional de retencao, consentimento e operacao deve ser homologada antes de documentos reais.
 
 ## Notificacoes
 
-Preferencia no servidor para avisos dentro do sistema. Decisoes de solicitacao, publicacoes e analises de ausencia geram avisos na mesma transacao se a preferencia estiver ligada. Desligar nao apaga avisos anteriores nem desliga verificacao de identidade/recuperacao de senha. Sem permissao de push do navegador e sem envio automatico de avisos academicos por e-mail nesta versao.
+Preferencia no servidor para avisos dentro do sistema. Decisoes de solicitacao e publicacoes geram avisos na mesma transacao se a preferencia estiver ligada. Desligar nao apaga avisos anteriores nem desliga verificacao de identidade/recuperacao de senha. Sem permissao de push do navegador e sem envio automatico de avisos academicos por e-mail nesta versao.
 
 ## Evidencia
 

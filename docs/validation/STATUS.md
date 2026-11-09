@@ -1,6 +1,6 @@
 # Estado da validacao
 
-Atualizado em 24/10/2026. Branch da etapa: feat/backend-institucional.
+Atualizado em 09/11/2026. Branch da etapa atual: feat/revisao-final-profly. O histórico das etapas anteriores permanece abaixo.
 
 ## Evidencia disponivel
 
@@ -412,3 +412,23 @@ Dois novos testes focados PASS: validacao de tipos/operadores/tamanho/formato, n
 Fechamento de salas: node scripts/verify.mjs no backend PASS, 76 testes/zero falhas/pulos/todo e gates types/lint/build/docs. sourceUnchanged=true; digest 6beaf9a8cc94eac7a75f858cd8781a6bebed323fc9017f2ab9a5b24cedfd20fd. node scripts/test-api.mjs PASS: 18 testes conectados; suite geral frontend previamente executada neste incremento PASS: 220 testes/36 arquivos. Tipos, build e lint direcionado do frontend PASS. A ultima repeticao conectada teve saida salva fora do repositorio para preservar evidencia de conclusao.
 
 Previa: API3337 reiniciada com dist atualizado, sem carregar .env/sem seed e preservando contagens (3 usuarios,1 perfil,1 solicitacao,0 ausencias,10 ocorrencias). MongoDB e seu processo proprietario mantidos. Via interface, coordenador ficticio alterou apenas Pratica Contratual futura para sala201, conferiu elegibilidade60, salvou rascunho e publicou revisao2. Professor ficticio recebeu Sala201 em proximas aulas, calendario e modal; demais encontros conservaram Sala a definir. Capturas91..93 em outputs/prints fora do checkout; detalhes curados23-professor-sala.jpg no README. Chrome apresentou timeout de controle; verificacao visual concluida no navegador interno, sem alterar abas pessoais. Nenhum e-mail externo, configuracao institucional ou certificado alterado. Limites institucionais/operacionais anteriores permanecem.
+
+
+## Revisao final do sistema — 09/11/2026
+
+Branch `feat/revisao-final-profly`. O arquivo local `backend/.env` nao foi lido, alterado ou incluido nas verificacoes. O arquivo nao rastreado preexistente `backend/diagnostico-mongo.mjs` foi preservado sem alteracao. Nenhum commit, push ou merge foi executado, conforme instrucao desta revisao.
+
+Interface: removidos menu, atalhos, botoes e tela operacional de atestados/ausencias; `/ausencias` redireciona ao inicio. Sala deixou de ser exibida ou editada em alocacoes, calendario, detalhes, proximas aulas e historico; a edicao preserva o valor antigo enviado ao contrato. Lista docente e administracao mostram quantidade de cursos, com nomes limitados ao escopo autorizado. Calendario da coordenacao usa ocorrencias reais em datas anteriores e diferencia planejada, realizada, cancelada e remarcada. Cancelamento de publicacao exige confirmacao e informa que a nova revisao retira somente encontros futuros. Acoes compactas de editar/cancelar possuem nome acessivel e tooltip; os pontos de quebra mobile existentes foram preservados.
+
+Backend: rotas academicas antigas de ausencia/listagem/revisao/anexo retornam `410 ABSENCE_FLOW_RETIRED` antes de ler ou gravar dados. Colecoes `absences` e `certificates` nao foram apagadas. Elegibilidade e agenda nao consultam registros legados de saude. `GET /courses/:courseId/teachers` informa `courseCount` e nomes visiveis somente nos cursos coordenados; `GET /admin/users` informa todos os cursos vinculados. Contrato `room`, validacao, reservas e snapshots permanecem para compatibilidade, embora a interface atual nao exponha o campo.
+
+Verificacoes executadas:
+
+- `npm run typecheck`, `npm run lint` e `npm run build`: PASS.
+- `npm test -- --maxWorkers=2`: PASS, 220 testes em 36 arquivos.
+- `corepack pnpm typecheck`, `corepack pnpm lint` e `corepack pnpm build`: PASS.
+- `corepack pnpm test:unit`: PASS, 22 testes. A primeira tentativa dentro do sandbox falhou antes dos testes com `uv_os_get_passwd ENOMEM`; repeticao fora do sandbox passou.
+- `corepack pnpm openapi`: PASS fora do sandbox pelo mesmo limite do carregador TypeScript; `backend/docs/openapi.json` regenerado das rotas reais.
+- `PROFLY_RUN_INTEGRATION=1 corepack pnpm test:integration`: PASS final, 54 testes, zero falhas/pulos/todo, em MongoDB efemero `_test`. Duas repeticoes anteriores revelaram apenas problemas nas novas assercoes de teste (timestamp variavel e fixture sintetica removida); ambos foram corrigidos antes da execucao final. Nenhum Atlas ou banco institucional foi usado.
+
+Pendencias: confirmar com o RH a custodia/migracao e retencao dos registros legados; revisar se uma integracao futura deve fornecer somente indisponibilidade operacional minima; validar visualmente em dispositivos reais; configurar remetente, HTTPS, backup/restore e MongoDB institucional com o integrante responsavel. O valor real de `MONGODB_URI` nao foi registrado em logs ou documentos.

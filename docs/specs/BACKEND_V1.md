@@ -4,7 +4,7 @@ Versao: 0.1, 24/10/2026. Estado: contrato de trabalho para implementacao increme
 
 ## 1. Escopo e fontes
 
-O produto atende administrador, coordenadores por curso e professores. Centraliza cadastro detalhado, solicitacao e aprovacao de entrada, disciplinas, competencias, disponibilidade, alocacoes, calendario, recomendacoes, historico e comunicacao de ausencia com atestado.
+O produto atende administrador, coordenadores por curso e professores. Centraliza cadastro detalhado, solicitacao e aprovacao de entrada, disciplinas, competencias, disponibilidade, alocacoes, calendario, recomendacoes e historico. Atestados e afastamentos pertencem ao RH e nao integram mais o fluxo academico do ProFly.
 
 Fontes de contexto: [visao do produto](../../README.md), [definicao do back-end](../BACKEND.md), [compatibilidade docente](../PROPOSTA_COMPATIBILIDADE.md) e [expansao institucional](../EXPANSAO_INSTITUCIONAL.md). O [fluxo de trabalho](../WORKFLOW.md) define a ordem de implementacao e os commits.
 
@@ -25,7 +25,7 @@ Os identificadores abaixo ligam a spec aos cenarios da [matriz JSON](backend-cas
 | REQ-07 | Executar arvore de elegibilidade por disciplina/oferta com motivos, pendencias e versao das regras. |
 | REQ-08 | Calcular score deterministico, limitado e explicavel, sem inventar dados ausentes. |
 | REQ-09 | Criar/alterar alocacoes e publicar revisoes de escala com revalidacao e consistencia sob concorrencia. |
-| REQ-10 | Registrar ausencia e proteger atestados, preservando o score academico. |
+| REQ-10 | Impedir tratamento academico de ausencias/atestados, preservar registros legados sem exposicao e encaminhar o fluxo ao RH. |
 | REQ-11 | Exibir ultimas 10 aulas e historico completo proprio, sem tratar aula planejada como realizada. |
 | REQ-12 | Validar entrada e saida, tratar falhas e rejeitar resultados contraditorios, incompletos ou excessivamente permissivos. |
 | REQ-13 | Persistir dados e invariantes no MongoDB e validar falhas de dependencia sem sucesso ficticio. |
@@ -64,7 +64,7 @@ Horario deve ter dia, inicio/fim e vigencia em fuso institucional configurado. V
 
 Interseccao de intervalos: inicioA < fimB e inicioB < fimA, com datas e dias de vigencia compativeis. Horarios adjacentes nao conflitam apenas por compartilhar a fronteira. Identificadores diferentes de bloco nao dispensam comparar horarios reais.
 
-Conferir todos os encontros da oferta, compromissos em outros cursos, indisponibilidades aplicaveis e carga nas semanas afetadas. O limite institucional/contratual vem de fonte autorizada; nao e substituido pela dedicacao pretendida declarada pelo professor. Grade, intervalo e conversao entre minutos/hora-aula precisam de configuracao institucional.
+Conferir todos os encontros da oferta, compromissos em outros cursos, disponibilidade declarada e carga nas semanas afetadas. O limite institucional/contratual vem de fonte autorizada; nao e substituido pela dedicacao pretendida declarada pelo professor. Grade, intervalo e conversao entre minutos/hora-aula precisam de configuracao institucional. Afastamentos operacionais devem chegar por uma futura integracao autorizada com o RH; registros legados de saude nao sao consultados pelo motor.
 
 Decisao confirmada em 24/10/2026: a dedicacao semanal pretendida e opcional, inclusive na submissao do perfil (REQ-04, CASE-013/014). Ausencia da meta nao e zero e nao impede solicitar entrada em um curso. O acompanhamento de horas realizadas depende de ocorrencias confirmadas no historico (REQ-11); datas passadas ou horarios pretendidos nao contam como aulas realizadas. A criacao da conta nao aprova vinculo: somente a coordenacao responsavel pelo curso pode decidir a solicitacao, sem aprovar automaticamente outros cursos (REQ-02/03).
 
@@ -97,11 +97,11 @@ Usar versao esperada para impedir sobrescrita silenciosa. Duas requisicoes simul
 
 Publicacao e republicacao devem ser consistentes, sem metade da revisao aplicada. A proposta atual e manter versao publicada estavel e rascunho editavel. Proposta tecnica implementada: rascunhos salvos e ultima publicacao reservam horarios/carga; publicar revalida e troca a revisao atomicamente, com avisos internos opcionais. Encontros passados sao preservados e a reavaliacao usa somente o futuro. Esta politica permanece sujeita a homologacao institucional, sem alterar o status proposto dos pesos e requisitos.
 
-## 8. Ausencias, anexos e historico
+## 8. Afastamentos do RH e historico
 
-Ausencia tem autor, periodo, situacao e referencia a anexo privado, quando houver. Acesso ao documento exige autorizacao a cada consulta/download; uma URL ou identificador conhecido nao basta. Validar formato, tamanho e conteudo do arquivo segundo limites configurados. Armazenamento privado, limites e tratamento de afastamento ainda em analise precisam ser fixados na implementacao.
+Decisao de 26/10/2026: atestados e afastamentos sao responsabilidade do RH. A interface nao oferece menu, formulario, atalho ou detalhe de ausencia. As rotas academicas anteriores retornam `410 ABSENCE_FLOW_RETIRED` antes de ler ou gravar arquivo. Colecoes e documentos existentes nao sao apagados por esta mudanca e precisam de plano institucional de custodia/migracao antes de qualquer descarte.
 
-O calendario e a elegibilidade usam somente a indisponibilidade aplicavel. O documento e os metadados clinicos nao aparecem em respostas de recomendacao. A ausencia preserva competencias e score academico. Seu envio nao apaga, redistribui ou republica aulas automaticamente.
+Calendario, elegibilidade e score nao consultam os registros legados de saude. Uma futura integracao com o RH exige contrato, papeis, base legal, retencao e testes proprios; nao deve reativar permissao de coordenador por inferencia.
 
 Historico proprio inclui curso, disciplina, turma, data, horario e situacao. A dashboard mostra as ultimas 10 ocorrencias passadas, em ordem decrescente de inicio, com desempate estavel, e oferece consulta paginada do restante. Aplicar autorizacao antes de filtros, ordenacao e paginacao.
 
@@ -139,7 +139,7 @@ Para concluir: todos os requisitos com testes e evidencia, nenhum teste obrigato
 - Revisao dos pesos, limites, rubrica e equivalencia de experiencia parcial.
 - Grade oficial, intervalos, carga maxima e unidade de hora-aula.
 - Confirmacao de aulas realizadas, reservas de rascunho e publicacao/republicacao.
-- Tratamento de ausencia ainda em analise, substituicao/reposicao e visibilidade entre cursos.
+- Integracao futura com o RH para afastamentos, substituicao/reposicao e visibilidade minima necessaria entre cursos.
 
 Essas pendencias podem ser representadas por configuracao e estados explicitos durante o desenvolvimento. Fixtures sinteticas permitem testar o mecanismo; nao substituem a definicao institucional.
 
@@ -147,7 +147,7 @@ Essas pendencias podem ser representadas por configuracao e estados explicitos d
 
 REQ-15, CASE-057..062. A politica operacional e a matriz de dados estao em [LGPD.md](../LGPD.md). Protocolo autenticado para direitos, consulta propria paginada, resposta administrativa versionada com eventos preservados e auditoria. Respondido nao significa exclusao/anonimizacao executada. Acesso/confirmacao completos possuem referencia de15 dias; demais direitos dependem da analise e das regras aplicaveis, sem aplicar15 dias indiscriminadamente.
 
-Exportacao propria exige senha atual, CSRF, sessao ativa, projecoes de inclusao e snapshot transacional. Sem hashes de senha, tokens, sessoes ou arquivos de terceiros; binarios privados baixados separadamente sob autorizacao existente. Limites de5000 itens por categoria/10MB, sem truncar silenciosamente; excedente orienta protocolo completo. Novos atestados bloqueados por padrao, com permissao sintetica em testes e habilitacao institucional explicita fora deles. Producao exige dados minimos de politica homologada; isso nao prova conformidade juridica. Nenhuma retencao ou base legal e inventada. Aceites antigos nao sao reescritos.
+Exportacao propria exige senha atual, CSRF, sessao ativa, projecoes de inclusao e snapshot transacional. Sem hashes de senha, tokens, sessoes ou arquivos de terceiros; binarios privados baixados separadamente sob autorizacao existente. Limites de5000 itens por categoria/10MB, sem truncar silenciosamente; excedente orienta protocolo completo. O fluxo academico de atestados esta retirado e seus arquivos legados nao sao reabertos por esta exportacao. Producao exige dados minimos de politica homologada; isso nao prova conformidade juridica. Nenhuma retencao ou base legal e inventada. Aceites antigos nao sao reescritos.
 
 
 ## Estados operacionais e demonstracao docente — 26/10/2026
@@ -163,4 +163,10 @@ REQ-06/07/09/11/12/14/15, CASE-069/070. Sala e identificada pelo nome ou numero,
 
 Reservas de sala abrangem todos os cursos/periodos, pela mesma interseccao de instantes UTC usada na grade. Chave de identidade normaliza caixa, acentos, espacos e prefixo Sala; sala nao entra nos fatores academicos do score. Conflito consta na arvore de elegibilidade e impede gravacao/publicacao. Consulta nao revela o compromisso alheio. Lock global academics existente serializa verificacao e reserva, incluindo disputas entre professores/turmas/cursos diferentes. Rascunho e ultima publicacao reservam o local; remover/alterar rascunho nao libera a sala da publicacao anterior ate republicar.
 
-Somente publicacao atualiza a escala do professor. Republicacao de sala atualiza ocorrencias futuras planejadas; local e versao de ocorrencias passadas ou ja iniciadas sao preservados. A reserva por slot conserva a sala da aula em andamento ate o fim, mesmo que a sala da recorrencia futura seja alterada. Registro antigo sem sala e apresentado como Sala a definir. Campo room integra a exportacao autenticada de ocorrencias proprias. A interface apresenta o local em alocacoes, calendarios/detalhes, proximas aulas e historico.
+Somente publicacao atualiza a escala do professor. Republicacao de sala atualiza ocorrencias futuras planejadas; local e versao de ocorrencias passadas ou ja iniciadas sao preservados. A reserva por slot conserva a sala da aula em andamento ate o fim, mesmo que a sala da recorrencia futura seja alterada. Campo `room` integra a exportacao autenticada de ocorrencias proprias. A API e a persistencia conservam o campo por compatibilidade e historico, inclusive para clientes anteriores. Decisao de 26/10/2026: a interface academica atual nao apresenta nem edita sala; ao editar outro campo de uma alocacao existente, envia o valor anterior para nao apaga-lo.
+
+## Revisao final da interface e das responsabilidades — 09/11/2026
+
+REQ-02/05/12, CASE-066: listagens autorizadas informam `courseCount`. Administracao recebe os nomes de todos os cursos vinculados; coordenacao recebe a contagem total do professor e somente nomes de cursos que ela ja pode consultar. Nao ha exemplo nominal criado na base real.
+
+REQ-09/11/14, CASE-039/040/045/046/068: o calendario da coordenacao consulta ocorrencias para datas anteriores e diferencia `PLANNED`, `COMPLETED`, `CANCELLED` e `RESCHEDULED`; datas atuais/futuras continuam ligadas ao rascunho editavel. Cancelar alocacao publicada exige confirmacao na interface, marca o rascunho como cancelado e so retira encontros futuros quando a revisao e publicada. Ocorrencias anteriores permanecem no historico.

@@ -430,8 +430,8 @@
         "REQ-10"
       ],
       "layer": "unit",
-      "scenario": "Registrar afastamento temporario mantendo dados academicos.",
-      "expected": "Score academico preservado; somente disponibilidade nas datas aplicaveis e afetada.",
+      "scenario": "Consultar elegibilidade depois da retirada do fluxo academico de afastamentos.",
+      "expected": "Score e elegibilidade nao leem registros legados de saude; o tratamento operacional pertence ao RH.",
       "status": "PLANNED"
     },
     {
@@ -495,8 +495,8 @@
         "REQ-02"
       ],
       "layer": "authorization",
-      "scenario": "Consultar ou baixar atestado alheio por ID ou URL conhecida.",
-      "expected": "Acesso negado fora do escopo autorizado, sem exposicao do documento.",
+      "scenario": "Professor ou coordenador tenta consultar ou baixar atestado por rota antiga.",
+      "expected": "410 ABSENCE_FLOW_RETIRED sem ler ou expor o documento legado.",
       "status": "PLANNED"
     },
     {
@@ -506,8 +506,8 @@
         "REQ-12"
       ],
       "layer": "adversarial",
-      "scenario": "Enviar anexo acima do limite, tipo recusado ou extensao enganosa.",
-      "expected": "413/415 conforme o caso e nenhuma disponibilizacao publica do arquivo.",
+      "scenario": "Cliente antigo tenta enviar anexo de atestado por rota academica.",
+      "expected": "410 antes de ler ou persistir bytes, independentemente do tipo ou tamanho.",
       "status": "PLANNED"
     },
     {
@@ -517,8 +517,8 @@
         "REQ-09"
       ],
       "layer": "integration",
-      "scenario": "Professor comunica ausencia que afeta aulas publicadas.",
-      "expected": "Caso e aulas afetadas sinalizados; nenhuma exclusao ou republicacao automatica.",
+      "scenario": "Cliente antigo tenta comunicar ausencia ou coordenador tenta analisar o caso.",
+      "expected": "Fluxo recusado com410; nenhuma aula, publicacao ou registro legado e alterado.",
       "status": "PLANNED"
     },
     {
@@ -528,8 +528,8 @@
         "REQ-12"
       ],
       "layer": "contract",
-      "scenario": "Consultar recomendacao/calendario durante afastamento.",
-      "expected": "Apenas indisponibilidade necessaria; nenhum documento ou metadado clinico no score/retorno.",
+      "scenario": "Consultar recomendacao e calendario com registros legados de afastamento no banco.",
+      "expected": "Nenhum documento, metadado clinico ou sinalizacao de ausencia aparece no score ou calendario.",
       "status": "PLANNED"
     },
     {
@@ -726,8 +726,8 @@
         "REQ-14"
       ],
       "layer": "integration",
-      "scenario": "Upload de atestado quando tratamento de saude nao esta habilitado.",
-      "expected": "403 antes de ler arquivo/persistir bytes, sem alterar documentos anteriores ou score.",
+      "scenario": "Upload de atestado pela rota academica descontinuada.",
+      "expected": "410 antes de ler arquivo/persistir bytes, sem alterar documentos anteriores ou score.",
       "status": "PLANNED"
     },
     {
@@ -750,8 +750,8 @@
         "REQ-15"
       ],
       "layer": "adversarial",
-      "scenario": "PDF passivo, MIME falso, arquivo truncado, script ou anexo incorporado, formulario, mais de50 paginas e varios uploads simultaneos.",
-      "expected": "Somente PDF passivo ou imagem valida; tamanho e paralelismo limitados; worker com prazo/heap limitado; original privado preservado e download autenticado como anexo; bloqueio institucional de saude mantido.",
+      "scenario": "Documento de saude legado permanece armazenado apos retirada do fluxo; comprovantes academicos continuam sob validacao privada.",
+      "expected": "Rotas de saude retornam410 sem apagar o original; validacao de PDF/imagem continua somente nos fluxos documentais academicos autorizados.",
       "status": "PLANNED"
     },
     {
@@ -778,7 +778,7 @@
       ],
       "layer": "integration",
       "scenario": "Listas maiores que a pagina, nomes/datas empatados, troca de curso/titular e planejamento com mais de500 alocacoes.",
-      "expected": "Ordenacao com desempate, continuacao explicita sem ampliar escopo; usuarios sem hashes/senhas; papeis de curso refletem vinculos reais; planejamento agregado recusa truncamento e permite filtro por periodo/listas paginadas; notificacoes informam total nao lido.",
+      "expected": "Ordenacao com desempate, continuacao explicita sem ampliar escopo; usuarios sem hashes/senhas; papeis e contagem de cursos refletem vinculos reais, com nomes somente no escopo autorizado; planejamento agregado recusa truncamento e permite filtro por periodo/listas paginadas; notificacoes informam total nao lido.",
       "status": "PLANNED"
     },
     {
@@ -815,7 +815,7 @@
       ],
       "layer": "concurrency",
       "scenario": "Sala informada com tipo/formato invalido; reserva da mesma sala em dois cursos, periodos e professores distintos; variacoes de escrita e cancelamento de rascunho.",
-      "expected": "Validacao no servidor; identidade global normalizada; somente uma reserva concorrente vence e conflito retorna motivo sem dados alheios; outro horario/sala permitido; publicacao anterior conserva reserva ate republicar cancelamento; fatores academicos nao alterados.",
+      "expected": "Validacao no servidor; identidade global normalizada; somente uma reserva concorrente vence e conflito retorna motivo sem dados alheios; outro horario/sala permitido; publicacao anterior conserva reserva ate republicar cancelamento; fatores academicos nao alterados; o campo nao e exposto na interface academica atual.",
       "status": "PLANNED"
     },
     {
@@ -828,7 +828,7 @@
       ],
       "layer": "integration",
       "scenario": "Alocacao com sala, consulta docente antes/depois de publicar, alteracao e republicacao com encontros passados, cliente anterior omitindo sala e versao obsoleta.",
-      "expected": "Sala no rascunho, calendario e ocorrencias publicadas; professor so recebe revisao publicada; alteracao atualiza somente encontros futuros, preserva local/versao do passado; omissao conserva sala, null explicito remove, versao obsoleta recusada; exportacao propria inclui local.",
+      "expected": "Backend conserva sala no rascunho e ocorrencias para compatibilidade; a interface nao exibe nem edita o campo; edicao academica preserva valor existente, passado e versao; cliente anterior continua sujeito a validacao e exportacao propria conserva o dado.",
       "status": "PLANNED"
     }
   ]

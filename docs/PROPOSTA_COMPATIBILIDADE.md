@@ -1,5 +1,7 @@
 # Proposta de compatibilidade docente para discussão com a coordenação
 
+> Atualização de 09/11/2026: atestados e afastamentos pertencem ao RH. Referências a comunicação de ausência abaixo são contexto histórico da proposta e não fazem parte da interface ou da elegibilidade atual.
+
 Versão de trabalho: 24/10/2026. Este documento reúne o funcionamento definido na conversa e propõe critérios para o cadastro e a indicação de professores. Pesos, limites de pontuação e exemplos são propostas para revisão, sem validação institucional e sem implementação nesta etapa. Todos os nomes e resultados do exemplo são fictícios.
 
 ## 1. Objetivo

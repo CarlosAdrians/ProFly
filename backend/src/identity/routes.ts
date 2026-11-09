@@ -516,14 +516,38 @@ export function identityRoutes(app: FastifyInstance, service: IdentityService) {
         }),
         request.query,
       );
-      const values = (
-        await service.users
-          .find()
-          .sort({ createdAt: 1, _id: 1 })
-          .skip(query.offset)
-          .limit(query.limit + 1)
-          .toArray()
-      ).map(userView);
+      const users = await service.users
+        .find()
+        .sort({ createdAt: 1, _id: 1 })
+        .skip(query.offset)
+        .limit(query.limit + 1)
+        .toArray();
+      const userIds = users.map((user) => user._id);
+      const memberships = userIds.length
+        ? await service.memberships.find({ userId: { $in: userIds }, active: true }).toArray()
+        : [];
+      const courseIds = [...new Set(memberships.map((membership) => membership.courseId))];
+      const courses = courseIds.length
+        ? await service.courses
+            .find({ _id: { $in: courseIds } })
+            .project<{ _id: string; name: string }>({ name: 1 })
+            .toArray()
+        : [];
+      const values = users.map((user) => {
+        const linked = memberships.filter((membership) => membership.userId === user._id);
+        const linkedCourseIds = [...new Set(linked.map((membership) => membership.courseId))];
+        return {
+          ...userView(user),
+          courseCount: linkedCourseIds.length,
+          courses: linkedCourseIds.map((courseId) => ({
+            id: courseId,
+            name: courses.find((course) => course._id === courseId)?.name ?? 'Curso indisponível',
+            roles: linked
+              .filter((membership) => membership.courseId === courseId)
+              .map((membership) => membership.role),
+          })),
+        };
+      });
       return pageOf(values, query);
     },
   );

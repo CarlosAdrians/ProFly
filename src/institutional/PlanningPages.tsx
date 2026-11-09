@@ -22,7 +22,6 @@ import type {
 } from './types';
 import { ActionFeedback, Badge, Heading, LoadingError, Panel, Select } from './ui';
 import s from './Portal.module.css';
-import { RoomLabel } from './RoomLabel';
 export function MeetingFields({
   meetings,
   onChange,
@@ -184,14 +183,15 @@ export function AllocationForm({
     periods = useApi<Items<Period>>('/periods');
   const [offeringId, setOffering] = useState(record?.offeringId ?? offeringPreset ?? ''),
     [teacherId, setTeacher] = useState(record?.teacherId ?? ''),
-    [room, setRoom] = useState(record?.room ?? ''),
     [meetings, setMeetings] = useState<Meeting[]>(record?.meetings ?? []),
     [assessment, setAssessment] = useState<Assessment | null>(null),
     [candidates, setCandidates] = useState<(Assessment & { name: string })[]>([]),
     action = useAction();
   const offering = offerings.data?.items.find((o) => o.id === offeringId),
     period = periods.data?.items.find((p) => p.id === offering?.periodId);
-  const payload = { offeringId, teacherId, meetings, room: room.trim() || null };
+  // Sala deixou de ser editável na interface acadêmica. O valor existente segue no contrato
+  // para que uma edição de professor/horário não apague dados históricos já persistidos.
+  const payload = { offeringId, teacherId, meetings, room: record?.room ?? null };
   const assess = async () => {
     setAssessment(
       await api<Assessment>(`/courses/${courseId}/eligibility`, {
@@ -241,21 +241,6 @@ export function AllocationForm({
           setAssessment(null);
         }}
       />
-      <TextField
-        label="Sala"
-        placeholder="Ex.: 201"
-        maxLength={80}
-        value={room}
-        onChange={(event) => {
-          setRoom(event.target.value);
-          setAssessment(null);
-          setCandidates([]);
-        }}
-      />
-      <p className={s.muted}>
-        Informe o nome ou número da sala. Se ainda não estiver definida, deixe em branco. A sala
-        aparecerá para o professor após a publicação.
-      </p>
       <MeetingFields
         meetings={meetings}
         period={period}
@@ -289,7 +274,7 @@ export function AllocationForm({
                 body: {
                   offeringId,
                   meetings,
-                  room: room.trim() || null,
+                  room: record?.room ?? null,
                   ...(record ? { allocationId: record.id } : {}),
                 },
               });
@@ -342,6 +327,7 @@ export function ApiAllocationsPage() {
     [editing, setEditing] = useState<Allocation | null | undefined>(),
     [setup, setSetup] = useState(false),
     [publishing, setPublishing] = useState<string | null>(null),
+    [cancelling, setCancelling] = useState<Allocation | null>(null),
     action = useAction();
   return (
     <>
@@ -392,30 +378,25 @@ export function ApiAllocationsPage() {
                 {a.slots.length} encontros
               </p>
               <Badge value={a.state} />
-              <p>
-                <RoomLabel room={a.room} />
-              </p>
             </div>
             <div className={s.actions}>
-              <Button variant="secondary" onClick={() => setEditing(a)}>
+              <Button
+                variant="secondary"
+                aria-label={`Editar alocação de ${subjects.data?.items.find((v) => v.id === a.subjectId)?.name ?? 'disciplina'}`}
+                title="Editar alocação"
+                onClick={() => setEditing(a)}
+              >
                 <Icon name="edit" />
-                Editar
               </Button>
               <Button
                 variant="secondary"
-                loading={action.busy}
-                onClick={() =>
-                  void action.run(async () => {
-                    await api(`/courses/${courseId}/allocations/${a.id}`, {
-                      method: 'DELETE',
-                      body: { expectedVersion: a.version },
-                    });
-                    planning.refresh();
-                  }, 'Rascunho removido. A escala publicada permanece até uma nova publicação.')
+                aria-label={
+                  a.state === 'PUBLISHED' ? 'Cancelar alocação publicada' : 'Remover rascunho'
                 }
+                title={a.state === 'PUBLISHED' ? 'Cancelar alocação publicada' : 'Remover rascunho'}
+                onClick={() => setCancelling(a)}
               >
                 <Icon name="trash" />
-                Remover rascunho
               </Button>
             </div>
           </div>
@@ -436,6 +417,59 @@ export function ApiAllocationsPage() {
               planning.refresh();
             }}
           />
+        )}
+      </Modal>
+      <Modal
+        open={!!cancelling}
+        title={
+          cancelling?.state === 'PUBLISHED' ? 'Cancelar alocação publicada' : 'Remover rascunho'
+        }
+        busy={action.busy}
+        onClose={() => setCancelling(null)}
+      >
+        {cancelling && (
+          <>
+            <h2>
+              {cancelling.state === 'PUBLISHED'
+                ? 'Confirmar cancelamento'
+                : 'Confirmar remoção do rascunho'}
+            </h2>
+            <p>
+              {cancelling.state === 'PUBLISHED'
+                ? 'O cancelamento será preparado no planejamento. Publique a nova revisão para retirar somente os encontros futuros da escala; aulas anteriores e seus registros serão preservados.'
+                : 'O rascunho será retirado do planejamento. Uma publicação anterior, se existir, continuará válida até a próxima revisão.'}
+            </p>
+            <ActionFeedback action={action} />
+            <div className={s.actions}>
+              <Button
+                variant="secondary"
+                disabled={action.busy}
+                onClick={() => setCancelling(null)}
+              >
+                Voltar
+              </Button>
+              <Button
+                loading={action.busy}
+                onClick={() =>
+                  void action.run(
+                    async () => {
+                      await api(`/courses/${courseId}/allocations/${cancelling.id}`, {
+                        method: 'DELETE',
+                        body: { expectedVersion: cancelling.version },
+                      });
+                      setCancelling(null);
+                      planning.refresh();
+                    },
+                    cancelling.state === 'PUBLISHED'
+                      ? 'Cancelamento preparado. Publique a revisão para atualizar a escala.'
+                      : 'Rascunho removido.',
+                  )
+                }
+              >
+                {cancelling.state === 'PUBLISHED' ? 'Confirmar cancelamento' : 'Remover rascunho'}
+              </Button>
+            </div>
+          </>
         )}
       </Modal>
       <Modal open={setup} title="Turmas e ofertas" size="wide" onClose={() => setSetup(false)}>

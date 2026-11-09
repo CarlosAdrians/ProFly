@@ -264,6 +264,12 @@ function CoordinatorAdmin() {
             <p>
               {u.email} · {u.state}
             </p>
+            {(u.roles.includes('teacher') || u.roles.includes('coordinator')) && (
+              <p>
+                {u.courseCount ?? 0} {u.courseCount === 1 ? 'curso vinculado' : 'cursos vinculados'}
+                {u.courses?.length ? ` · ${u.courses.map((course) => course.name).join(', ')}` : ''}
+              </p>
+            )}
           </div>
           {['ACTIVE', 'DISABLED'].includes(u.state) && (
             <Button

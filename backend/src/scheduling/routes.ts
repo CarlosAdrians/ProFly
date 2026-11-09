@@ -1,25 +1,19 @@
 import type { FastifyInstance } from 'fastify';
-import { Binary } from 'mongodb';
-import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { listQuery, pageOf } from '../shared/pagination.js';
 import type { IdentityService } from '../identity/service.js';
-import type { Actor } from '../identity/models.js';
 import { command, id, routeId } from '../shared/http.js';
 import { date } from '../shared/temporal.js';
 import { AppError, conflict, missing, parse } from '../shared/errors.js';
 import { audit, entity, lock, view, type Entity } from '../shared/model.js';
 import {
-  absenceInput,
   allocationInput,
   workloadInput,
-  type Absence,
   type Notice,
   type Preference,
   type Workload,
 } from './models.js';
-import { SchedulingService, notify } from './service.js';
-import { validateDocument, documentExtension } from '../documents/validate.js';
+import { SchedulingService } from './service.js';
 
 const version = z.number().int().min(1);
 const page = z
@@ -44,15 +38,8 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
   const coordinator = identity.guard(['coordinator', 'admin']),
     teacher = identity.guard(['teacher']),
     authenticated = identity.guard();
-  const absences = db.db.collection<Absence>('absences');
   const preferences = db.db.collection<Preference>('preferences');
   const notices = db.db.collection<Notice>('notices');
-  const certificates = db.db.collection<{
-    _id: string;
-    bytes: Binary;
-    type: string;
-    sha256: string;
-  }>('certificates');
   app.get('/api/v1/me/preferences', { preHandler: authenticated }, async (request) => {
     const record = await preferences.findOne({ _id: identity.actor(request).user._id });
     return record ? view(record) : { version: 0, notifications: true };
@@ -157,7 +144,8 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
   );
   app.get('/api/v1/courses/:courseId/teachers', { preHandler: coordinator }, async (request) => {
     const courseId = routeId(request, 'courseId');
-    await identity.course(identity.actor(request), courseId);
+    const actor = identity.actor(request);
+    await identity.course(actor, courseId);
     const page = parse(
       listQuery.extend({ limit: listQuery.shape.limit.default(200) }),
       request.query,
@@ -174,7 +162,38 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
         { $limit: page.limit + 1 },
       ])
       .toArray();
-    return pageOf(values, page);
+    const teacherIds = values.map((value) => value.id);
+    const memberships = teacherIds.length
+      ? await identity.memberships
+          .find({ userId: { $in: teacherIds }, role: 'teacher', active: true })
+          .toArray()
+      : [];
+    const visibleCourseIds = actor.user.roles.includes('admin')
+      ? [...new Set(memberships.map((membership) => membership.courseId))]
+      : (
+          await identity.memberships
+            .find({ userId: actor.user._id, role: 'coordinator', active: true })
+            .toArray()
+        ).map((membership) => membership.courseId);
+    const visibleCourses = visibleCourseIds.length
+      ? await identity.courses
+          .find({ _id: { $in: visibleCourseIds }, active: true })
+          .project<{ _id: string; name: string }>({ name: 1 })
+          .toArray()
+      : [];
+    return pageOf(
+      values.map((value) => {
+        const linked = memberships.filter((membership) => membership.userId === value.id);
+        return {
+          ...value,
+          courseCount: new Set(linked.map((membership) => membership.courseId)).size,
+          courses: visibleCourses
+            .filter((course) => linked.some((membership) => membership.courseId === course._id))
+            .map((course) => ({ id: course._id, name: course.name })),
+        };
+      }),
+      page,
+    );
   });
   command(
     app,
@@ -419,20 +438,7 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
       .toArray();
     if (records.length > 4096)
       throw new AppError(422, 'SCHEDULE_LIMIT', 'Reduza o periodo consultado.');
-    const cases = await absences
-      .find({ teacherId, startsOn: { $lte: query.until }, endsOn: { $gte: query.from } })
-      .toArray();
-    return {
-      items: records.map((r) => ({
-        ...view(r),
-        absencePending: cases.some(
-          (a) =>
-            a.startsOn <= r.date &&
-            a.endsOn >= r.date &&
-            Object.values(a.decisions).some((d) => d.status !== 'REJECTED'),
-        ),
-      })),
-    };
+    return { items: records.map(view) };
   });
   app.get('/api/v1/me/history', { preHandler: teacher }, async (request) => {
     const q = parse(page, request.query),
@@ -566,227 +572,30 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
     coordinator,
     'history',
   );
-  command(
-    app,
-    'POST',
-    '/api/v1/me/absences',
-    absenceInput,
-    async (request, reply, body) => {
-      const actor = identity.actor(request);
-      const result = await db.transaction(async (session) => {
-        await lock(
-          db,
-          session,
-          'academics',
-          `user:${actor.user._id}`,
-          ...body.courseIds.map((c) => `course:${c}`),
-        );
-        for (const courseId of body.courseIds)
-          await identity.course(actor, courseId, session, true);
-        const record: Absence = {
-          ...entity(),
-          teacherId: actor.user._id,
-          ...body,
-          decisions: Object.fromEntries(
-            body.courseIds.map((c) => [c, { status: 'SUBMITTED' as const }]),
-          ),
-        };
-        await absences.insertOne(record, { session });
-        await audit(db, session, actor.user._id, 'ABSENCE_SUBMITTED', record._id);
-        for (const courseId of body.courseIds) {
-          const members = await identity.memberships
-            .find({ courseId, role: 'coordinator', active: true }, { session })
-            .toArray();
-          for (const member of members)
-            await notify(
-              identity,
-              session,
-              member.userId,
-              'ABSENCE',
-              record._id,
-              'Uma ausencia docente aguarda analise.',
-            );
-        }
-        return view(record);
-      });
-      return reply.code(201).send(result);
-    },
-    teacher,
-    'absences',
-  );
-  async function allowed(actor: Actor, absenceId: string, courseId?: string) {
-    const record = await absences.findOne({ _id: absenceId });
-    if (!record) missing();
-    if (!courseId) {
-      if (record.teacherId !== actor.user._id) missing();
-    } else {
-      await identity.course(actor, courseId);
-      if (!record.courseIds.includes(courseId)) missing();
-    }
-    return record;
-  }
-  app.get('/api/v1/me/absences', { preHandler: teacher }, async (request) => {
-    const page = parse(listQuery, request.query);
-    const values = await absences
-      .find({ teacherId: identity.actor(request).user._id })
-      .sort({ createdAt: -1, _id: -1 })
-      .skip(page.offset)
-      .limit(page.limit + 1)
-      .toArray();
-    return pageOf(values.map(view), page);
-  });
-  app.get('/api/v1/courses/:courseId/absences', { preHandler: coordinator }, async (request) => {
-    const courseId = routeId(request, 'courseId');
-    await identity.course(identity.actor(request), courseId);
-    const page = parse(listQuery, request.query);
-    const values = await absences
-      .find({ courseIds: courseId })
-      .sort({ createdAt: -1, _id: -1 })
-      .skip(page.offset)
-      .limit(page.limit + 1)
-      .toArray();
-    return pageOf(
-      values.map((record) => {
-        const { decisions, courseIds, ...data } = view(record);
-        void courseIds;
-        return { ...data, decisions: { [courseId]: decisions[courseId] } };
-      }),
-      page,
+  const retiredAbsenceFlow = () => {
+    throw new AppError(
+      410,
+      'ABSENCE_FLOW_RETIRED',
+      'Atestados e afastamentos sao tratados pelo RH fora do ProFly.',
     );
-  });
-  command(
-    app,
-    'POST',
-    '/api/v1/courses/:courseId/absences/:absenceId/review',
-    z.strictObject({ expectedVersion: version, decision: z.enum(['ACCEPTED', 'REJECTED']) }),
-    async (request, _reply, body) => {
-      const actor = identity.actor(request),
-        courseId = routeId(request, 'courseId');
-      return service.authorized(actor, courseId, async (session) => {
-        const record = await absences.findOne(
-          { _id: routeId(request, 'absenceId'), courseIds: courseId },
-          { session },
-        );
-        if (!record) missing();
-        if (record.version !== body.expectedVersion) conflict('STALE_VERSION');
-        if (record.decisions[courseId]?.status !== 'SUBMITTED')
-          conflict('ABSENCE_ALREADY_REVIEWED');
-        await absences.updateOne(
-          { _id: record._id },
-          {
-            $set: {
-              [`decisions.${courseId}`]: {
-                status: body.decision,
-                by: actor.user._id,
-                at: new Date().toISOString(),
-              },
-              updatedAt: new Date().toISOString(),
-            },
-            $inc: { version: 1 },
-          },
-          { session },
-        );
-        await notify(
-          identity,
-          session,
-          record.teacherId,
-          'ABSENCE',
-          record._id,
-          'Sua comunicacao de ausencia foi analisada.',
-        );
-        await audit(db, session, actor.user._id, `ABSENCE_${body.decision}`, record._id, courseId);
-        return { reviewed: true };
-      });
-    },
-    coordinator,
-    'absences',
-  );
+  };
+  app.get('/api/v1/me/absences', { preHandler: teacher }, retiredAbsenceFlow);
+  app.post('/api/v1/me/absences', { preHandler: teacher }, retiredAbsenceFlow);
   app.post(
     '/api/v1/me/absences/:absenceId/attachment',
     { preHandler: teacher },
-    async (request, reply) => {
-      const actor = identity.actor(request),
-        absenceId = routeId(request, 'absenceId');
-      await allowed(actor, absenceId);
-      if (identity.config.privacy.healthUploads === 'BLOCKED')
-        throw new AppError(
-          403,
-          'HEALTH_UPLOADS_DISABLED',
-          'Envio de atestados bloqueado ate a definicao institucional de privacidade.',
-        );
-      const file = await request.file();
-      if (!file) throw new AppError(422, 'FILE_REQUIRED', 'Selecione o atestado.');
-      const bytes = await validateDocument(
-        await file.toBuffer(),
-        file.mimetype,
-        identity.config.uploadMaxBytes,
-      );
-      await db.transaction(async (session) => {
-        await lock(db, session, 'academics', `user:${actor.user._id}`);
-        const record = await absences.findOne(
-          { _id: absenceId, teacherId: actor.user._id },
-          { session },
-        );
-        if (!record) missing();
-        if (
-          record.attachment ||
-          Object.values(record.decisions).some((d) => d.status !== 'SUBMITTED')
-        )
-          conflict(
-            'ATTACHMENT_LOCKED',
-            'O documento enviado e preservado; abra uma nova comunicacao para corrigir.',
-          );
-        await certificates.insertOne(
-          {
-            _id: absenceId,
-            bytes: new Binary(bytes),
-            type: file.mimetype,
-            sha256: createHash('sha256').update(bytes).digest('hex'),
-          },
-          { session },
-        );
-        await absences.updateOne(
-          { _id: absenceId },
-          {
-            $set: {
-              attachment: { bytes: bytes.length, type: file.mimetype },
-              updatedAt: new Date().toISOString(),
-            },
-            $inc: { version: 1 },
-          },
-          { session },
-        );
-        await audit(db, session, actor.user._id, 'CERTIFICATE_UPLOADED', absenceId);
-      });
-      return reply.code(201).send({ uploaded: true });
-    },
+    retiredAbsenceFlow,
   );
-  for (const prefix of ['/api/v1/me', '/api/v1/courses/:courseId'])
-    app.get(
-      `${prefix}/absences/:absenceId/attachment`,
-      { preHandler: prefix.endsWith('me') ? teacher : coordinator },
-      async (request, reply) => {
-        const actor = identity.actor(request),
-          absenceId = routeId(request, 'absenceId');
-        await allowed(
-          actor,
-          absenceId,
-          prefix.endsWith('me') ? undefined : routeId(request, 'courseId'),
-        );
-        const file = await certificates.findOne({ _id: absenceId });
-        if (!file) missing();
-        // Authorization precedes every private download; no public object URL and no stored filename.
-        await db.transaction((s) =>
-          audit(db, s, actor.user._id, 'CERTIFICATE_DOWNLOADED', absenceId),
-        );
-        return reply
-          .type(file.type)
-          .header(
-            'Content-Disposition',
-            `attachment; filename="atestado.${documentExtension(file.type)}"`,
-          )
-          .header('Content-Security-Policy', "default-src 'none'; sandbox")
-          .send(Buffer.from(file.bytes.value()));
-      },
-    );
+  app.get('/api/v1/me/absences/:absenceId/attachment', { preHandler: teacher }, retiredAbsenceFlow);
+  app.get('/api/v1/courses/:courseId/absences', { preHandler: coordinator }, retiredAbsenceFlow);
+  app.post(
+    '/api/v1/courses/:courseId/absences/:absenceId/review',
+    { preHandler: coordinator },
+    retiredAbsenceFlow,
+  );
+  app.get(
+    '/api/v1/courses/:courseId/absences/:absenceId/attachment',
+    { preHandler: coordinator },
+    retiredAbsenceFlow,
+  );
 }

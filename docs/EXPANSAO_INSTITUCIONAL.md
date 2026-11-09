@@ -1,5 +1,7 @@
 # Expansão institucional do ProFly
 
+> Atualização de 09/11/2026: o fluxo de atestados/afastamentos foi transferido ao RH e removido das áreas acadêmicas. A interface atual também não exibe sala; o backend conserva o campo somente para compatibilidade. Descrições divergentes abaixo registram decisões anteriores.
+
 Documento de trabalho iniciado em 23/10/2026 e atualizado em 24/10/2026. As decisões confirmadas estão identificadas; as demais seções apresentam propostas para discussão. A implementação continua sendo a demonstração descrita no [front-end atual](FRONTEND_ATUAL.md).
 
 Para executar a próxima etapa, seguir a [spec do back-end](specs/BACKEND_V1.md) e a [ordem de trabalho atualizada](WORKFLOW.md), que priorizam o back-end e a validação antes da integração das novas telas. As etapas abaixo preservam o contexto da discussão inicial.

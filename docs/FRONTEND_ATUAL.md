@@ -1,8 +1,10 @@
 # ProFly — interface disponível
 
-## Estado em 25/10/2026
+## Estado em 09/11/2026
 
-A aplicação usa agora a API por padrão. Cadastro, análise por curso, administração, conta/foto, calendário publicado, alocações, score, histórico, ausências e notificações estão ligados ao servidor. Configuração, rotas, evidências e limites em [INTERFACE_API.md](INTERFACE_API.md). Não há fallback silencioso para cadastros do navegador.
+A aplicação usa a API por padrão. Cadastro, análise por curso, administração, conta/foto, calendário publicado, alocações, score, histórico e notificações estão ligados ao servidor. A revisão final removeu atestados/ausências e sala das interfaces acadêmicas, acrescentou contagem de cursos por pessoa, histórico real no calendário da coordenação e confirmação para cancelar alocações publicadas. Configuração, rotas, evidências e limites em [INTERFACE_API.md](INTERFACE_API.md). Não há fallback silencioso para cadastros do navegador.
+
+Atestados e afastamentos pertencem ao RH. `/ausencias` redireciona ao início; não há menu, botão ou atalho acadêmico. Registros já existentes não foram apagados. Sala continua preservada no contrato do servidor para compatibilidade, mas não aparece em formulários, cartões, próximas aulas, calendário, detalhes ou histórico.
 
 O conteúdo a seguir registra a demonstração anterior, preservada somente com `VITE_DEMO_MODE=true`. Suas credenciais fictícias e limitações locais não descrevem o modo conectado.
 

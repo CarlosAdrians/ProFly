@@ -23,6 +23,8 @@ export interface User {
   state: string;
   phone: string | null;
   photoVersion: number;
+  courseCount?: number;
+  courses?: { id: string; name: string; roles?: string[] }[];
 }
 export interface Session {
   user: User;

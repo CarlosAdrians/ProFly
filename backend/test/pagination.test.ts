@@ -80,6 +80,13 @@ test('CASE-066: docentes, solicitacoes e competencias paginadas mantem o curso a
       active: true,
     })),
   );
+  await f.database.db.collection<TestRecord>('memberships').insertOne({
+    ...entity(),
+    userId: users[0]!._id,
+    courseId: f.courseB.id,
+    role: 'teacher',
+    active: true,
+  });
   await f.database.db.collection<TestRecord>('applications').insertMany(
     users.map((user, i) => ({
       ...entity(),
@@ -94,6 +101,21 @@ test('CASE-066: docentes, solicitacoes e competencias paginadas mantem o curso a
   assert.equal(seen.size, 16); // 15 active new teachers plus the approved fixture teacher.
   assert.ok(!seen.has(users[15]!._id));
   assert.ok(!seen.has(users[16]!._id));
+  const linked = await f.call(
+    `/api/v1/courses/${f.courseA.id}/teachers?limit=100`,
+    undefined,
+    f.coordinatorHeaders,
+  );
+  const multiple = linked.items.find((item: { id: string }) => item.id === users[0]!._id);
+  assert.equal(multiple.courseCount, 2);
+  assert.deepEqual(
+    multiple.courses.map((course: { id: string }) => course.id),
+    [f.courseA.id],
+  );
+  const adminUsers = await f.call('/api/v1/admin/users?limit=100', undefined, f.admin);
+  const adminView = adminUsers.items.find((item: { id: string }) => item.id === users[0]!._id);
+  assert.equal(adminView.courseCount, 2);
+  assert.equal(adminView.courses.length, 2);
   assert.equal(
     (await collect(`/api/v1/courses/${f.courseA.id}/applications`, f.coordinatorHeaders)).size,
     17,
@@ -119,7 +141,7 @@ test('CASE-066: docentes, solicitacoes e competencias paginadas mantem o curso a
   assert.equal((await collect('/api/v1/admin/competencies', f.admin)).size, 14);
 });
 
-test('CASE-066: notificacoes e ausencias paginam sem dados de outro titular ou decisoes de outro curso', async () => {
+test('CASE-066: notificacoes paginam e ausencias legadas ficam preservadas fora da API academica', async () => {
   const before = await f.database.db
     .collection<TestRecord>('notices')
     .countDocuments({ userId: f.teacherId, read: false });
@@ -159,18 +181,21 @@ test('CASE-066: notificacoes e ausencias paginam sem dados de outro titular ou d
     },
   }));
   await f.database.db.collection<TestRecord>('absences').insertMany(absences);
-  assert.equal((await collect('/api/v1/me/absences', f.teacher)).size, 15);
+  assert.equal(await f.database.db.collection<TestRecord>('absences').countDocuments(), 15);
   assert.equal(
-    (await collect(`/api/v1/courses/${f.courseA.id}/absences`, f.coordinatorHeaders)).size,
-    15,
+    (await f.app.inject({ url: '/api/v1/me/absences', headers: f.teacher })).statusCode,
+    410,
   );
-  const scoped = await f.call(
-    `/api/v1/courses/${f.courseA.id}/absences?limit=1`,
-    undefined,
-    f.coordinatorHeaders,
+  assert.equal(
+    (
+      await f.app.inject({
+        url: `/api/v1/courses/${f.courseA.id}/absences`,
+        headers: f.coordinatorHeaders,
+      })
+    ).statusCode,
+    410,
   );
-  assert.deepEqual(Object.keys(scoped.items[0].decisions), [f.courseA.id]);
-  assert.ok(!('courseIds' in scoped.items[0]));
+  assert.equal(await f.database.db.collection<TestRecord>('absences').countDocuments(), 15);
 });
 
 test('CASE-066: planejamento grande recusa truncamento e oferece periodo e listagens paginadas', async () => {

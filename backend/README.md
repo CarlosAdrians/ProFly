@@ -14,7 +14,7 @@ src/identity/          Contas, sessoes, convites, cursos e responsabilidades
 src/notifications/     Configuracao e adaptador SMTP para verificacao/reset
 src/teachers/          Perfil versionado, solicitacoes e analise por curso
 src/academics/         Competencias, disciplinas, periodos, turmas e ofertas
-src/scheduling/        Elegibilidade, reservas, publicacao, historico e ausencias
+src/scheduling/        Elegibilidade, reservas, publicacao e historico
 test/                  Testes unitarios e integracao explicitamente habilitada
 scripts/               Exportacao do contrato OpenAPI e administrador inicial
 docs/openapi.json      Contrato gerado das rotas implementadas
@@ -155,7 +155,7 @@ POST `/api/v1/auth/enroll` recebe identidade, perfil, aceites legais versionados
 
 PUT `/me/account` exige expectedVersion. POST `/me/email-change` exige senha atual, versao e novo endereco; somente confirmar prova altera o acesso. POST `/me/password` exige senha atual e revoga todas as sessoes. POST/GET/DELETE `/me/photo` usa autorizacao, validacao de imagem e foto normalizada privada. Telefone valida DDD brasileiro e formato; senha nova exige letra, numero e 8 a 72 caracteres.
 
-Planejamento, recomendacoes em snapshot unico, historico e atestados estao em [PLANEJAMENTO_API.md](../docs/PLANEJAMENTO_API.md). Recomendar nao reserva; salvar e publicar revalidam dados atuais. Nao ha PDF neste fluxo de atestados.
+Planejamento, recomendacoes em snapshot unico e historico estao em [PLANEJAMENTO_API.md](../docs/PLANEJAMENTO_API.md). Recomendar nao reserva; salvar e publicar revalidam dados atuais. Atestados e afastamentos sao responsabilidade do RH e nao possuem operacao academica nesta API.
 
 ## Previa isolada opcional
 
@@ -188,7 +188,9 @@ A semana é calculada em America/Fortaleza. Nesta preparação:26/10 a01/11/2026
 
 ## Comprovantes academicos e PDF
 
-Implementacao backend (CASE-064/065): atestados e comprovantes aceitam JPG/PNG/WebP e PDF passivo. Limite por documento: menor entre UPLOAD_MAX_BYTES e 5 MB; imagens com ate 16 megapixels, PDF com ate 50 paginas. PDF criptografado, formulario interativo, scripts, links ativos e anexos incorporados sao recusados. Parser [pdf-lib](https://pdf-lib.js.org/docs/api/classes/pdfdocument) com versao fixa, worker separado, prazo de 5 segundos, heap de 64 MB e no maximo dois parsers simultaneos; limite de heap nao representa limite de toda memoria nativa. Nao e antivirus nem validacao de assinatura/autenticidade. Downloads sempre autenticados, no-store, nosniff e Content-Disposition attachment, preservando bytes originais. Bloqueio institucional de atestados continua aplicado antes da leitura do arquivo.
+Implementacao backend (CASE-064/065): comprovantes academicos aceitam JPG/PNG/WebP e PDF passivo. Limite por documento: menor entre UPLOAD_MAX_BYTES e 5 MB; imagens com ate 16 megapixels, PDF com ate 50 paginas. PDF criptografado, formulario interativo, scripts, links ativos e anexos incorporados sao recusados. Parser [pdf-lib](https://pdf-lib.js.org/docs/api/classes/pdfdocument) com versao fixa, worker separado, prazo de 5 segundos, heap de 64 MB e no maximo dois parsers simultaneos; limite de heap nao representa limite de toda memoria nativa. Nao e antivirus nem validacao de assinatura/autenticidade. Downloads autorizados usam no-store, nosniff e Content-Disposition attachment, preservando bytes originais.
+
+Atestados e afastamentos foram retirados do escopo academico em 09/11/2026. GET/POST das rotas antigas `/me/absences` e `/courses/:courseId/absences`, inclusive revisao e anexo, retornam `410 ABSENCE_FLOW_RETIRED` depois da autenticacao aplicavel e antes de ler ou gravar dados. As colecoes `absences` e `certificates` nao sao apagadas; calendario, elegibilidade e score nao as consultam. Custodia ou migracao depende de decisao do RH e da politica institucional.
 
 | Rota | Contrato |
 | --- | --- |
@@ -204,7 +206,7 @@ Quotas conservadoras: 100 metadados e 50 MB por conta, inclusive originais retir
 
 ## Consultas paginadas e fechamento local
 
-CASE-066: listas de cursos, usuarios, catalogos academicos, periodos, solicitacoes, docentes, avisos e ausencias retornam items, limit, offset e nextOffset (null no fim). Catalogos de competencias/disciplinas conservam maximo 100; listagens gerais maximo 200, usuarios maximo 100, ocorrencias maximo 500. Defaults anteriores preservados quando aplicavel. Ordenacao inclui ID como desempate; offset nao e snapshot entre requisicoes, portanto recarregue apos alteracoes concorrentes. Escopo por curso/titular e aplicado antes de paginar. Papeis de cursos refletem vinculos reais; acesso global de administrador nao cria coordenacao ficticia.
+CASE-066: listas de cursos, usuarios, catalogos academicos, periodos, solicitacoes, docentes e avisos retornam items, limit, offset e nextOffset (null no fim). Catalogos de competencias/disciplinas conservam maximo 100; listagens gerais maximo 200, usuarios maximo 100, ocorrencias maximo 500. Defaults anteriores preservados quando aplicavel. Ordenacao inclui ID como desempate; offset nao e snapshot entre requisicoes, portanto recarregue apos alteracoes concorrentes. Escopo por curso/titular e aplicado antes de paginar. Papeis de cursos refletem vinculos reais; acesso global de administrador nao cria coordenacao ficticia. Docentes recebem `courseCount`; nomes de cursos sao retornados somente dentro do escopo autorizado. Administracao recebe todos os nomes vinculados.
 
 GET /api/v1/courses/:courseId/planning aceita periodId opcional e recusa agregados acima de 500 alocacoes/publicacoes ou 100 planos com PLANNING_LIMIT. Alternativas paginadas: /allocations, /published-allocations e /plans, com periodId opcional. /occurrences aceita from/until, limit e offset. Calendario docente recusa mais de 4096 encontros, solicitando reduzir intervalo; comparacao recusa mais de 200 candidatos e nao publica ranking parcial. Avisos retornam unreadCount separado do tamanho da pagina.
 
@@ -232,7 +234,7 @@ $env:PROFLY_PREVIEW_MONGO_PORT='<porta-local-do-replica-set-de-teste>'
 node scripts/seed-preview-history.mjs
 ```
 
-A interface de atestados agora aceita PDF passivo e imagens pelo contrato privado existente, com retomada de upload e paginacao. O bloqueio de documentos reais na previa permanece. Comprovantes academicos possuem API propria; seus controles completos de interface continuam fora desta melhoria visual.
+A interface de atestados foi removida porque o fluxo pertence ao RH. Comprovantes academicos possuem API propria; seus controles completos de interface continuam fora desta melhoria visual.
 
 
 ## Sala da alocacao
@@ -241,4 +243,4 @@ CASE-069/070: POST/PUT de alocacoes, elegibilidade e comparacao recebem room opc
 
 Salvar reserva em rascunho; somente publicar atualiza a escala docente. Tanto rascunho quanto publicacao vigente reservam o local. Mudar/remover rascunho nao libera o local publicado antes de republicar. Serializacao pelo guard academics cobre duas pessoas/turmas/cursos disputando a mesma sala; horarios adjacentes usam a regra temporal existente de interseccao aberta no fim. A sala nao altera os fatores academicos do score.
 
-Snapshot de sala e chave por slot permitem atualizar a recorrencia futura sem liberar a sala de uma aula em andamento antes do seu fim. Ocorrencias passadas/ja iniciadas mantem local e versao; futuras planejadas recebem o local da nova revisao. Nome antigo ausente continua ausente, exibido como Sala a definir. Consulta docente/historico e exportacao propria incluem room. Indices de roomKey e slots.roomKey sao criados sem substituir registros.
+Snapshot de sala e chave por slot permitem atualizar a recorrencia futura sem liberar a sala de uma aula em andamento antes do seu fim. Ocorrencias passadas/ja iniciadas mantem local e versao; futuras planejadas recebem o local da nova revisao. Consulta e exportacao propria continuam incluindo `room` por compatibilidade, mas a interface academica nao exibe nem edita o campo. Indices de roomKey e slots.roomKey sao criados sem substituir registros.
