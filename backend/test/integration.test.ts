@@ -2425,3 +2425,76 @@ test('CASE-071/072/074: horario mantem analise, publicacao aponta bloqueios e vi
   const again = await f.teacher.submit(courseA, f.teacher.subjectA, closed!.version, 3);
   assert.equal(again.statusCode, 201, again.body);
 });
+
+test('CASE-075: listas da coordenacao trazem quem pediu e aceitam busca e filtros por data', async () => {
+  const f = await schedulingFixture('lists-scope');
+  const list = await app.inject({
+    url: `/api/v1/courses/${courseA}/applications`,
+    headers: coordinatorHeaders,
+  });
+  assert.equal(list.statusCode, 200, list.body);
+  const own = list
+    .json()
+    .items.find((item: { teacherId: string }) => item.teacherId === f.teacher.id);
+  assert.equal(own.teacherName, 'Professor de Teste');
+  assert.equal(own.teacherEmail, 'lists-scope@profly.test');
+
+  const search = await app.inject({
+    url: '/api/v1/admin/users?role=teacher&q=LISTS-SCOPE%40',
+    headers: adminHeaders,
+  });
+  assert.equal(search.statusCode, 200, search.body);
+  assert.deepEqual(
+    search.json().items.map((user: { id: string }) => user.id),
+    [f.teacher.id],
+  );
+  const regex = await app.inject({ url: '/api/v1/admin/users?q=.*', headers: adminHeaders });
+  assert.equal(regex.statusCode, 200);
+  assert.equal(regex.json().items.length, 0, 'busca trata o texto literalmente');
+  assert.equal(
+    (await app.inject({ url: '/api/v1/admin/users?role=root', headers: adminHeaders })).statusCode,
+    422,
+  );
+
+  const created = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/allocations`,
+    headers: coordinatorHeaders,
+    payload: { offeringId: f.offerings[0].id, teacherId: f.teacher.id, meetings: [f.meeting] },
+  });
+  assert.equal(created.statusCode, 201, created.body);
+  const planning = async (query: string) => {
+    const result = await app.inject({
+      url: `/api/v1/courses/${courseA}/planning?periodId=${f.period.id}&${query}`,
+      headers: coordinatorHeaders,
+    });
+    assert.equal(result.statusCode, 200, result.body);
+    return result.json().allocations.length as number;
+  };
+  assert.equal(await planning(`from=${f.from}&until=${f.until}`), 1);
+  const after = new Date(`${f.until}T12:00:00Z`);
+  after.setUTCDate(after.getUTCDate() + 1);
+  assert.equal(await planning(`from=${after.toISOString().slice(0, 10)}`), 0);
+  assert.equal(
+    (
+      await app.inject({
+        url: `/api/v1/courses/${courseA}/planning?from=${f.until}&until=${f.from}`,
+        headers: coordinatorHeaders,
+      })
+    ).statusCode,
+    422,
+  );
+  for (const [status, code] of [
+    ['PLANNED', 200],
+    ['DONE', 422],
+  ] as const)
+    assert.equal(
+      (
+        await app.inject({
+          url: `/api/v1/courses/${courseA}/occurrences?status=${status}`,
+          headers: coordinatorHeaders,
+        })
+      ).statusCode,
+      code,
+    );
+});

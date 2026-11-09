@@ -309,7 +309,24 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
         .skip(page.offset)
         .limit(page.limit + 1)
         .toArray();
-      return pageOf(values.map(view), page);
+      // The coordination decides about people: list who sent each request.
+      const people = values.length
+        ? await identity.users
+            .find({ _id: { $in: [...new Set(values.map((value) => value.teacherId))] } })
+            .project<{ _id: string; name: string; email: string }>({ name: 1, email: 1 })
+            .toArray()
+        : [];
+      return pageOf(
+        values.map((value) => {
+          const person = people.find((item) => item._id === value.teacherId);
+          return {
+            ...view(value),
+            teacherName: person?.name ?? null,
+            teacherEmail: person?.email ?? null,
+          };
+        }),
+        page,
+      );
     },
   );
   app.get(
