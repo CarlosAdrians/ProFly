@@ -69,6 +69,11 @@ export function ApiTeachersPage() {
             <div>
               <strong>{t.name}</strong>
               <p>{t.email}</p>
+              <p>
+                {t.courseCount ?? 1}{' '}
+                {(t.courseCount ?? 1) === 1 ? 'curso vinculado' : 'cursos vinculados'}
+                {t.courses?.length ? ` · ${t.courses.map((course) => course.name).join(', ')}` : ''}
+              </p>
             </div>
             <Badge value="APPROVED" />
           </div>
