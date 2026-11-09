@@ -892,6 +892,19 @@
       "scenario": "Coordenacao lista solicitacoes; administrador busca professor por e-mail com caracteres especiais; planejamento e ocorrencias filtrados por datas e situacao, incluindo filtros invalidos.",
       "expected": "Lista traz nome e e-mail de quem pediu; busca literal encontra somente a conta pretendida e papel invalido retorna 422; planejamento fora do intervalo vem vazio, intervalo invertido e situacao desconhecida retornam 422.",
       "status": "PLANNED"
+    },
+    {
+      "id": "CASE-076",
+      "requirements": [
+        "REQ-01",
+        "REQ-03",
+        "REQ-13",
+        "REQ-15"
+      ],
+      "layer": "integration",
+      "scenario": "Servidor sem envio de e-mail recebe cadastro completo com termos aceitos e solicitacao de curso; cadastro simples sem aceite continua recebido sem envio.",
+      "expected": "Cadastro completo cria conta ativa sem intencao pendente, permite login, encaminha a solicitacao SUBMITTED com aviso a coordenacao e nao cria vinculo; cadastro simples e recuperacao continuam retornando 503 sem envio configurado.",
+      "status": "PLANNED"
     }
   ]
 }
