@@ -28,7 +28,10 @@ export function ApiTeachersPage() {
       canReview ? `/courses/${courseId}/applications` : null,
     ),
     teachers = useApi<Items<User>>(courseId ? `/courses/${courseId}/teachers` : null),
-    [selected, setSelected] = useState('');
+    [selected, setSelected] = useState(''),
+    [unlinking, setUnlinking] = useState<User | null>(null),
+    [reason, setReason] = useState(''),
+    unlink = useAction();
   return (
     <>
       <Heading
@@ -75,10 +78,64 @@ export function ApiTeachersPage() {
                 {t.courses?.length ? ` · ${t.courses.map((course) => course.name).join(', ')}` : ''}
               </p>
             </div>
-            <Badge value="APPROVED" />
+            <div className={s.row}>
+              <Badge value="APPROVED" />
+              {canReview && (
+                <Button variant="secondary" onClick={() => setUnlinking(t)}>
+                  <Icon name="trash" />
+                  Encerrar vínculo
+                </Button>
+              )}
+            </div>
           </div>
         ))}
       </Panel>
+      <Modal
+        open={canReview && !!unlinking}
+        title="Encerrar vínculo com o curso"
+        busy={unlink.busy}
+        onClose={() => setUnlinking(null)}
+      >
+        {unlinking && (
+          <form
+            className={s.stack}
+            onSubmit={(e) => {
+              e.preventDefault();
+              void unlink.run(async () => {
+                await api(`/courses/${courseId}/teachers/${unlinking.id}/unlink`, {
+                  method: 'POST',
+                  body: { reason },
+                });
+                setUnlinking(null);
+                setReason('');
+                teachers.refresh();
+                applications.refresh();
+              });
+            }}
+          >
+            <p>
+              <strong>{unlinking.name}</strong> deixa de aparecer entre os professores deste curso e
+              não pode receber novas alocações. Aulas já realizadas continuam no histórico. Se ainda
+              houver aulas futuras, cancele ou reatribua e publique a revisão antes.
+            </p>
+            <p className={s.muted}>
+              O professor é avisado e pode solicitar entrada novamente depois.
+            </p>
+            <TextField
+              label="Motivo"
+              required
+              minLength={3}
+              maxLength={2000}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+            <ActionFeedback action={unlink} />
+            <Button type="submit" loading={unlink.busy}>
+              Confirmar encerramento
+            </Button>
+          </form>
+        )}
+      </Modal>
       <Modal
         open={canReview && !!selected}
         size="wide"

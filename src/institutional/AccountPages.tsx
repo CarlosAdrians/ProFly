@@ -101,8 +101,9 @@ function ProfileEdit({
       }}
     >
       <p className={s.muted}>
-        Alterações do perfil precisam de nova submissão e análise dos cursos. Publicações anteriores
-        são preservadas.
+        {availability
+          ? 'Horários e dedicação não exigem nova análise dos cursos. A coordenação confere a nova disponibilidade ao alocar aulas; publicações anteriores são preservadas.'
+          : 'Mudanças em formação, conhecimentos ou experiências precisam de nova submissão e análise dos cursos. Telefone, horários e dedicação não exigem nova análise. Publicações anteriores são preservadas.'}
       </p>
       <ProfileFields
         data={data}

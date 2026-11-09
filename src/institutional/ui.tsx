@@ -92,6 +92,7 @@ function fieldLabel(path: string) {
     subjectIds: 'Disciplinas',
     requests: 'Cursos solicitados',
     eligibility: 'Elegibilidade',
+    allocations: 'Alocação',
     score: 'Pontuação',
     _form: 'Dados informados',
     password: 'Senha',
