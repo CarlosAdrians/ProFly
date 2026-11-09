@@ -227,7 +227,7 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
       screen.getByLabelText('Professor aprovado no curso'),
       fixture.teacherId,
     );
-    await user.type(screen.getByLabelText('Sala'), '201');
+    expect(screen.queryByLabelText('Sala')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Comparar professores' }));
     await screen.findAllByText(/pontos$/);
     await user.click(screen.getByRole('button', { name: 'Conferir elegibilidade' }));
@@ -244,12 +244,10 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     await user.click(screen.getByRole('button', { name: 'Confirmar publicação' }));
     await screen.findByText('Escala publicada com sucesso.');
     expect(
-      (
-        await fixture.database.db
-          .collection('allocations')
-          .findOne({ offeringId: fixture.offering.id })
-      )?.room,
-    ).toBe('201');
+      await fixture.database.db
+        .collection('allocations')
+        .findOne({ offeringId: fixture.offering.id }),
+    ).toBeTruthy();
     await user.click(screen.getByRole('link', { name: 'Meu início' }));
     await screen.findByRole('heading', { name: 'Próximas aulas do curso' });
     await screen.findAllByText('Direito Civil I');
@@ -290,10 +288,10 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
       target: { value: fixture.from },
     });
     await screen.findAllByText('Direito Civil I');
-    expect((await screen.findAllByText('Sala 201')).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Sala/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Nova alocação' })).not.toBeInTheDocument();
   }, 30000);
-  it('salva preferências de notificações e comunica ausência sem alterar o perfil acadêmico', async () => {
+  it('salva preferências de notificações sem expor o fluxo de ausência acadêmica', async () => {
     open('/login');
     const user = await signIn(fixture.teacherEmail);
     await user.click(screen.getByRole('button', { name: /^Notificações,/ }));
@@ -317,18 +315,8 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     const before = await fixture.database.db
       .collection<{ _id: string }>('profiles')
       .findOne({ _id: fixture.teacherId });
-    await user.click(screen.getByRole('link', { name: 'Atestados' }));
-    await user.click(await screen.findByRole('button', { name: 'Informar ausência' }));
-    await user.type(screen.getByLabelText('Primeiro dia'), fixture.from);
-    await user.type(screen.getByLabelText('Último dia'), fixture.until);
-    await user.click(screen.getByRole('checkbox', { name: 'Direito' }));
-    await user.click(screen.getByRole('button', { name: 'Salvar comunicação' }));
-    await screen.findByText('Comunicação de ausência');
-    expect(
-      await fixture.database.db
-        .collection('absences')
-        .countDocuments({ teacherId: fixture.teacherId }),
-    ).toBe(1);
+    expect(screen.queryByRole('link', { name: 'Atestados' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Informar ausência' })).not.toBeInTheDocument();
     expect(
       await fixture.database.db
         .collection<{ _id: string }>('profiles')
@@ -463,68 +451,6 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     await screen.findByRole('heading', { name: 'Meu início' });
     expect(screen.queryByRole('heading', { name: 'Notificações' })).not.toBeInTheDocument();
   }, 30000);
-  it('envia atestado no formulario e repete falha do upload sem duplicar a ausencia salva', async () => {
-    open('/login');
-    const user = await signIn(fixture.teacherEmail);
-    await user.click(screen.getByRole('link', { name: 'Atestados' }));
-    await user.click(await screen.findByRole('button', { name: 'Enviar atestado' }));
-    const dialog = screen.getByRole('dialog', { name: 'Enviar atestado' });
-    const sharp = (await import('../../backend/node_modules/sharp')).default;
-    const bytes = await sharp({
-      create: { width: 2, height: 2, channels: 3, background: '#ffffff' },
-    })
-      .png()
-      .toBuffer();
-    await user.upload(
-      within(dialog).getByLabelText('Arquivo do atestado'),
-      new File([new Uint8Array(bytes)], 'atestado-ficticio.png', { type: 'image/png' }),
-    );
-    await user.type(within(dialog).getByLabelText('Primeiro dia'), fixture.from);
-    await user.type(within(dialog).getByLabelText('Último dia'), fixture.until);
-    await user.click(within(dialog).getByRole('checkbox', { name: 'Direito' }));
-    const before = await fixture.database.db
-      .collection('absences')
-      .countDocuments({ teacherId: fixture.teacherId });
-    const actualFetch = globalThis.fetch;
-    let refused = false;
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
-        if (String(input).endsWith('/attachment') && init?.method === 'POST' && !refused) {
-          refused = true;
-          return new Response(
-            JSON.stringify({
-              error: { code: 'UNAVAILABLE', message: 'Upload temporariamente indisponível.' },
-            }),
-            { status: 503 },
-          );
-        }
-        return actualFetch(input, init);
-      }),
-    );
-    await user.click(within(dialog).getByRole('button', { name: 'Enviar atestado para análise' }));
-    await within(dialog).findByText('Upload temporariamente indisponível.');
-    expect(
-      await fixture.database.db
-        .collection('absences')
-        .countDocuments({ teacherId: fixture.teacherId }),
-    ).toBe(before + 1);
-    expect(within(dialog).getByLabelText('Primeiro dia')).toBeDisabled();
-    await user.click(within(dialog).getByRole('button', { name: 'Reenviar atestado' }));
-    await screen.findByRole('button', { name: 'Baixar atestado privado' });
-    expect(screen.queryByRole('dialog', { name: 'Enviar atestado' })).not.toBeInTheDocument();
-    expect(
-      await fixture.database.db
-        .collection('absences')
-        .countDocuments({ teacherId: fixture.teacherId }),
-    ).toBe(before + 1);
-    const stored = await fixture.database.db
-      .collection('absences')
-      .find({ teacherId: fixture.teacherId, attachment: { $exists: true } })
-      .toArray();
-    expect(stored.at(-1)?.attachment.bytes).toBe(bytes.length);
-  }, 30000);
-
   it('horarios compactos abrem para editar e preservam as outras janelas ao salvar na API', async () => {
     const before = await fixture.database.db
       .collection<{ _id: string; version: number; data: typeof fixture.profile }>('profiles')
@@ -874,39 +800,23 @@ describe('interface -> contrato HTTP real -> MongoDB efêmero', () => {
     await screen.findByRole('heading', { name: 'Meu calendário' }, { timeout: 10000 });
   }, 30000);
 
-  it('atestado PDF passa pelo formulario e parser real e fica privado no registro', async () => {
-    const { PDFDocument } = await import('../../backend/node_modules/pdf-lib');
-    const pdf = await PDFDocument.create();
-    pdf.addPage().drawText('DOCUMENTO FICTICIO - TESTE');
-    const bytes = await pdf.save();
+  it('retira atestados da area academica e preserva os registros existentes', async () => {
     open('/login');
-    const user = await signIn(fixture.teacherEmail);
-    await user.click(screen.getByRole('link', { name: 'Atestados' }));
-    await user.click(await screen.findByRole('button', { name: 'Enviar atestado' }));
-    const dialog = screen.getByRole('dialog', { name: 'Enviar atestado' });
-    await user.upload(
-      within(dialog).getByLabelText('Arquivo do atestado'),
-      new File([new Uint8Array(bytes)], 'ficticio.pdf', { type: 'application/pdf' }),
-    );
-    fireEvent.change(within(dialog).getByLabelText('Primeiro dia'), {
-      target: { value: fixture.from },
+    await signIn(fixture.teacherEmail);
+    expect(screen.queryByRole('link', { name: 'Atestados' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Enviar atestado' })).not.toBeInTheDocument();
+    const before = await fixture.database.db.collection('absences').countDocuments();
+    const response = await fixture.app.inject({
+      url: '/api/v1/me/absences',
+      headers: { cookie },
     });
-    fireEvent.change(within(dialog).getByLabelText('Último dia'), {
-      target: { value: fixture.until },
-    });
-    await user.click(within(dialog).getByRole('checkbox', { name: 'Direito' }));
-    await user.click(within(dialog).getByRole('button', { name: 'Enviar atestado para análise' }));
-    await waitFor(
-      () =>
-        expect(screen.queryByRole('dialog', { name: 'Enviar atestado' })).not.toBeInTheDocument(),
-      { timeout: 10000 },
-    );
-    expect(
-      await fixture.database.db
-        .collection('absences')
-        .countDocuments({ teacherId: fixture.teacherId, 'attachment.type': 'application/pdf' }),
-    ).toBe(1);
-    expect(await screen.findByText(/PDF ·/)).toBeInTheDocument();
+    expect(response.statusCode).toBe(410);
+    expect(response.json().error.code).toBe('ABSENCE_FLOW_RETIRED');
+    expect(await fixture.database.db.collection('absences').countDocuments()).toBe(before);
+    cleanup();
+    const router = open('/ausencias');
+    await screen.findByRole('heading', { name: 'Meu início' });
+    expect(router.state.location.pathname).toBe('/inicio');
   }, 30000);
 
   it('recuperação usa fragmento, confirma nova senha e revoga a sessão anterior', async () => {
