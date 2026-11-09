@@ -8,19 +8,23 @@ O projeto nasceu no curso de Direito e está sendo ampliado para atender aos dem
 
 ## Conheça as telas
 
-Capturas de **26/10/2026**, com a interface conectada à API e contas fictícias de professor e coordenador. As imagens mostram a área visível da tela; páginas e modais mais longos continuam pela rolagem.
+Capturas de **09/11/2026**, com a interface conectada à API e ao MongoDB e contas fictícias. O passo a passo de cada perfil está no [manual do usuário](docs/MANUAL_USUARIO.md).
 
 | Acesso ao ProFly | Cadastro do professor |
 | --- | --- |
-| ![Login com a fachada e a marca UNIFACISA](docs/assets/screenshots/01-login.jpg) | ![Primeira etapa do cadastro docente](docs/assets/screenshots/02-cadastro-professor.jpg) |
+| ![Login com a fachada e a marca UNIFACISA](docs/manual/telas/01-login.jpg) | ![Etapa de cursos e horários do cadastro](docs/manual/telas/04-cadastro-cursos-horarios.jpg) |
 
-| Disponibilidade do professor | Calendário do professor |
+| Início da coordenação | Análise do cadastro |
 | --- | --- |
-| ![Quadro semanal dos horários pretendidos](docs/assets/screenshots/07-professor-disponibilidade.jpg) | ![Aulas publicadas com cores por disciplina e ilustrações dos turnos](docs/assets/screenshots/09-professor-calendario-semana.jpg) |
+| ![Próximas aulas e cadastros aguardando análise](docs/manual/telas/07-coordenador-inicio.jpg) | ![Análise com disciplinas pedidas e confirmação de evidências](docs/manual/telas/09-coordenador-analise.jpg) |
 
-| Início da coordenação | Calendário do curso |
+| Comparar professores | Motivos da árvore de decisão |
 | --- | --- |
-| ![Próximas aulas e tarefas da coordenação do curso](docs/assets/screenshots/14-coordenador-inicio.jpg) | ![Grade semanal do curso para a coordenação](docs/assets/screenshots/19-coordenador-calendario.jpg) |
+| ![Ranking dos elegíveis e motivo principal dos demais](docs/manual/telas/12-comparar-professores.jpg) | ![Respostas da árvore e fatores da pontuação](docs/manual/telas/13-arvore-motivos.jpg) |
+
+| Calendário do professor | Disponibilidade do professor |
+| --- | --- |
+| ![Aulas publicadas no calendário semanal](docs/manual/telas/16-professor-calendario.jpg) | ![Quadro semanal dos horários pretendidos](docs/manual/telas/17-professor-disponibilidade.jpg) |
 
 ## O problema que queremos resolver
 
@@ -129,8 +133,9 @@ A aplicação deve rejeitar dados incoerentes e operações fora do escopo, mant
 
 | Documento | Conteúdo |
 | --- | --- |
+| [Manual do usuário](docs/MANUAL_USUARIO.md) | Passo a passo de professor, coordenação e administração, árvore de decisão, perguntas frequentes e execução. |
 | [Spec do back-end](docs/specs/BACKEND_V1.md) | Requisitos rastreáveis, contratos, invariantes, limites e critérios de aceitação. |
-| [Matriz de cenários](docs/specs/backend-cases.json) | 66 cenários planejados para testes de domínio, contratos, autorização, integração, concorrência e entradas adversariais. |
+| [Matriz de cenários](docs/specs/backend-cases.json) | 76 cenários planejados para testes de domínio, contratos, autorização, integração, concorrência e entradas adversariais. |
 | [Fluxo de trabalho](docs/WORKFLOW.md) | Ordem de implementação, ciclo de validação e commits por área. |
 | [Estado das validações](docs/validation/STATUS.md) | O que foi verificado e o que ainda está pendente ou não implementado. |
 | [Definição do back-end](docs/BACKEND.md) | Modelo conceitual, responsabilidades, dados e contratos com o responsável pelo banco. |
@@ -181,7 +186,7 @@ A base de implementação foi localizada em `claude/pensive-dirac-5rithn`, no co
 
 ## O que falta para a entrega
 
-A base está validada para **demonstração acadêmica local** nos cenários documentados. A última verificação (09/11/2026, branch fix/auditoria-criticos) registrou **78 testes de backend, 17 da interface conectada e 220 gerais de frontend aprovados**, além de tipos, lint e build. A captura das telas não substitui testes de fluxo nem homologação de produção.
+A base está validada para **demonstração acadêmica local** nos cenários documentados. A última verificação (09/11/2026, branch fix/auditoria-criticos) registrou **79 testes de backend, 17 da interface conectada e 220 gerais de frontend aprovados**, além de tipos, lint e build. A captura das telas não substitui testes de fluxo nem homologação de produção.
 
 Antes de considerar a operação institucional concluída:
 
@@ -201,9 +206,9 @@ npm ci
 npm run dev
 ```
 
-O Vite atende em [127.0.0.1:5174](http://127.0.0.1:5174) e encaminha `/api` para `127.0.0.1:3333`. Inicie também o [backend](backend/README.md), com MongoDB transacional e seu `backend/.env` local. URI e credenciais ficam somente no servidor; nunca em variáveis `VITE_*`. `PROFLY_API_TARGET` altera apenas o destino do proxy de desenvolvimento.
+O Vite atende em [127.0.0.1:5174](http://127.0.0.1:5174) e encaminha `/api` para `127.0.0.1:3333`. Inicie também o [backend](backend/README.md), com MongoDB transacional e seu `backend/.env` local. URI e credenciais ficam somente no servidor; nunca em variáveis `VITE_*`. No Atlas, libere o IP em Network Access; se o Windows mostrar `querySrv ECONNREFUSED`, use a URI no formato direto com os três hosts do cluster, como explica o [manual](docs/MANUAL_USUARIO.md#como-executar). `PROFLY_API_TARGET` altera apenas o destino do proxy de desenvolvimento.
 
-Não há credencial administrativa padrão na aplicação conectada. Crie o primeiro administrador com o procedimento explícito do backend; ele cadastra cursos e convida coordenadores. O professor usa **Cadastrar**, confirma o e-mail e aguarda análise independente de cada curso. Conectar a API não importa nem apaga cadastros locais antigos.
+Não há credencial administrativa padrão na aplicação conectada. Crie o primeiro administrador com o procedimento explícito do backend; ele cadastra cursos e convida coordenadores. O professor usa **Cadastrar** e aguarda a análise independente de cada curso pela coordenação, no painel dela. Com envio de e-mail configurado, o professor confirma o e-mail antes; sem envio (`EMAIL_TRANSPORT=disabled`), o cadastro completo cria a conta e encaminha o pedido direto à coordenação. Conectar a API não importa nem apaga cadastros locais antigos.
 
 ### Demonstração anterior
 

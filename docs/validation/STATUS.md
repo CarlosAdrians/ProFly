@@ -462,3 +462,17 @@ Branch fix/auditoria-criticos. Bugs confirmados no navegador com Playwright (Edg
 | Interface conectada a API real | PASS | npm run test:api: 17 testes. |
 | Navegador (Playwright + Edge) | PASS | 9 fluxos na previa isolada 3334/5175: cadastro completo com e-mail capturado localmente, tres validacoes do cadastro, analise, limite de carga, comparacao/publicacao, agenda do professor com troca de horario mantendo elegibilidade e bloqueio do encerramento de vinculo com aula futura. Testes mantidos fora do repositorio. |
 | Banco real (cluster) | NOT_RUN | URI recebida sem a senha do usuario do banco; nenhum acesso ao cluster foi feito. |
+
+## Banco real, cadastro sem e-mail e manual — 09/11/2026
+
+Branch fix/auditoria-criticos. Cluster MongoDB Atlas do projeto acessado com a URI no formato direto (o Node no Windows recusou a consulta SRV de `mongodb+srv`). Dados de apresentacao ficticios criados pela API no banco `profly_development` com um administrador proprio de demonstracao, sem alterar as contas existentes. Testes de navegador executados em banco separado `profly_e2e_test` do mesmo cluster. Decisao do usuario registrada como CASE-076: sem envio de e-mail, o cadastro completo vai direto a analise da coordenacao.
+
+| Verificacao | Estado | Evidencia ou limitacao |
+| --- | --- | --- |
+| Navegador no cluster real (Playwright + Edge) | PASS | 9 fluxos em `profly_e2e_test` (cadastro com e-mail capturado localmente, validacoes, analise, carga, comparacao/publicacao, agenda, troca de horario e encerramento de vinculo) e o fluxo sem e-mail (conta criada, login e pedido no painel da coordenacao). |
+| Dados da apresentacao no cluster | PASS | Painel da coordenacao com dois pedidos, comparacao com ranking e professor com aula publicada conferidos no navegador. |
+| Backend | PASS | tsc, eslint, 22 unitarios, integration.test.ts 37 testes e demais suites de integracao (ver comando registrado no README). |
+| Frontend | PASS | tsc, eslint, vitest 220, build, interface conectada 17. |
+| Manual do usuario | PASS | docs/MANUAL_USUARIO.md com 24 telas em docs/manual/telas; check-docs aprovado. |
+
+Limites: sem envio de e-mail, a titularidade do endereco informado nao e comprovada; recuperacao de senha continua dependendo do envio. A senha do usuario do banco foi compartilhada na sessao de trabalho e deve ser trocada no Atlas.
