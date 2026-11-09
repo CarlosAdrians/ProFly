@@ -20,7 +20,6 @@ import { addDate, monday, monthDates, moveMeeting, weekday } from './calendarMod
 import { calendarSubjectTone } from './calendarColors';
 import c from './TeacherCalendar.module.css';
 import s from './Portal.module.css';
-import { RoomLabel } from './RoomLabel';
 interface Pin {
   id: string;
   date: string;
@@ -29,7 +28,6 @@ interface Pin {
   subject: string;
   teacher: string;
   course?: string;
-  room?: string | null;
   status: string;
   allocation?: Allocation;
   occurrence?: Occurrence;
@@ -59,6 +57,11 @@ export function ApiCalendarPage() {
       teacher ? `/me/schedule?from=${from}&until=${until}` : null,
     ),
     planning = useApi<Planning>(!teacher && courseId ? `/courses/${courseId}/planning` : null),
+    occurrences = useApi<Items<Occurrence>>(
+      !teacher && courseId
+        ? `/courses/${courseId}/occurrences?from=${from}&until=${until}&limit=500`
+        : null,
+    ),
     subjects = useApi<Items<Subject>>(
       !teacher && courseId ? `/courses/${courseId}/subjects?limit=100` : null,
     ),
@@ -74,25 +77,37 @@ export function ApiCalendarPage() {
         subject: o.subjectName,
         teacher: o.groupName,
         course: o.courseName,
-        room: o.room,
         status: o.status,
         occurrence: o,
       }))
-    : (planning.data?.allocations ?? []).flatMap((a) =>
-        a.slots
-          .filter((slot) => slot.date >= from && slot.date <= until)
-          .map((slot) => ({
-            id: `${a.id}:${slot.startsAt}`,
-            date: slot.date,
-            startsAt: slot.startsAt,
-            endsAt: slot.endsAt,
-            subject: subjects.data?.items.find((v) => v.id === a.subjectId)?.name ?? 'Disciplina',
-            teacher: teachers.data?.items.find((t) => t.id === a.teacherId)?.name ?? 'Professor',
-            status: a.state,
-            room: slot.room !== undefined ? slot.room : a.room,
-            allocation: a,
+    : [
+        ...(occurrences.data?.items ?? [])
+          .filter((o) => o.date < today)
+          .map((o) => ({
+            id: o.id,
+            date: o.date,
+            startsAt: o.startsAt,
+            endsAt: o.endsAt,
+            subject: o.subjectName,
+            teacher: teachers.data?.items.find((t) => t.id === o.teacherId)?.name ?? 'Professor',
+            status: o.status,
+            occurrence: o,
           })),
-      );
+        ...(planning.data?.allocations ?? []).flatMap((a) =>
+          a.slots
+            .filter((slot) => slot.date >= today && slot.date >= from && slot.date <= until)
+            .map((slot) => ({
+              id: `${a.id}:${slot.startsAt}`,
+              date: slot.date,
+              startsAt: slot.startsAt,
+              endsAt: slot.endsAt,
+              subject: subjects.data?.items.find((v) => v.id === a.subjectId)?.name ?? 'Disciplina',
+              teacher: teachers.data?.items.find((t) => t.id === a.teacherId)?.name ?? 'Professor',
+              status: a.state,
+              allocation: a,
+            })),
+        ),
+      ];
   const shownPins = pins.filter((pin) => dates.includes(pin.date) && inShift(pin.startsAt));
   const disciplines = teacher
     ? [
@@ -143,7 +158,7 @@ export function ApiCalendarPage() {
         description={
           teacher
             ? 'Sua escala publicada pela coordenação. Selecione uma aula para consultar os detalhes.'
-            : 'Arraste um encontro ou abra o cartão para editar. A publicação é feita em Alocações.'
+            : 'Consulte o histórico por data. Encontros atuais e futuros podem ser editados; a publicação é feita em Alocações.'
         }
       >
         {!teacher && (
@@ -224,6 +239,7 @@ export function ApiCalendarPage() {
               error={teacher ? schedule.error : planning.error}
               retry={teacher ? schedule.refresh : planning.refresh}
             />
+            {!teacher && <LoadingError {...occurrences} retry={occurrences.refresh} />}
             <ActionFeedback action={action} />
             {teacher && dates.length > 0 && schedule.data && !schedule.error && (
               <p className={`${s.calendarSummary} ${c.summary}`}>
@@ -322,7 +338,7 @@ export function ApiCalendarPage() {
                               teacher ? calendarSubjectTone(p.course ?? '', p.subject) : undefined
                             }
                             data-status={p.status}
-                            draggable={!teacher && day >= today}
+                            draggable={!!p.allocation && day >= today}
                             onDragStart={(e) => {
                               if (p.allocation) {
                                 setDrag({ allocation: p.allocation, date: day });
@@ -364,7 +380,6 @@ export function ApiCalendarPage() {
                             <span className={teacher ? c.subject : undefined}>{p.subject}</span>
                             {p.course && !teacher && <small>{p.course}</small>}
                             <small className={teacher ? c.group : undefined}>{p.teacher}</small>
-                            <RoomLabel room={p.room} />
                             <small className={teacher ? c.status : undefined}>
                               {p.status === 'DRAFT'
                                 ? 'Rascunho'
@@ -446,12 +461,6 @@ export function ApiCalendarPage() {
               {timeLabel(selected.endsAt)}
             </p>
             <Badge value={selected.status} />
-            <p>
-              <RoomLabel room={selected.room} />
-            </p>
-            {selected.absencePending && (
-              <p>Há uma comunicação de ausência aplicável a este período.</p>
-            )}
           </>
         )}
       </Modal>
