@@ -34,7 +34,7 @@ O ProFly busca centralizar essas informações, explicar as possibilidades de al
 | --- | --- |
 | Administrador | Cadastrar cursos e coordenadores e atribuir as responsabilidades de cada coordenação. |
 | Coordenador | Gerenciar professores e disciplinas no contexto de seus cursos, analisar solicitações de entrada, consultar compatibilidade e organizar alocações e horários. |
-| Professor | Preencher seu perfil, solicitar participação, informar disponibilidade, consultar a própria escala e o histórico de aulas e comunicar ausências com atestado. |
+| Professor | Preencher seu perfil, solicitar participação, informar disponibilidade e consultar a própria escala e o histórico de aulas. Atestados e afastamentos são tratados pelo RH fora do ProFly. |
 
 Uma pessoa pode atuar em mais de um curso sem precisar de perfis docentes duplicados. A aprovação em um curso não concede acesso automático a outro. A autorização deve ser conferida também no servidor em cada operação.
 
@@ -75,25 +75,23 @@ Detalhes, nós de decisão, fórmula e exemplos fictícios estão na [proposta d
 
 ### Alocações e calendário
 
-Planejamento por curso, turma e período, com seleção de dia e turno. Os cartões de aula representam disciplina, turma, professor e sala e podem ser incluídos, editados e movimentados por arraste, com alternativa por formulário.
+Planejamento por curso, turma e período, com seleção de dia e turno. Os cartões de aula representam disciplina, turma e professor e podem ser incluídos, editados e movimentados por arraste, com alternativa por formulário.
 
-Toda alteração precisa conferir novamente os horários reais, os compromissos do professor em outros cursos e sua carga. Disputas simultâneas entre coordenações devem preservar a integridade da escala. A proposta de trabalho inclui rascunho e versão publicada estável; rascunhos salvos e a última publicação mantêm reservas globais de professor, turma e sala até uma nova revisão atômica. Essa política conservadora permanece proposta para homologação institucional.
+Toda alteração precisa conferir novamente os horários reais, os compromissos do professor em outros cursos e sua carga. Disputas simultâneas entre coordenações devem preservar a integridade da escala. A proposta de trabalho inclui rascunho e versão publicada estável. Cancelar uma alocação publicada exige confirmação e nova publicação; somente encontros futuros saem da escala, enquanto o histórico anterior é preservado.
 
-A alocação pode informar a **sala pelo nome ou número**, como “201”, sem bloco. O local aparece no calendário e nos detalhes da aula, nas próximas aulas e no histórico. Aulas sem local informado mostram **Sala a definir**. [Veja um exemplo dos detalhes com Sala 201](docs/assets/screenshots/23-professor-sala.jpg). Salvar mantém a mudança no rascunho; publicar atualiza somente as aulas futuras do professor e preserva a sala dos encontros já iniciados ou passados. A mesma sala não pode ser reservada em horários sobrepostos, inclusive entre cursos, turmas e professores diferentes.
+O campo de sala foi retirado das interfaces acadêmicas em 09/11/2026. A API e o MongoDB conservam valores antigos para compatibilidade e histórico; editar professor ou horário não apaga silenciosamente esse dado. Novas telas não exibem nem solicitam sala.
 
 ### Dashboard e histórico do professor
 
-Uma entrada simples reúne a situação das solicitações, aulas de hoje/semana, perfil acadêmico, disponibilidade e comunicação de ausência.
+Uma entrada simples reúne a situação das solicitações, aulas de hoje/semana, perfil acadêmico e disponibilidade.
 
 O histórico recente mostra as **últimas 10 aulas**, reunindo os cursos do professor, com disciplina, turma, data, horário e situação. Há acesso ao histórico completo com filtros e paginação. Uma aula apenas agendada ou com data passada não é considerada realizada automaticamente.
 
 O histórico pertinente confirmado pode compor a experiência usada na recomendação, com deduplicação e critérios próprios. A janela de 10 itens é somente um recorte de navegação.
 
-### Ausências e atestados
+### Atestados e afastamentos
 
-O professor informa o período de ausência, pode anexar o atestado em fluxo reservado e acompanha o retorno da coordenação responsável. As aulas afetadas são sinalizadas para tratamento.
-
-O afastamento afeta a disponibilidade nas datas aplicáveis e preserva o score acadêmico e os conhecimentos do professor. O documento não aparece na recomendação. Seu envio não apaga, redistribui ou republica aulas automaticamente.
+Esse fluxo passou a ser responsabilidade do RH e foi removido do menu, das páginas acadêmicas e das rotas de operação do ProFly. Endpoints antigos respondem que o fluxo foi descontinuado. Registros e documentos já existentes permanecem preservados para futura definição institucional de custódia ou migração; esta revisão não apaga dados pessoais.
 
 ## Direção visual
 
@@ -122,7 +120,7 @@ API Node.js: identidade, autorização, validação e regras de negócio
         v
 MongoDB: cadastros, vínculos, planejamento, histórico e versões
 
-Anexos de atestado: armazenamento privado com acesso autorizado pela API
+Registros legados de atestado: preservados, sem operação pelas áreas acadêmicas
 ```
 
 A aplicação deve rejeitar dados incoerentes e operações fora do escopo, manter estados explícitos e retornar erros úteis aos formulários. Validação no navegador complementa as verificações do servidor.
@@ -160,24 +158,24 @@ Alterações de front-end e back-end ficam em commits separados. Testes e docume
 
 ## Estado de desenvolvimento
 
-Atualizado em **26/10/2026**. Branch local: `feat/backend-institucional`. A interface usa a API por padrão; a demonstração anterior foi preservada como opção explícita.
+Atualizado em **09/11/2026**. Branch local: `feat/revisao-final-profly`. A interface usa a API por padrão; a demonstração anterior foi preservada como opção explícita.
 
 | Parte | Estado atual |
 | --- | --- |
 | Identidade e conta | Sessão real por cookie/CSRF, cadastro detalhado, confirmação de e-mail, recuperação, troca protegida de e-mail/senha e foto privada. |
 | Aprovação por curso | Solicitações encaminhadas após verificar o e-mail; análise exclusiva do coordenador com vínculo ativo no curso, inclusive para quem acumula papel de administrador. Sem aprovação automática. |
-| Administração | Cursos, coordenadores, convites, revogação, competências, períodos/grade e limite institucional de carga. Primeiro administrador exige configuração explícita. |
+| Administração | Cursos, coordenadores, convites, revogação, competências, períodos/grade e limite institucional de carga. Contas mostram a quantidade e os nomes dos cursos vinculados. Primeiro administrador exige configuração explícita. |
 | Perfil e catálogo | Perfil versionado, formação, conhecimentos, experiências, horários pretendidos e dedicação opcional; disciplinas, critérios, turmas e ofertas pela API. |
 | Elegibilidade e score | Árvore explicável e comparação consistente de candidatos, com dados desconhecidos pendentes e pesos/requisitos configuráveis como proposta. |
-| Planejamento | Rascunhos, arraste/formulário, reservas globais, versão esperada e publicação atômica; escala anterior preservada em falha. |
+| Planejamento | Rascunhos, arraste/formulário, confirmação de cancelamento, reservas globais, versão esperada e publicação atômica; escala anterior e histórico preservados em falha. |
 | Professor | Agenda publicada, últimas 10 aulas, histórico paginado, horas realizadas confirmadas versus meta opcional. |
-| Ausências | Comunicação e decisão por curso, sinalização temporária e atestado privado JPG/PNG/WebP e PDF passivo pela interface conectada; retomada de upload, download privado e paginação. |
+| Atestados e afastamentos | Fluxo acadêmico descontinuado e encaminhado ao RH; telas e atalhos removidos, rotas antigas retornam `410`, registros legados preservados sem consulta pelo calendário ou score. |
 | Comprovantes acadêmicos | API de documentos privados por versão/item do perfil, imutáveis, auditados, com quotas e retirada sem apagar o original; integração dos novos controles no frontend pendente. |
 | Notificações | Avisos internos, paginação, total não lido e preferência persistida; e-mails de segurança independentes. |
 | E-mail | SMTP implementado e testado em captura fictícia local. Entrega externa depende de remetente autenticado. |
 | Validação | Fechamento local com comando backend/scripts/verify.mjs; rastreabilidade dos 70 cenários em [aceitação do backend](docs/validation/BACKEND_ACCEPTANCE.md), histórico em [STATUS.md](docs/validation/STATUS.md). |
 
-A implementação está validada para demonstração acadêmica local e não equivale à homologação institucional. O MongoDB configurado ainda falhou na conexão TLS na conferência desta etapa, sem desativar validação de certificados. Ainda faltam remetente real, configuração inicial da administração, revisão de critérios/grade/limites e políticas de privacidade/retenção, infraestrutura HTTPS e verificações de produção. Não inserir atestados reais na prévia de desenvolvimento.
+A implementação é destinada à demonstração acadêmica local e não equivale à homologação institucional. Ainda faltam remetente real, configuração inicial da administração, revisão de critérios/grade/limites, definição do RH para a custódia dos registros legados, políticas de privacidade/retenção, infraestrutura HTTPS e verificações de produção. Não inserir dados pessoais reais na prévia de desenvolvimento.
 
 A base de implementação foi localizada em `claude/pensive-dirac-5rithn`, no commit `6e78ca6`. Na leitura inicial, a `main` continha apenas referências e protótipos. Esses dados registram a origem da etapa, sem presumir publicação desta branch no remoto.
 
