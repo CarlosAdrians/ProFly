@@ -234,39 +234,7 @@ export class IdentityService {
             'registrationIntents',
           )
           .findOne({ _id: user._id }, { session });
-        for (const request of intent?.requests ?? []) {
-          const application: Application = {
-            ...entity(),
-            teacherId: user._id,
-            courseId: request.courseId,
-            profileVersion: 1,
-            subjectIds: request.subjectIds,
-            status: 'SUBMITTED',
-          };
-          await this.database.db
-            .collection<Application>('applications')
-            .insertOne(application, { session });
-          await audit(
-            this.database,
-            session,
-            user._id,
-            'APPLICATION_SUBMITTED',
-            application._id,
-            request.courseId,
-          );
-          const members = await this.memberships
-            .find({ courseId: request.courseId, role: 'coordinator', active: true }, { session })
-            .toArray();
-          for (const member of members)
-            await notify(
-              this,
-              session,
-              member.userId,
-              'APPLICATION',
-              application._id,
-              'Uma solicitacao docente aguarda analise.',
-            );
-        }
+        await this.submitRequests(user._id, intent?.requests ?? [], session);
         if (intent)
           await this.database.db
             .collection<{ _id: string }>('registrationIntents')
@@ -276,11 +244,56 @@ export class IdentityService {
     });
   }
 
+  /** Sends each course request to the coordination of that course for analysis. */
+  async submitRequests(
+    userId: string,
+    requests: NonNullable<Enrollment['requests']>,
+    session: ClientSession,
+  ) {
+    for (const request of requests) {
+      const application: Application = {
+        ...entity(),
+        teacherId: userId,
+        courseId: request.courseId,
+        profileVersion: 1,
+        subjectIds: request.subjectIds,
+        status: 'SUBMITTED',
+      };
+      await this.database.db
+        .collection<Application>('applications')
+        .insertOne(application, { session });
+      await audit(
+        this.database,
+        session,
+        userId,
+        'APPLICATION_SUBMITTED',
+        application._id,
+        request.courseId,
+      );
+      const members = await this.memberships
+        .find({ courseId: request.courseId, role: 'coordinator', active: true }, { session })
+        .toArray();
+      for (const member of members)
+        await notify(
+          this,
+          session,
+          member.userId,
+          'APPLICATION',
+          application._id,
+          'Uma solicitacao docente aguarda analise.',
+        );
+    }
+  }
+
   async register(
     input: { name: string; email: string; password: string },
     enrollment?: Enrollment,
   ) {
-    if (!this.notifications)
+    // Without e-mail delivery, the complete enrollment (terms accepted) goes straight to the
+    // coordination, which approves each course in its panel. The bare account route still needs
+    // e-mail, and configured delivery keeps the e-mail confirmation step.
+    const direct = !this.notifications;
+    if (direct && !enrollment)
       throw new AppError(503, 'EMAIL_UNAVAILABLE', 'Envio de verificacao ainda nao configurado.');
     const passwordHash = await hashPassword(input.password);
     const user: User = {
@@ -289,7 +302,7 @@ export class IdentityService {
       email: input.email,
       passwordHash,
       roles: ['teacher'],
-      state: 'PENDING_EMAIL',
+      state: direct ? 'ACTIVE' : 'PENDING_EMAIL',
       ...(enrollment?.profile.contact ? { phone: enrollment.profile.contact.phone } : {}),
     };
     const raw = await this.database.transaction(async (session) => {
@@ -320,11 +333,12 @@ export class IdentityService {
                 'Confira os cursos e disciplinas selecionados.',
               );
           }
-          await this.database.db
-            .collection<{ _id: string; requests: NonNullable<Enrollment['requests']> }>(
-              'registrationIntents',
-            )
-            .insertOne({ _id: user._id, requests: enrollment.requests }, { session });
+          if (!direct)
+            await this.database.db
+              .collection<{ _id: string; requests: NonNullable<Enrollment['requests']> }>(
+                'registrationIntents',
+              )
+              .insertOne({ _id: user._id, requests: enrollment.requests }, { session });
         }
         const ids = [
           ...new Set([
@@ -370,10 +384,14 @@ export class IdentityService {
       await this.database.db
         .collection<Guard>('guards')
         .insertOne({ _id: `user:${user._id}`, version: 0 }, { session });
-      const raw = await this.createToken(user._id, 'VERIFY_EMAIL', session);
       await audit(this.database, session, user._id, 'REGISTRATION_REQUESTED', user._id);
-      return raw;
+      if (direct) {
+        await this.submitRequests(user._id, enrollment?.requests ?? [], session);
+        return null;
+      }
+      return this.createToken(user._id, 'VERIFY_EMAIL', session);
     });
+    if (!raw || !this.notifications) return { user: userView(user), verificationRequired: false };
     try {
       await this.notifications.send({ email: user.email, purpose: 'VERIFY_EMAIL', token: raw });
     } catch {

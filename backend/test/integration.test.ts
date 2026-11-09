@@ -2498,3 +2498,91 @@ test('CASE-075: listas da coordenacao trazem quem pediu e aceitam busca e filtro
       code,
     );
 });
+
+test('CASE-076: sem e-mail configurado, o cadastro completo vai direto para a analise da coordenacao', async () => {
+  const competency = await app.inject({
+    method: 'POST',
+    url: '/api/v1/admin/competencies',
+    headers: adminHeaders,
+    payload: { code: 'DIRECT-ENROLL', name: 'Competencia direta', active: true },
+  });
+  assert.equal(competency.statusCode, 201, competency.body);
+  const subject = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/subjects`,
+    headers: adminHeaders,
+    payload: { code: 'DIRECT-ENROLL', name: 'Disciplina direta', active: true, criteria: null },
+  });
+  assert.equal(subject.statusCode, 201, subject.body);
+  const legal = (await app.inject('/api/v1/catalog/legal')).json().version;
+  const unconfigured = await buildApp(config, database);
+  try {
+    const email = 'direct-enroll@profly.test';
+    const enrolled = await unconfigured.inject({
+      method: 'POST',
+      url: '/api/v1/auth/enroll',
+      remoteAddress: '10.9.0.1',
+      payload: {
+        name: 'Professor Cadastro Direto',
+        email,
+        password: 'ExampleTest2026',
+        legal: { version: legal, termsAccepted: true, privacyAcknowledged: true },
+        requests: [{ courseId: courseA, subjectIds: [subject.json().id] }],
+        profile: {
+          contact: { phone: '83999990000' },
+          education: [
+            {
+              id: randomUUID(),
+              level: 'MASTER',
+              field: 'Direito',
+              institution: 'Instituicao de Teste',
+              completedYear: 2020,
+            },
+          ],
+          knowledge: [{ id: randomUUID(), competencyId: competency.json().id, level: 3 }],
+          teaching: { status: 'NONE', entries: [] },
+          professional: { status: 'NONE', entries: [] },
+          availability: { status: 'NONE', timeZone: 'America/Fortaleza', windows: [] },
+        },
+      },
+    });
+    assert.equal(enrolled.statusCode, 201, enrolled.body);
+    assert.equal(enrolled.json().verificationRequired, false);
+    assert.equal(enrolled.json().user.state, 'ACTIVE');
+    assert.equal(
+      await database.db
+        .collection('registrationIntents')
+        .countDocuments({ _id: enrolled.json().user.id }),
+      0,
+    );
+    const login = await unconfigured.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      remoteAddress: '10.9.0.1',
+      payload: { email, password: 'ExampleTest2026' },
+    });
+    assert.equal(login.statusCode, 200, login.body);
+    // The coordination sees the request and decides; no course access before that.
+    const list = await app.inject({
+      url: `/api/v1/courses/${courseA}/applications`,
+      headers: coordinatorHeaders,
+    });
+    const pending = list
+      .json()
+      .items.find((item: { teacherId: string }) => item.teacherId === enrolled.json().user.id);
+    assert.equal(pending.status, 'SUBMITTED');
+    assert.equal(pending.teacherName, 'Professor Cadastro Direto');
+    assert.equal(
+      await database.db
+        .collection('memberships')
+        .countDocuments({ userId: enrolled.json().user.id, role: 'teacher' }),
+      0,
+    );
+    const notice = await database.db
+      .collection('notices')
+      .countDocuments({ resourceId: pending.id, kind: 'APPLICATION' });
+    assert.ok(notice > 0, 'coordenacao recebe aviso no painel');
+  } finally {
+    await unconfigured.close();
+  }
+});
