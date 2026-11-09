@@ -4,6 +4,8 @@
 
 O ProFly organiza informações de professores, disciplinas, competências e disponibilidade para apoiar a montagem das escalas acadêmicas. Cada coordenador trabalha nos cursos pelos quais é responsável; o professor acompanha suas aulas em uma visão reunida; o administrador mantém a estrutura institucional e as responsabilidades de acesso.
 
+**Documentação:** [manual do usuário](docs/MANUAL_USUARIO.md) · [documentação técnica](docs/DOCUMENTACAO_TECNICA.md) · [como executar](#executar-em-qualquer-computador) · [usuários de demonstração](#usuários-de-demonstração)
+
 O projeto nasceu no curso de Direito e está sendo ampliado para atender aos demais cursos da faculdade. Este README apresenta a visão do produto completo. A implementação disponível e o trabalho ainda pendente estão identificados na seção [Estado de desenvolvimento](#estado-de-desenvolvimento).
 
 ## Conheça as telas
@@ -134,6 +136,7 @@ A aplicação deve rejeitar dados incoerentes e operações fora do escopo, mant
 | Documento | Conteúdo |
 | --- | --- |
 | [Manual do usuário](docs/MANUAL_USUARIO.md) | Passo a passo de professor, coordenação e administração, árvore de decisão, perguntas frequentes e execução. |
+| [Documentação técnica](docs/DOCUMENTACAO_TECNICA.md) | Arquitetura, organização do código, modelo de dados e relacionamentos, fluxos, árvore de elegibilidade, API, segurança, configuração e testes. |
 | [Spec do back-end](docs/specs/BACKEND_V1.md) | Requisitos rastreáveis, contratos, invariantes, limites e critérios de aceitação. |
 | [Matriz de cenários](docs/specs/backend-cases.json) | 76 cenários planejados para testes de domínio, contratos, autorização, integração, concorrência e entradas adversariais. |
 | [Fluxo de trabalho](docs/WORKFLOW.md) | Ordem de implementação, ciclo de validação e commits por área. |
@@ -269,7 +272,7 @@ Abra [http://127.0.0.1:5174](http://127.0.0.1:5174). Use exatamente esse endere�
 
 ### 5. Contas de acesso
 
-O banco `profly_development` já tem contas fictícias de administração, coordenação e professores para demonstração; peça as senhas ao grupo. Elas não ficam no repositório.
+O banco `profly_development` já tem as contas fictícias listadas em [usuários de demonstração](#usuários-de-demonstração). As senhas são compartilhadas pelo grupo e não ficam no repositório.
 
 Em um banco vazio, crie o primeiro administrador. No PowerShell, dentro de `backend`:
 
@@ -278,6 +281,26 @@ $env:BOOTSTRAP_ADMIN_NAME="Administrador"; $env:BOOTSTRAP_ADMIN_EMAIL="admin@exe
 ```
 
 Depois entre como administrador para criar cursos, competências, períodos e convidar coordenadores, como descreve o [manual](docs/MANUAL_USUARIO.md#administração).
+
+### Usuários de demonstração
+
+Contas fictícias criadas em 09/11/2026 no banco `profly_development` do cluster do projeto, todas com e-mail `@profly.test` (domínio de teste, não recebe mensagens). **As senhas não ficam neste repositório público**: peça ao grupo.
+
+| Nome | E-mail | Papel | Situação | Para que serve |
+| --- | --- | --- | --- | --- |
+| Admin Demonstração | `admin.demo@profly.test` | Administração | Ativa | Cursos, coordenadores, competências, períodos e carga docente. |
+| Coordenação de Direito | `coordenacao.demo@profly.test` | Coordenação do curso Direito | Ativa | Analisar pedidos, comparar professores, alocar e publicar. |
+| Bruno Lima | `bruno.lima@profly.test` | Professor | Aprovado em Direito, com carga | Tem aula publicada às segundas; 1º na comparação. |
+| Eduardo Costa | `eduardo.costa@profly.test` | Professor | Aprovado em Direito, com carga | Elegível; 2º na comparação. |
+| Carla Mendes | `carla.mendes@profly.test` | Professora | Aprovada em Direito, sem carga | Mostra "Falta resolver: limite de carga" na árvore. |
+| Ana Ribeiro | `ana.ribeiro@profly.test` | Professora | Pedido aguardando análise | Demonstrar a aprovação no painel da coordenação. |
+| Diego Santos | `diego.santos@profly.test` | Professor | Pedido aguardando análise | Demonstrar a recusa ou o pedido de ajustes. |
+| Administrador ProFly Teste | `admin@profly.test` | Administração | Ativa | Conta de teste criada antes pelo grupo. |
+| Coordenador Teste ProFly | `coordenador@profly.test` | Coordenação do "Curso de Teste ProFly" | Ativa | Conta de teste criada antes pelo grupo. |
+
+Dados acadêmicos da demonstração: curso **Direito**, competência **Direito Civil**, disciplina **Direito Civil I** (ficha revisada), período **Semestre 2026.2** (grade revisada, segundas e terças 18:30–19:20), **Turma 1** e duas ofertas: segunda (alocada ao Bruno e publicada) e terça (livre para comparar professores ao vivo).
+
+Os testes de navegador usam outro banco do mesmo cluster, `profly_e2e_test`, com contas `admin.e2e@profly.test`, `coordenacao.e2e@profly.test` e professores `e2e.*@profly.test`. Ele pode ser apagado sem afetar a demonstração.
 
 ### Problemas comuns
 

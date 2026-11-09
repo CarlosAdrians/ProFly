@@ -1,6 +1,6 @@
 # Manual do usuário do ProFly
 
-Atualizado em 09/11/2026. As telas mostram contas e dados fictícios. O manual segue a ordem de uso: o administrador prepara a estrutura, o professor se cadastra, a coordenação analisa e monta a escala, e o professor acompanha as aulas.
+Atualizado em 09/11/2026. As telas mostram contas e dados fictícios. O manual segue a ordem de uso: o administrador prepara a estrutura, o professor se cadastra, a coordenação analisa e monta a escala, e o professor acompanha as aulas. Arquitetura, dados, regras e API estão na [documentação técnica](DOCUMENTACAO_TECNICA.md); as contas de demonstração, no [README](../README.md#usuários-de-demonstração).
 
 - [Acesso](#acesso)
 - [Professor](#professor)
