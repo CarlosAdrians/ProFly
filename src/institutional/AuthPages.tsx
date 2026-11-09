@@ -359,7 +359,8 @@ export function ApiRegisterPage() {
     [terms, setTerms] = useState(false),
     [privacy, setPrivacy] = useState(false),
     [legal, setLegal] = useState<'terms' | 'privacy' | null>(null),
-    [created, setCreated] = useState(false);
+    [created, setCreated] = useState(false),
+    [verificationRequired, setVerificationRequired] = useState(true);
   const action = useAction(),
     serverLegal = useApi<{ version: string }>('/catalog/legal');
   const steps = ['Sua conta', 'Perfil acadêmico', 'Cursos e horários', 'Revisão'];
@@ -402,7 +403,7 @@ export function ApiRegisterPage() {
         throw new Error(
           'Os termos foram atualizados ou não puderam ser conferidos. Atualize a página antes de continuar.',
         );
-      await api('/auth/enroll', {
+      const result = await api<{ verificationRequired: boolean }>('/auth/enroll', {
         method: 'POST',
         body: {
           name,
@@ -415,6 +416,7 @@ export function ApiRegisterPage() {
       });
       setPassword('');
       setConfirmation('');
+      setVerificationRequired(result.verificationRequired !== false);
       setCreated(true);
     });
     // The message sits above the form; long steps would otherwise hide it below the fold.
@@ -427,7 +429,18 @@ export function ApiRegisterPage() {
         <img src="/images/unifacisa-logo.png" alt="UNIFACISA" />
         <Link to="/login">Voltar ao login</Link>
       </div>
-      {created ? (
+      {created && !verificationRequired ? (
+        <Panel title="Cadastro enviado">
+          <p>
+            Sua conta foi criada.{' '}
+            {requests.length
+              ? 'As solicitações seguiram para a coordenação de cada curso, que vai aprovar ou recusar sua entrada.'
+              : 'Entre para completar seu perfil e pedir entrada nos cursos quando quiser.'}
+          </p>
+          <p>Você já pode entrar e acompanhar a análise em Meu início.</p>
+          <Link to="/login">Ir para o login</Link>
+        </Panel>
+      ) : created ? (
         <Panel title="Confirme seu e-mail">
           <p>
             Seu perfil foi salvo. Abra o link enviado para {email} para confirmar sua identidade.
