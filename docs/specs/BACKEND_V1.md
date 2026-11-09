@@ -170,3 +170,15 @@ Somente publicacao atualiza a escala do professor. Republicacao de sala atualiza
 REQ-02/05/12, CASE-066: listagens autorizadas informam `courseCount`. Administracao recebe os nomes de todos os cursos vinculados; coordenacao recebe a contagem total do professor e somente nomes de cursos que ela ja pode consultar. Nao ha exemplo nominal criado na base real.
 
 REQ-09/11/14, CASE-039/040/045/046/068: o calendario da coordenacao consulta ocorrencias para datas anteriores e diferencia `PLANNED`, `COMPLETED`, `CANCELLED` e `RESCHEDULED`; datas atuais/futuras continuam ligadas ao rascunho editavel. Cancelar alocacao publicada exige confirmacao na interface, marca o rascunho como cancelado e so retira encontros futuros quando a revisao e publicada. Ocorrencias anteriores permanecem no historico.
+
+## Correcoes da auditoria — 09/11/2026
+
+Decisoes desta etapa, tomadas na auditoria do repositorio e passiveis de revisao pela equipe.
+
+REQ-03/04/07/14, CASE-071: a analise da coordenacao vale para os dados academicos (formacao, conhecimentos e experiencias). Salvar o perfil sem alterar esses dados (telefone, disponibilidade, dedicacao) gera nova versao e copia as analises da versao anterior para a nova, marcadas com `carriedFromVersion`; solicitacoes `SUBMITTED`/`APPROVED` da versao anterior acompanham a nova. A disponibilidade continua conferida pela arvore a cada avaliacao. Qualquer mudanca academica mantem a regra anterior: nova submissao e nova analise. A resposta de `PUT /me/profile` informa `reviewRequired`.
+
+REQ-09/12, CASE-072: a publicacao continua atomica. Quando alguma alocacao nao esta elegivel, o 409 `PUBLICATION_NOT_ELIGIBLE` lista em `fieldErrors` cada alocacao bloqueante com disciplina, turma, professor e motivos, em vez de uma mensagem generica.
+
+REQ-05/09/14, CASE-073: periodo com ofertas ou alocacoes ativas aceita nome, situacao da grade, novos blocos e vigencia ampliada. Continuam recusados desativacao, troca de fuso e qualquer alteracao que deixe encontros de ofertas ativas ou alocacoes nao canceladas fora dos blocos ou da vigencia. Turma em uso pode ser renomeada; mudar de periodo ou desativar continua recusado.
+
+REQ-02/03/09/14, CASE-074: `POST /courses/:courseId/teachers/:teacherId/unlink` encerra o vinculo docente de um curso, com motivo obrigatorio. Exige coordenador ativo do curso (mesma regra da analise; administrador sem vinculo nao encerra). Recusa com 409 `TEACHER_HAS_ALLOCATIONS` enquanto houver aulas futuras em rascunho ou publicadas. Outros cursos nao sao afetados; a solicitacao do curso passa a `REJECTED` com o motivo, o professor e notificado e pode solicitar entrada novamente. Historico e ocorrencias passadas sao preservados.
