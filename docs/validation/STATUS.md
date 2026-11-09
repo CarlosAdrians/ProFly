@@ -1,6 +1,6 @@
 # Estado da validacao
 
-Atualizado em 09/11/2026. Branch da etapa atual: feat/revisao-final-profly. O histórico das etapas anteriores permanece abaixo.
+Atualizado em 09/11/2026. Branch da etapa atual: fix/auditoria-criticos. O histórico das etapas anteriores permanece abaixo.
 
 ## Evidencia disponivel
 
@@ -432,3 +432,21 @@ Verificacoes executadas:
 - `PROFLY_RUN_INTEGRATION=1 corepack pnpm test:integration`: PASS final, 54 testes, zero falhas/pulos/todo, em MongoDB efemero `_test`. Duas repeticoes anteriores revelaram apenas problemas nas novas assercoes de teste (timestamp variavel e fixture sintetica removida); ambos foram corrigidos antes da execucao final. Nenhum Atlas ou banco institucional foi usado.
 
 Pendencias: confirmar com o RH a custodia/migracao e retencao dos registros legados; revisar se uma integracao futura deve fornecer somente indisponibilidade operacional minima; validar visualmente em dispositivos reais; configurar remetente, HTTPS, backup/restore e MongoDB institucional com o integrante responsavel. O valor real de `MONGODB_URI` nao foi registrado em logs ou documentos.
+
+## Correcoes criticas da auditoria — 09/11/2026
+
+Branch fix/auditoria-criticos, a partir da main com a revisao final mesclada. Escopo e decisoes em [BACKEND_V1.md](../specs/BACKEND_V1.md), secao Correcoes da auditoria; cenarios CASE-071..074.
+
+Problemas reproduzidos antes da correcao, na previa isolada (banco efemero, contas sinteticas): professor que salvava o perfil sem nenhuma mudanca passava de ELIGIBLE para PENDING; a publicacao do periodo era recusada com mensagem generica; renomear periodo com oferta ativa retornava RESOURCE_IN_USE; nao havia rota para encerrar vinculo docente e a recusa de um reenvio mantinha o professor na lista do curso.
+
+| Verificacao | Estado | Evidencia ou limitacao |
+| --- | --- | --- |
+| Tipos e lint do backend | PASS | tsc -p tsconfig.check.json e eslint src test scripts. |
+| Testes unitarios do backend | PASS | 22 testes, 0 falhas. |
+| Integracao do backend | PASS | integration.test.ts: 35 testes, incluindo o novo CASE-071/072/074 e o CASE-018/019/020 ajustado para CASE-073; demais suites (privacy, documents, pagination, maintenance, preview-history, rooms): 20 testes. MongoDB 7.0.24 efemero. |
+| Frontend | PASS | tsc -b --noEmit, eslint src, vitest: 36 arquivos e 220 testes. |
+| Interface conectada a API real | PASS | npm run test:api: 17 testes (o README citava 18; a contagem da main tambem e 17). |
+| OpenAPI | PASS | Regenerado com a rota de encerramento de vinculo. |
+| Documentos | PASS | node scripts/check-docs.mjs: 74 cenarios planejados. |
+
+O CASE-011/016 continua cobrindo a exigencia de nova analise, agora com uma mudanca academica (nivel de conhecimento); a versao anterior usava a dedicacao, que deixou de exigir nova analise por decisao desta etapa. Limites: nao houve navegacao manual completa no navegador; a publicacao parcial do que esta elegivel nao foi adotada (a publicacao continua atomica).
