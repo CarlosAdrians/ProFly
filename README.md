@@ -181,7 +181,7 @@ A base de implementação foi localizada em `claude/pensive-dirac-5rithn`, no co
 
 ## O que falta para a entrega
 
-A base está validada para **demonstração acadêmica local** nos cenários documentados. A última verificação registrou **76 testes de backend, 18 da interface conectada e 220 gerais de frontend aprovados**, além de tipos, lint e build. O código do backend foi comparado novamente ao relatório nesta revisão e permanece igual. A captura das telas não substitui testes de fluxo nem homologação de produção.
+A base está validada para **demonstração acadêmica local** nos cenários documentados. A última verificação (09/11/2026, branch fix/auditoria-criticos) registrou **78 testes de backend, 17 da interface conectada e 220 gerais de frontend aprovados**, além de tipos, lint e build. A captura das telas não substitui testes de fluxo nem homologação de produção.
 
 Antes de considerar a operação institucional concluída:
 

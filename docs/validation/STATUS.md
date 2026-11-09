@@ -450,3 +450,15 @@ Problemas reproduzidos antes da correcao, na previa isolada (banco efemero, cont
 | Documentos | PASS | node scripts/check-docs.mjs: 74 cenarios planejados. |
 
 O CASE-011/016 continua cobrindo a exigencia de nova analise, agora com uma mudanca academica (nivel de conhecimento); a versao anterior usava a dedicacao, que deixou de exigir nova analise por decisao desta etapa. Limites: nao houve navegacao manual completa no navegador; a publicacao parcial do que esta elegivel nao foi adotada (a publicacao continua atomica).
+
+## Bugs da segunda varredura e testes de navegador — 09/11/2026
+
+Branch fix/auditoria-criticos. Bugs confirmados no navegador com Playwright (Edge, fora do repositorio) na previa isolada e corrigidos: cadastro aceitava curso sem disciplina e perfil incompleto ate a ultima etapa; pagina de confirmacao sem token mostrava link invalido em vez do reenvio; lista de solicitacoes sem nome do professor; analise sem as disciplinas pedidas; limite de carga salvo sem mensagem; comparacao sem posicao no ranking. Encontrados na leitura do codigo e corrigidos: inicio da coordenacao, calendario e alocacoes consultavam listas limitadas a 500 sem filtro de datas; tela de carga listava so os 100 primeiros usuarios; domingo com aula nao aparecia ao professor; curso de trabalho nao era lembrado. Cenario CASE-075.
+
+| Verificacao | Estado | Evidencia ou limitacao |
+| --- | --- | --- |
+| Backend | PASS | tsc, eslint, 22 testes unitarios e 56 de integracao (MongoDB 7.0.24 efemero). |
+| Frontend | PASS | tsc -b --noEmit, eslint, vitest 220 testes, build. |
+| Interface conectada a API real | PASS | npm run test:api: 17 testes. |
+| Navegador (Playwright + Edge) | PASS | 9 fluxos na previa isolada 3334/5175: cadastro completo com e-mail capturado localmente, tres validacoes do cadastro, analise, limite de carga, comparacao/publicacao, agenda do professor com troca de horario mantendo elegibilidade e bloqueio do encerramento de vinculo com aula futura. Testes mantidos fora do repositorio. |
+| Banco real (cluster) | NOT_RUN | URI recebida sem a senha do usuario do banco; nenhum acesso ao cluster foi feito. |
