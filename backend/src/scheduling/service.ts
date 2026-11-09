@@ -386,6 +386,7 @@ export class SchedulingService {
       const revision = plan.publishedRevision + 1;
       const assessments: ReturnType<typeof evaluate>[] = [];
       const retainedHistoricalIds: string[] = [];
+      const blocked: { record: Allocation; reasons: string[] }[] = [];
       for (const record of records) {
         if (record.slots.every((slot) => slot.endsAt <= this.now().toISOString())) {
           const previous = await this.published.findOne(
@@ -411,7 +412,34 @@ export class SchedulingService {
         const { result } = await this.assessment(courseId, record, session, record._id, key);
         assessments.push(result);
         if (result.eligibility !== 'ELIGIBLE')
-          conflict('PUBLICATION_NOT_ELIGIBLE', 'Reavalie as alocacoes antes de publicar.');
+          blocked.push({
+            record,
+            reasons: result.checks.filter((c) => c.state !== 'PASS').map((c) => c.reason),
+          });
+      }
+      if (blocked.length) {
+        // The publication stays atomic; tell the coordination exactly which drafts block it.
+        const fieldErrors: Record<string, string[]> = {};
+        for (const [index, { record, reasons }] of blocked.entries()) {
+          const [teacher, subject, group] = await Promise.all([
+            this.identity.users.findOne({ _id: record.teacherId }, { session }),
+            this.database.db
+              .collection<Academic<{ name: string }>>('subjects')
+              .findOne({ _id: record.subjectId }, { session }),
+            this.database.db
+              .collection<Academic<{ name: string }>>('groups')
+              .findOne({ _id: record.groupId }, { session }),
+          ]);
+          fieldErrors[`allocations.${index}`] = [
+            `${subject?.name ?? 'Disciplina'} · ${group?.name ?? 'Turma'} · ${teacher?.name ?? 'Professor'}: ${reasons.join(' ')}`,
+          ];
+        }
+        throw new AppError(
+          409,
+          'PUBLICATION_NOT_ELIGIBLE',
+          'Reavalie as alocacoes abaixo antes de publicar.',
+          fieldErrors,
+        );
       }
       const previous = await this.published.find({ courseId, periodId }, { session }).toArray();
       await this.published.deleteMany({ courseId, periodId }, { session });

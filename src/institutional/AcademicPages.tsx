@@ -28,7 +28,10 @@ export function ApiTeachersPage() {
       canReview ? `/courses/${courseId}/applications` : null,
     ),
     teachers = useApi<Items<User>>(courseId ? `/courses/${courseId}/teachers` : null),
-    [selected, setSelected] = useState('');
+    [selected, setSelected] = useState(''),
+    [unlinking, setUnlinking] = useState<User | null>(null),
+    [reason, setReason] = useState(''),
+    unlink = useAction();
   return (
     <>
       <Heading
@@ -45,10 +48,12 @@ export function ApiTeachersPage() {
           {applications.data?.items.map((a) => (
             <div className={s.row} key={a.id}>
               <div>
-                <Badge value={a.status} />
+                <strong>{a.teacherName ?? 'Professor'}</strong>
+                {a.teacherEmail && <p>{a.teacherEmail}</p>}
                 <p>
-                  Recebida em {new Date(a.createdAt).toLocaleDateString('pt-BR')} · Perfil v
-                  {a.profileVersion}
+                  <Badge value={a.status} /> Recebida em{' '}
+                  {new Date(a.createdAt).toLocaleDateString('pt-BR')} · {a.subjectIds.length}{' '}
+                  {a.subjectIds.length === 1 ? 'disciplina pedida' : 'disciplinas pedidas'}
                 </p>
               </div>
               <Button variant="secondary" onClick={() => setSelected(a.id)}>
@@ -75,10 +80,64 @@ export function ApiTeachersPage() {
                 {t.courses?.length ? ` · ${t.courses.map((course) => course.name).join(', ')}` : ''}
               </p>
             </div>
-            <Badge value="APPROVED" />
+            <div className={s.row}>
+              <Badge value="APPROVED" />
+              {canReview && (
+                <Button variant="secondary" onClick={() => setUnlinking(t)}>
+                  <Icon name="trash" />
+                  Encerrar vínculo
+                </Button>
+              )}
+            </div>
           </div>
         ))}
       </Panel>
+      <Modal
+        open={canReview && !!unlinking}
+        title="Encerrar vínculo com o curso"
+        busy={unlink.busy}
+        onClose={() => setUnlinking(null)}
+      >
+        {unlinking && (
+          <form
+            className={s.stack}
+            onSubmit={(e) => {
+              e.preventDefault();
+              void unlink.run(async () => {
+                await api(`/courses/${courseId}/teachers/${unlinking.id}/unlink`, {
+                  method: 'POST',
+                  body: { reason },
+                });
+                setUnlinking(null);
+                setReason('');
+                teachers.refresh();
+                applications.refresh();
+              });
+            }}
+          >
+            <p>
+              <strong>{unlinking.name}</strong> deixa de aparecer entre os professores deste curso e
+              não pode receber novas alocações. Aulas já realizadas continuam no histórico. Se ainda
+              houver aulas futuras, cancele ou reatribua e publique a revisão antes.
+            </p>
+            <p className={s.muted}>
+              O professor é avisado e pode solicitar entrada novamente depois.
+            </p>
+            <TextField
+              label="Motivo"
+              required
+              minLength={3}
+              maxLength={2000}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+            <ActionFeedback action={unlink} />
+            <Button type="submit" loading={unlink.busy}>
+              Confirmar encerramento
+            </Button>
+          </form>
+        )}
+      </Modal>
       <Modal
         open={canReview && !!selected}
         size="wide"
@@ -112,6 +171,7 @@ function ReviewForm({
 }) {
   const result = useApi<ReviewDetail>(`/courses/${courseId}/applications/${applicationId}`),
     competencies = useApi<Items<CatalogItem>>('/catalog/competencies?limit=100'),
+    subjects = useApi<Items<Subject>>(`/courses/${courseId}/subjects?limit=100`),
     [decision, setDecision] = useState('APPROVED'),
     [reason, setReason] = useState(''),
     [items, setItems] = useState<Record<string, string>>({}),
@@ -168,6 +228,19 @@ function ReviewForm({
           <h2>{detail.teacher.name}</h2>
           <p>{detail.teacher.email}</p>
           <Badge value={detail.application.status} />
+          <h3>Disciplinas pedidas neste curso</h3>
+          <p className={s.muted}>
+            A aprovação vale para estas disciplinas; somente elas poderão receber o professor na
+            alocação.
+          </p>
+          <ul>
+            {detail.application.subjectIds.map((id) => (
+              <li key={id}>
+                {subjects.data?.items.find((subject) => subject.id === id)?.name ??
+                  (subjects.loading ? 'Carregando…' : 'Disciplina indisponível')}
+              </li>
+            ))}
+          </ul>
           <ProfileSummary data={profile} />
           <h3>Disponibilidade declarada</h3>
           {profile.availability?.windows.map((w) => (

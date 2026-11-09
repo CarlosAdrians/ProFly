@@ -1032,10 +1032,10 @@ test('CASE-011/016: edicao de perfil torna analise antiga obsoleta e exige nova 
   assert.equal((await teacher.save(0, teacher.data)).statusCode, 200);
   const first = await teacher.submit(courseA, teacher.subjectA);
   assert.equal(first.statusCode, 201);
-  assert.equal(
-    (await teacher.save(1, { ...teacher.data, desiredWeeklyMinutes: 600 })).statusCode,
-    200,
-  );
+  const changedKnowledge = { ...teacher.data.knowledge![0]!, level: 5 };
+  const academic = await teacher.save(1, { ...teacher.data, knowledge: [changedKnowledge] });
+  assert.equal(academic.statusCode, 200, academic.body);
+  assert.equal(academic.json().reviewRequired, true);
   const stale = await app.inject({
     method: 'POST',
     url: `/api/v1/courses/${courseA}/applications/${first.json().id}/review`,
@@ -1056,11 +1056,11 @@ test('CASE-011/016: edicao de perfil torna analise antiga obsoleta e exige nova 
     headers: coordinatorHeaders,
   });
   assert.equal(detail.json().profile.profileVersion, 2);
-  assert.equal(detail.json().profile.data.desiredWeeklyMinutes, 600);
+  assert.equal(detail.json().profile.data.knowledge[0].level, 5);
   const old = await database.db
     .collection('profileVersions')
     .findOne({ teacherId: teacher.id, profileVersion: 1 });
-  assert.equal(old!.data.desiredWeeklyMinutes, 1200);
+  assert.equal(old!.data.knowledge[0].level, 4);
   const changes = await app.inject({
     method: 'POST',
     url: `/api/v1/courses/${courseA}/applications/${first.json().id}/review`,
@@ -1272,17 +1272,46 @@ test('CASE-018/019/020: ofertas exigem curso, periodo e blocos compativeis e pre
   assert.equal(await database.db.collection('offerings').countDocuments({ code: 'OFFER-TEST' }), 0);
   const saved = await create(url, offering);
   assert.equal(saved.courseId, courseA);
-  assert.equal(
-    (
-      await app.inject({
-        method: 'PUT',
-        url: `/api/v1/admin/periods/${period.id}`,
-        headers: adminHeaders,
-        payload: { expectedVersion: 1, data: periodData },
-      })
-    ).statusCode,
-    409,
-  );
+  const updatePeriod = (expectedVersion: number, data: object) =>
+    app.inject({
+      method: 'PUT',
+      url: `/api/v1/admin/periods/${period.id}`,
+      headers: adminHeaders,
+      payload: { expectedVersion, data },
+    });
+  // Changes that would leave the active offering outside the grade remain refused.
+  for (const data of [
+    { ...periodData, blocks: [periodData.blocks[1]] },
+    { ...periodData, endsOn: '2026-11-30' },
+    { ...periodData, timeZone: 'America/Sao_Paulo' },
+    { ...periodData, active: false },
+  ]) {
+    const refused = await updatePeriod(1, data);
+    assert.equal(refused.statusCode, 409, refused.body);
+    assert.equal(refused.json().error.code, 'RESOURCE_IN_USE');
+  }
+  // Renaming, reviewing the grade and adding a block keep the offering valid.
+  const reviewed = await updatePeriod(1, {
+    ...periodData,
+    name: 'Periodo sintetico revisado',
+    calendarStatus: 'REVIEWED',
+    blocks: [...periodData.blocks, { ...block, startsAt: '20:30', endsAt: '21:20' }],
+  });
+  assert.equal(reviewed.statusCode, 200, reviewed.body);
+  const renamedGroup = await app.inject({
+    method: 'PUT',
+    url: `/api/v1/courses/${courseA}/groups/${groupA.id}`,
+    headers: adminHeaders,
+    payload: { expectedVersion: 1, data: { ...groupData, name: 'Turma renomeada' } },
+  });
+  assert.equal(renamedGroup.statusCode, 200, renamedGroup.body);
+  const disabledGroup = await app.inject({
+    method: 'PUT',
+    url: `/api/v1/courses/${courseA}/groups/${groupA.id}`,
+    headers: adminHeaders,
+    payload: { expectedVersion: 2, data: { ...groupData, active: false } },
+  });
+  assert.equal(disabledGroup.statusCode, 409, disabledGroup.body);
   assert.equal(
     (
       await app.inject({
@@ -2274,4 +2303,286 @@ test('CASE-025/036: periodos com IDs diferentes e datas sobrepostas preservam re
     await database.db.collection('allocations').countDocuments({ teacherId: f.teacher.id }),
     1,
   );
+});
+
+test('CASE-071/072/074: horario mantem analise, publicacao aponta bloqueios e vinculo pode ser encerrado', async () => {
+  const f = await schedulingFixture('review-carry');
+  const allocationData = {
+    offeringId: f.offerings[0].id,
+    teacherId: f.teacher.id,
+    meetings: [f.meeting],
+  };
+  const created = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/allocations`,
+    headers: coordinatorHeaders,
+    payload: allocationData,
+  });
+  assert.equal(created.statusCode, 201, created.body);
+  const eligibility = async () => {
+    const result = await app.inject({
+      method: 'POST',
+      url: `/api/v1/courses/${courseA}/eligibility`,
+      headers: coordinatorHeaders,
+      payload: { ...allocationData, allocationId: created.json().id },
+    });
+    assert.equal(result.statusCode, 200, result.body);
+    return result.json().eligibility as string;
+  };
+  assert.equal(await eligibility(), 'ELIGIBLE');
+
+  // CASE-071: only availability/dedication changes; the analysis remains valid in both courses.
+  const availability = f.teacher.data.availability!;
+  const scheduleOnly = await f.teacher.save(1, {
+    ...f.teacher.data,
+    desiredWeeklyMinutes: 900,
+    availability: {
+      ...availability,
+      windows: [
+        ...availability.windows,
+        { ...availability.windows[0]!, id: randomUUID(), weekday: 2 },
+      ],
+    },
+  });
+  assert.equal(scheduleOnly.statusCode, 200, scheduleOnly.body);
+  assert.equal(scheduleOnly.json().reviewRequired, false);
+  assert.equal(await eligibility(), 'ELIGIBLE');
+  const carried = await database.db
+    .collection('reviews')
+    .find({ teacherId: f.teacher.id, profileVersion: 2 })
+    .toArray();
+  assert.equal(carried.length, 2);
+  assert.ok(carried.every((review) => review.carriedFromVersion === 1));
+  const applications = await database.db
+    .collection('applications')
+    .find({ teacherId: f.teacher.id })
+    .toArray();
+  assert.ok(applications.every((a) => a.status === 'APPROVED' && a.profileVersion === 2));
+
+  // An academic change still requires a new analysis.
+  const academic = await f.teacher.save(2, {
+    ...f.teacher.data,
+    knowledge: [{ ...f.teacher.data.knowledge![0]!, level: 5 }],
+  });
+  assert.equal(academic.statusCode, 200, academic.body);
+  assert.equal(academic.json().reviewRequired, true);
+  assert.equal(await eligibility(), 'PENDING');
+
+  // CASE-072: publication remains atomic but names the blocking allocation.
+  const plan = (
+    await app.inject({ url: `/api/v1/courses/${courseA}/planning`, headers: coordinatorHeaders })
+  )
+    .json()
+    .plans.find((p: { periodId: string }) => p.periodId === f.period.id);
+  const publish = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/periods/${f.period.id}/publish`,
+    headers: coordinatorHeaders,
+    payload: { expectedVersion: plan.version },
+  });
+  assert.equal(publish.statusCode, 409, publish.body);
+  const blocking = publish.json().error;
+  assert.equal(blocking.code, 'PUBLICATION_NOT_ELIGIBLE');
+  assert.match(blocking.fieldErrors['allocations.0'][0], /Professor de Teste/);
+  assert.match(blocking.fieldErrors['allocations.0'][0], /Perfil atual precisa ser analisado/);
+
+  // CASE-074: unlinking requires a course coordinator and no future classes.
+  const unlink = (headers: Record<string, string>) =>
+    app.inject({
+      method: 'POST',
+      url: `/api/v1/courses/${courseA}/teachers/${f.teacher.id}/unlink`,
+      headers,
+      payload: { reason: 'Encerramento sintetico' },
+    });
+  assert.equal((await unlink(secondCoordinatorHeaders)).statusCode, 404);
+  assert.equal((await unlink(f.teacher.headers)).statusCode, 403);
+  const busy = await unlink(coordinatorHeaders);
+  assert.equal(busy.statusCode, 409, busy.body);
+  assert.equal(busy.json().error.code, 'TEACHER_HAS_ALLOCATIONS');
+  const cancelled = await app.inject({
+    method: 'DELETE',
+    url: `/api/v1/courses/${courseA}/allocations/${created.json().id}`,
+    headers: coordinatorHeaders,
+    payload: { expectedVersion: created.json().version },
+  });
+  assert.equal(cancelled.statusCode, 200, cancelled.body);
+  const done = await unlink(coordinatorHeaders);
+  assert.equal(done.statusCode, 200, done.body);
+  const listed = await app.inject({
+    url: `/api/v1/courses/${courseA}/teachers`,
+    headers: coordinatorHeaders,
+  });
+  assert.ok(!listed.body.includes(f.teacher.id));
+  const otherCourse = await database.db
+    .collection('memberships')
+    .findOne({ userId: f.teacher.id, courseId: courseB, role: 'teacher' });
+  assert.equal(otherCourse?.active, true);
+  const closed = await database.db
+    .collection('applications')
+    .findOne({ teacherId: f.teacher.id, courseId: courseA });
+  assert.equal(closed?.status, 'REJECTED');
+  assert.equal((await unlink(coordinatorHeaders)).statusCode, 404);
+  const again = await f.teacher.submit(courseA, f.teacher.subjectA, closed!.version, 3);
+  assert.equal(again.statusCode, 201, again.body);
+});
+
+test('CASE-075: listas da coordenacao trazem quem pediu e aceitam busca e filtros por data', async () => {
+  const f = await schedulingFixture('lists-scope');
+  const list = await app.inject({
+    url: `/api/v1/courses/${courseA}/applications`,
+    headers: coordinatorHeaders,
+  });
+  assert.equal(list.statusCode, 200, list.body);
+  const own = list
+    .json()
+    .items.find((item: { teacherId: string }) => item.teacherId === f.teacher.id);
+  assert.equal(own.teacherName, 'Professor de Teste');
+  assert.equal(own.teacherEmail, 'lists-scope@profly.test');
+
+  const search = await app.inject({
+    url: '/api/v1/admin/users?role=teacher&q=LISTS-SCOPE%40',
+    headers: adminHeaders,
+  });
+  assert.equal(search.statusCode, 200, search.body);
+  assert.deepEqual(
+    search.json().items.map((user: { id: string }) => user.id),
+    [f.teacher.id],
+  );
+  const regex = await app.inject({ url: '/api/v1/admin/users?q=.*', headers: adminHeaders });
+  assert.equal(regex.statusCode, 200);
+  assert.equal(regex.json().items.length, 0, 'busca trata o texto literalmente');
+  assert.equal(
+    (await app.inject({ url: '/api/v1/admin/users?role=root', headers: adminHeaders })).statusCode,
+    422,
+  );
+
+  const created = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/allocations`,
+    headers: coordinatorHeaders,
+    payload: { offeringId: f.offerings[0].id, teacherId: f.teacher.id, meetings: [f.meeting] },
+  });
+  assert.equal(created.statusCode, 201, created.body);
+  const planning = async (query: string) => {
+    const result = await app.inject({
+      url: `/api/v1/courses/${courseA}/planning?periodId=${f.period.id}&${query}`,
+      headers: coordinatorHeaders,
+    });
+    assert.equal(result.statusCode, 200, result.body);
+    return result.json().allocations.length as number;
+  };
+  assert.equal(await planning(`from=${f.from}&until=${f.until}`), 1);
+  const after = new Date(`${f.until}T12:00:00Z`);
+  after.setUTCDate(after.getUTCDate() + 1);
+  assert.equal(await planning(`from=${after.toISOString().slice(0, 10)}`), 0);
+  assert.equal(
+    (
+      await app.inject({
+        url: `/api/v1/courses/${courseA}/planning?from=${f.until}&until=${f.from}`,
+        headers: coordinatorHeaders,
+      })
+    ).statusCode,
+    422,
+  );
+  for (const [status, code] of [
+    ['PLANNED', 200],
+    ['DONE', 422],
+  ] as const)
+    assert.equal(
+      (
+        await app.inject({
+          url: `/api/v1/courses/${courseA}/occurrences?status=${status}`,
+          headers: coordinatorHeaders,
+        })
+      ).statusCode,
+      code,
+    );
+});
+
+test('CASE-076: sem e-mail configurado, o cadastro completo vai direto para a analise da coordenacao', async () => {
+  const competency = await app.inject({
+    method: 'POST',
+    url: '/api/v1/admin/competencies',
+    headers: adminHeaders,
+    payload: { code: 'DIRECT-ENROLL', name: 'Competencia direta', active: true },
+  });
+  assert.equal(competency.statusCode, 201, competency.body);
+  const subject = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/subjects`,
+    headers: adminHeaders,
+    payload: { code: 'DIRECT-ENROLL', name: 'Disciplina direta', active: true, criteria: null },
+  });
+  assert.equal(subject.statusCode, 201, subject.body);
+  const legal = (await app.inject('/api/v1/catalog/legal')).json().version;
+  const unconfigured = await buildApp(config, database);
+  try {
+    const email = 'direct-enroll@profly.test';
+    const enrolled = await unconfigured.inject({
+      method: 'POST',
+      url: '/api/v1/auth/enroll',
+      remoteAddress: '10.9.0.1',
+      payload: {
+        name: 'Professor Cadastro Direto',
+        email,
+        password: 'ExampleTest2026',
+        legal: { version: legal, termsAccepted: true, privacyAcknowledged: true },
+        requests: [{ courseId: courseA, subjectIds: [subject.json().id] }],
+        profile: {
+          contact: { phone: '83999990000' },
+          education: [
+            {
+              id: randomUUID(),
+              level: 'MASTER',
+              field: 'Direito',
+              institution: 'Instituicao de Teste',
+              completedYear: 2020,
+            },
+          ],
+          knowledge: [{ id: randomUUID(), competencyId: competency.json().id, level: 3 }],
+          teaching: { status: 'NONE', entries: [] },
+          professional: { status: 'NONE', entries: [] },
+          availability: { status: 'NONE', timeZone: 'America/Fortaleza', windows: [] },
+        },
+      },
+    });
+    assert.equal(enrolled.statusCode, 201, enrolled.body);
+    assert.equal(enrolled.json().verificationRequired, false);
+    assert.equal(enrolled.json().user.state, 'ACTIVE');
+    assert.equal(
+      await database.db
+        .collection('registrationIntents')
+        .countDocuments({ _id: enrolled.json().user.id }),
+      0,
+    );
+    const login = await unconfigured.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      remoteAddress: '10.9.0.1',
+      payload: { email, password: 'ExampleTest2026' },
+    });
+    assert.equal(login.statusCode, 200, login.body);
+    // The coordination sees the request and decides; no course access before that.
+    const list = await app.inject({
+      url: `/api/v1/courses/${courseA}/applications`,
+      headers: coordinatorHeaders,
+    });
+    const pending = list
+      .json()
+      .items.find((item: { teacherId: string }) => item.teacherId === enrolled.json().user.id);
+    assert.equal(pending.status, 'SUBMITTED');
+    assert.equal(pending.teacherName, 'Professor Cadastro Direto');
+    assert.equal(
+      await database.db
+        .collection('memberships')
+        .countDocuments({ userId: enrolled.json().user.id, role: 'teacher' }),
+      0,
+    );
+    const notice = await database.db
+      .collection('notices')
+      .countDocuments({ resourceId: pending.id, kind: 'APPLICATION' });
+    assert.ok(notice > 0, 'coordenacao recebe aviso no painel');
+  } finally {
+    await unconfigured.close();
+  }
 });

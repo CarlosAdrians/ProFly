@@ -364,14 +364,38 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
   app.get('/api/v1/courses/:courseId/planning', { preHandler: coordinator }, async (request) => {
     const courseId = routeId(request, 'courseId');
     await identity.course(identity.actor(request), courseId);
-    const query = parse(z.strictObject({ periodId: id.optional() }), request.query);
+    const query = parse(
+      z
+        .strictObject({ periodId: id.optional(), from: date.optional(), until: date.optional() })
+        .refine((q) => !q.from || !q.until || q.from <= q.until),
+      request.query,
+    );
+    // Screens ask only for the dates they show, so a course with many past semesters does not
+    // hit the aggregate limit below.
+    const range =
+      query.from || query.until
+        ? {
+            slots: {
+              $elemMatch: {
+                date: {
+                  ...(query.from ? { $gte: query.from } : {}),
+                  ...(query.until ? { $lte: query.until } : {}),
+                },
+              },
+            },
+          }
+        : {};
     const filter = { courseId, ...(query.periodId ? { periodId: query.periodId } : {}) };
     const allocations = await service.allocations
-      .find({ ...filter, state: { $ne: 'CANCELLED' } })
+      .find({ ...filter, ...range, state: { $ne: 'CANCELLED' } })
       .sort({ _id: 1 })
       .limit(501)
       .toArray();
-    const published = await service.published.find(filter).sort({ _id: 1 }).limit(501).toArray();
+    const published = await service.published
+      .find({ ...filter, ...range })
+      .sort({ _id: 1 })
+      .limit(501)
+      .toArray();
     const plans = await service.plans.find(filter).sort({ _id: 1 }).limit(101).toArray();
     if (allocations.length > 500 || published.length > 500 || plans.length > 100)
       throw new AppError(
@@ -488,6 +512,7 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
             .default(500),
           from: date.optional(),
           until: date.optional(),
+          status: z.enum(['PLANNED', 'COMPLETED', 'CANCELLED', 'RESCHEDULED']).optional(),
         })
         .refine((q) => !q.from || !q.until || q.from <= q.until),
       request.query,
@@ -495,6 +520,7 @@ export function schedulingRoutes(app: FastifyInstance, identity: IdentityService
     const values = await service.occurrences
       .find({
         courseId,
+        ...(query.status ? { status: query.status } : {}),
         ...(query.from || query.until
           ? {
               date: {

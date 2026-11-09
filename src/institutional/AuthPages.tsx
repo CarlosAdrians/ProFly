@@ -1,7 +1,7 @@
 import { PrivacyInformation } from './PrivacyPage';
 import { useAction } from './actions';
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { AuthLayout } from '../layouts/AuthLayout/AuthLayout';
 import { Button } from '../components/ui/Button/Button';
 import { TextField } from '../components/ui/TextField/TextField';
@@ -16,7 +16,7 @@ import { useApi, useApiSession } from './hooks';
 import type { CatalogItem, Items, ProfileData } from './types';
 import { ActionFeedback, LoadingError, Panel } from './ui';
 import { ProfileFields } from './ProfileFields';
-import { emptyProfile } from './profileModel';
+import { academicProblems, emptyProfile, missingForRequests } from './profileModel';
 import authStyles from '../features/auth/pages/AuthForm.module.css';
 import s from './Portal.module.css';
 export function ApiLoginPage() {
@@ -122,17 +122,20 @@ function TokenForm({ kind }: { kind: 'verify' | 'reset' | 'invite' }) {
   const [token] = useState(
     () => new URLSearchParams(window.location.hash.slice(1)).get('token') ?? '',
   );
+  const location = useLocation();
   const [password, setPassword] = useState(''),
     [confirmation, setConfirmation] = useState(''),
     [done, setDone] = useState(false),
-    [email, setEmail] = useState('');
+    [email, setEmail] = useState(() => (location.state as { email?: string } | null)?.email ?? '');
   const action = useAction(),
     auth = useApiSession();
   useEffect(() => {
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
   }, []);
   const valid = /^[a-f0-9]{64}$/.test(token),
-    newPassword = kind !== 'verify';
+    newPassword = kind !== 'verify',
+    // Opening the page without a link token is the resend flow, not an error.
+    resendOnly = kind === 'verify' && !valid;
   return (
     <AuthLayout variant="backdrop">
       <title>{kind === 'verify' ? 'Confirmar e-mail' : 'Definir senha'} | ProFly</title>
@@ -180,7 +183,9 @@ function TokenForm({ kind }: { kind: 'verify' | 'reset' | 'invite' }) {
           <p className={s.muted}>
             {valid
               ? 'Confirme a ação abaixo. O link expira em uma hora e só pode ser utilizado uma vez.'
-              : 'O link está ausente ou inválido. Abra o link mais recente enviado ao seu e-mail.'}
+              : resendOnly
+                ? 'Informe o e-mail usado no cadastro para receber um novo link de confirmação. O link vale por uma hora.'
+                : 'O link está ausente ou inválido. Abra o link mais recente enviado ao seu e-mail.'}
           </p>
           {newPassword && (
             <>
@@ -206,11 +211,13 @@ function TokenForm({ kind }: { kind: 'verify' | 'reset' | 'invite' }) {
             </>
           )}
           <ActionFeedback action={action} />
-          <Button type="submit" loading={action.busy} disabled={!valid}>
-            {newPassword ? 'Salvar nova senha' : 'Confirmar e-mail'}
-          </Button>
+          {!resendOnly && (
+            <Button type="submit" loading={action.busy} disabled={!valid}>
+              {newPassword ? 'Salvar nova senha' : 'Confirmar e-mail'}
+            </Button>
+          )}
           {kind === 'verify' && (
-            <details>
+            <details open={resendOnly || undefined}>
               <summary>Preciso de um novo link</summary>
               <TextField
                 label="E-mail de cadastro"
@@ -352,19 +359,37 @@ export function ApiRegisterPage() {
     [terms, setTerms] = useState(false),
     [privacy, setPrivacy] = useState(false),
     [legal, setLegal] = useState<'terms' | 'privacy' | null>(null),
-    [created, setCreated] = useState(false);
+    [created, setCreated] = useState(false),
+    [verificationRequired, setVerificationRequired] = useState(true);
   const action = useAction(),
     serverLegal = useApi<{ version: string }>('/catalog/legal');
   const steps = ['Sua conta', 'Perfil acadêmico', 'Cursos e horários', 'Revisão'];
   async function submit(e: FormEvent) {
     e.preventDefault();
-    await action.run(async () => {
+    const ok = await action.run(async () => {
       if (step === 0) {
         if (!isValidPhone(data.contact?.phone ?? ''))
           throw new Error('Informe um telefone nacional com DDD válido.');
         if (password !== confirmation || !/(?=.*\p{L})(?=.*[0-9])/u.test(password))
           throw new Error(
             'A senha precisa ter 8 a 72 caracteres, letra e número. Confirme a mesma senha.',
+          );
+      }
+      if (step === 1) {
+        const problems = academicProblems(data);
+        if (problems.length) throw new Error(problems.join(' '));
+      }
+      if (step === 2) {
+        if (requests.some((r) => !r.subjectIds.length))
+          throw new Error(
+            'Marque ao menos uma disciplina em cada curso selecionado, ou desmarque o curso.',
+          );
+        if (data.availability?.status === 'PROVIDED' && !data.availability.windows.length)
+          throw new Error('Adicione ao menos um horário pretendido ou mude a disponibilidade.');
+        const missing = requests.length ? missingForRequests(data) : [];
+        if (missing.length)
+          throw new Error(
+            `Para pedir entrada em um curso, informe: ${missing.join(', ')}. Volte ao perfil acadêmico ou desmarque os cursos para pedir depois, pela sua conta.`,
           );
       }
       if (step < 3) {
@@ -378,7 +403,7 @@ export function ApiRegisterPage() {
         throw new Error(
           'Os termos foram atualizados ou não puderam ser conferidos. Atualize a página antes de continuar.',
         );
-      await api('/auth/enroll', {
+      const result = await api<{ verificationRequired: boolean }>('/auth/enroll', {
         method: 'POST',
         body: {
           name,
@@ -391,8 +416,11 @@ export function ApiRegisterPage() {
       });
       setPassword('');
       setConfirmation('');
+      setVerificationRequired(result.verificationRequired !== false);
       setCreated(true);
     });
+    // The message sits above the form; long steps would otherwise hide it below the fold.
+    if (!ok) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   return (
     <main className={s.register}>
@@ -401,14 +429,27 @@ export function ApiRegisterPage() {
         <img src="/images/unifacisa-logo.png" alt="UNIFACISA" />
         <Link to="/login">Voltar ao login</Link>
       </div>
-      {created ? (
+      {created && !verificationRequired ? (
+        <Panel title="Cadastro enviado">
+          <p>
+            Sua conta foi criada.{' '}
+            {requests.length
+              ? 'As solicitações seguiram para a coordenação de cada curso, que vai aprovar ou recusar sua entrada.'
+              : 'Entre para completar seu perfil e pedir entrada nos cursos quando quiser.'}
+          </p>
+          <p>Você já pode entrar e acompanhar a análise em Meu início.</p>
+          <Link to="/login">Ir para o login</Link>
+        </Panel>
+      ) : created ? (
         <Panel title="Confirme seu e-mail">
           <p>
             Seu perfil foi salvo. Abra o link enviado para {email} para confirmar sua identidade.
             Depois disso, as solicitações selecionadas seguirão para cada coordenação.
           </p>
           <p>A confirmação do e-mail não aprova sua entrada nos cursos.</p>
-          <Link to="/verificar-email">Reenviar confirmação</Link>
+          <Link to="/verificar-email" state={{ email }}>
+            Reenviar confirmação
+          </Link>
         </Panel>
       ) : (
         <Panel>

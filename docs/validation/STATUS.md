@@ -1,6 +1,6 @@
 # Estado da validacao
 
-Atualizado em 09/11/2026. Branch da etapa atual: feat/revisao-final-profly. O histórico das etapas anteriores permanece abaixo.
+Atualizado em 09/11/2026. Branch da etapa atual: fix/auditoria-criticos. O histórico das etapas anteriores permanece abaixo.
 
 ## Evidencia disponivel
 
@@ -432,3 +432,47 @@ Verificacoes executadas:
 - `PROFLY_RUN_INTEGRATION=1 corepack pnpm test:integration`: PASS final, 54 testes, zero falhas/pulos/todo, em MongoDB efemero `_test`. Duas repeticoes anteriores revelaram apenas problemas nas novas assercoes de teste (timestamp variavel e fixture sintetica removida); ambos foram corrigidos antes da execucao final. Nenhum Atlas ou banco institucional foi usado.
 
 Pendencias: confirmar com o RH a custodia/migracao e retencao dos registros legados; revisar se uma integracao futura deve fornecer somente indisponibilidade operacional minima; validar visualmente em dispositivos reais; configurar remetente, HTTPS, backup/restore e MongoDB institucional com o integrante responsavel. O valor real de `MONGODB_URI` nao foi registrado em logs ou documentos.
+
+## Correcoes criticas da auditoria — 09/11/2026
+
+Branch fix/auditoria-criticos, a partir da main com a revisao final mesclada. Escopo e decisoes em [BACKEND_V1.md](../specs/BACKEND_V1.md), secao Correcoes da auditoria; cenarios CASE-071..074.
+
+Problemas reproduzidos antes da correcao, na previa isolada (banco efemero, contas sinteticas): professor que salvava o perfil sem nenhuma mudanca passava de ELIGIBLE para PENDING; a publicacao do periodo era recusada com mensagem generica; renomear periodo com oferta ativa retornava RESOURCE_IN_USE; nao havia rota para encerrar vinculo docente e a recusa de um reenvio mantinha o professor na lista do curso.
+
+| Verificacao | Estado | Evidencia ou limitacao |
+| --- | --- | --- |
+| Tipos e lint do backend | PASS | tsc -p tsconfig.check.json e eslint src test scripts. |
+| Testes unitarios do backend | PASS | 22 testes, 0 falhas. |
+| Integracao do backend | PASS | integration.test.ts: 35 testes, incluindo o novo CASE-071/072/074 e o CASE-018/019/020 ajustado para CASE-073; demais suites (privacy, documents, pagination, maintenance, preview-history, rooms): 20 testes. MongoDB 7.0.24 efemero. |
+| Frontend | PASS | tsc -b --noEmit, eslint src, vitest: 36 arquivos e 220 testes. |
+| Interface conectada a API real | PASS | npm run test:api: 17 testes (o README citava 18; a contagem da main tambem e 17). |
+| OpenAPI | PASS | Regenerado com a rota de encerramento de vinculo. |
+| Documentos | PASS | node scripts/check-docs.mjs: 74 cenarios planejados. |
+
+O CASE-011/016 continua cobrindo a exigencia de nova analise, agora com uma mudanca academica (nivel de conhecimento); a versao anterior usava a dedicacao, que deixou de exigir nova analise por decisao desta etapa. Limites: nao houve navegacao manual completa no navegador; a publicacao parcial do que esta elegivel nao foi adotada (a publicacao continua atomica).
+
+## Bugs da segunda varredura e testes de navegador — 09/11/2026
+
+Branch fix/auditoria-criticos. Bugs confirmados no navegador com Playwright (Edge, fora do repositorio) na previa isolada e corrigidos: cadastro aceitava curso sem disciplina e perfil incompleto ate a ultima etapa; pagina de confirmacao sem token mostrava link invalido em vez do reenvio; lista de solicitacoes sem nome do professor; analise sem as disciplinas pedidas; limite de carga salvo sem mensagem; comparacao sem posicao no ranking. Encontrados na leitura do codigo e corrigidos: inicio da coordenacao, calendario e alocacoes consultavam listas limitadas a 500 sem filtro de datas; tela de carga listava so os 100 primeiros usuarios; domingo com aula nao aparecia ao professor; curso de trabalho nao era lembrado. Cenario CASE-075.
+
+| Verificacao | Estado | Evidencia ou limitacao |
+| --- | --- | --- |
+| Backend | PASS | tsc, eslint, 22 testes unitarios e 56 de integracao (MongoDB 7.0.24 efemero). |
+| Frontend | PASS | tsc -b --noEmit, eslint, vitest 220 testes, build. |
+| Interface conectada a API real | PASS | npm run test:api: 17 testes. |
+| Navegador (Playwright + Edge) | PASS | 9 fluxos na previa isolada 3334/5175: cadastro completo com e-mail capturado localmente, tres validacoes do cadastro, analise, limite de carga, comparacao/publicacao, agenda do professor com troca de horario mantendo elegibilidade e bloqueio do encerramento de vinculo com aula futura. Testes mantidos fora do repositorio. |
+| Banco real (cluster) | NOT_RUN | URI recebida sem a senha do usuario do banco; nenhum acesso ao cluster foi feito. |
+
+## Banco real, cadastro sem e-mail e manual — 09/11/2026
+
+Branch fix/auditoria-criticos. Cluster MongoDB Atlas do projeto acessado com a URI no formato direto (o Node no Windows recusou a consulta SRV de `mongodb+srv`). Dados de apresentacao ficticios criados pela API no banco `profly_development` com um administrador proprio de demonstracao, sem alterar as contas existentes. Testes de navegador executados em banco separado `profly_e2e_test` do mesmo cluster. Decisao do usuario registrada como CASE-076: sem envio de e-mail, o cadastro completo vai direto a analise da coordenacao.
+
+| Verificacao | Estado | Evidencia ou limitacao |
+| --- | --- | --- |
+| Navegador no cluster real (Playwright + Edge) | PASS | 9 fluxos em `profly_e2e_test` (cadastro com e-mail capturado localmente, validacoes, analise, carga, comparacao/publicacao, agenda, troca de horario e encerramento de vinculo) e o fluxo sem e-mail (conta criada, login e pedido no painel da coordenacao). |
+| Dados da apresentacao no cluster | PASS | Painel da coordenacao com dois pedidos, comparacao com ranking e professor com aula publicada conferidos no navegador. |
+| Backend | PASS | tsc, eslint, 22 unitarios, integration.test.ts 37 testes e demais suites de integracao (ver comando registrado no README). |
+| Frontend | PASS | tsc, eslint, vitest 220, build, interface conectada 17. |
+| Manual do usuario | PASS | docs/MANUAL_USUARIO.md com 24 telas em docs/manual/telas; check-docs aprovado. |
+
+Limites: sem envio de e-mail, a titularidade do endereco informado nao e comprovada; recuperacao de senha continua dependendo do envio. A senha do usuario do banco foi compartilhada na sessao de trabalho e deve ser trocada no Atlas.

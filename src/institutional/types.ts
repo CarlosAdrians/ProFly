@@ -42,6 +42,9 @@ export interface Application extends RecordBase {
   subjectIds: string[];
   status: 'SUBMITTED' | 'APPROVED' | 'CHANGES_REQUESTED' | 'REJECTED';
   reason?: string;
+  /** Present in the coordination list only. */
+  teacherName?: string | null;
+  teacherEmail?: string | null;
 }
 export interface ReviewDetail {
   application: Application;
@@ -118,4 +121,6 @@ export type Absence = RecordBase & {
 export type Notice = RecordBase & { title: string; kind: string; read: boolean };
 export interface Items<T> {
   items: T[];
+  /** Offset of the next page when the server has more items. */
+  nextOffset?: number | null;
 }

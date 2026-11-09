@@ -513,11 +513,20 @@ export function identityRoutes(app: FastifyInstance, service: IdentityService) {
             .transform(Number)
             .pipe(z.number().int().min(0).max(10000))
             .default(0),
+          role: z.enum(['admin', 'coordinator', 'teacher']).optional(),
+          q: z.string().trim().min(1).max(100).optional(),
         }),
         request.query,
       );
+      // Search by name or e-mail so lists beyond one page stay reachable in the UI.
+      const pattern = query.q
+        ? new RegExp(query.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+        : null;
       const users = await service.users
-        .find()
+        .find({
+          ...(query.role ? { roles: query.role } : {}),
+          ...(pattern ? { $or: [{ name: pattern }, { email: pattern }] } : {}),
+        })
         .sort({ createdAt: 1, _id: 1 })
         .skip(query.offset)
         .limit(query.limit + 1)

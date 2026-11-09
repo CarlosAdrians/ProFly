@@ -50,13 +50,15 @@ export function ApiCalendarPage() {
       : view === 'WEEK'
         ? Array.from({ length: 7 }, (_, i) => addDate(monday(date), i))
         : monthDates(date);
-  const dates = rawDates.filter((day) => weekday(day) !== 7);
-  const from = dates[0] ?? date,
-    until = dates.at(-1) ?? date;
+  // Fetch the whole visible range, Sundays included, so classes there are not lost.
+  const from = rawDates[0] ?? date,
+    until = rawDates.at(-1) ?? date;
   const schedule = useApi<Items<Occurrence>>(
       teacher ? `/me/schedule?from=${from}&until=${until}` : null,
     ),
-    planning = useApi<Planning>(!teacher && courseId ? `/courses/${courseId}/planning` : null),
+    planning = useApi<Planning>(
+      !teacher && courseId ? `/courses/${courseId}/planning?from=${from}&until=${until}` : null,
+    ),
     occurrences = useApi<Items<Occurrence>>(
       !teacher && courseId
         ? `/courses/${courseId}/occurrences?from=${from}&until=${until}&limit=500`
@@ -108,7 +110,19 @@ export function ApiCalendarPage() {
             })),
         ),
       ];
+  // The grid shows Monday to Saturday. A Sunday appears on its own (day view) only when it
+  // has classes; the notice below links to it from the week and month views.
+  const dates = rawDates.filter(
+    (day) => weekday(day) !== 7 || (view === 'DAY' && pins.some((pin) => pin.date === day)),
+  );
   const shownPins = pins.filter((pin) => dates.includes(pin.date) && inShift(pin.startsAt));
+  const sundays = [
+    ...new Set(
+      pins
+        .filter((pin) => weekday(pin.date) === 7 && !dates.includes(pin.date))
+        .map((pin) => pin.date),
+    ),
+  ].sort();
   const disciplines = teacher
     ? [
         ...new Map(
@@ -240,6 +254,12 @@ export function ApiCalendarPage() {
               retry={teacher ? schedule.refresh : planning.refresh}
             />
             {!teacher && <LoadingError {...occurrences} retry={occurrences.refresh} />}
+            {!teacher && occurrences.data?.nextOffset != null && (
+              <p className={s.muted}>
+                Há mais aulas passadas do que cabem nesta visão. Use a semana ou o dia para ver
+                todas.
+              </p>
+            )}
             <ActionFeedback action={action} />
             {teacher && dates.length > 0 && schedule.data && !schedule.error && (
               <p className={`${s.calendarSummary} ${c.summary}`}>
@@ -263,6 +283,23 @@ export function ApiCalendarPage() {
               </ul>
             )}
           </div>
+          {sundays.length > 0 && (
+            <div className={s.row} role="note">
+              <p>Há aulas no domingo neste período.</p>
+              {sundays.map((day) => (
+                <Button
+                  key={day}
+                  variant="secondary"
+                  onClick={() => {
+                    setView('DAY');
+                    setDate(day);
+                  }}
+                >
+                  Ver domingo {dayLabel(day)}
+                </Button>
+              ))}
+            </div>
+          )}
           {dates.length === 0 && (
             <p className={s.empty}>
               Selecione uma data de segunda a sábado para consultar as aulas.

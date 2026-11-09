@@ -12,6 +12,7 @@ import {
   offeringInput,
   periodInput,
   subjectInput,
+  type OfferingData,
   type PeriodData,
   type SubjectData,
 } from './contracts.js';
@@ -187,16 +188,45 @@ export function academicRoutes(app: FastifyInstance, identity: IdentityService) 
       conflict('RESOURCE_IN_USE');
   });
   resource('periods', periodInput, false, async (body, _courseId, session, recordId) => {
-    if (
-      recordId &&
-      (await db.db
-        .collection('offerings')
-        .countDocuments({ periodId: recordId, active: true }, { session }))
-    )
-      conflict(
-        'RESOURCE_IN_USE',
-        'Periodo com ofertas ativas exige revisao do planejamento antes da alteracao.',
-      );
+    if (recordId) {
+      // Name, review status, new blocks or a longer validity do not affect planned classes.
+      // Only changes that would leave an active offering or allocation outside the grade are refused.
+      const previous = await db.db
+        .collection<Academic<PeriodData>>('periods')
+        .findOne({ _id: recordId }, { session });
+      const offerings = await db.db
+        .collection<Academic<OfferingData>>('offerings')
+        .find({ periodId: recordId, active: true }, { session })
+        .toArray();
+      const allocations = await db.db
+        .collection<{ meetings: OfferingData['meetings'] }>('allocations')
+        .find({ periodId: recordId, state: { $ne: 'CANCELLED' } }, { session })
+        .toArray();
+      const meetings = [...offerings, ...allocations].flatMap((item) => item.meetings);
+      if (offerings.length || allocations.length) {
+        if (!body.active || (previous && previous.timeZone !== body.timeZone))
+          conflict(
+            'RESOURCE_IN_USE',
+            'Periodo com ofertas ativas nao pode ser desativado nem mudar de fuso.',
+          );
+        const outside = meetings.some(
+          (meeting) =>
+            meeting.validFrom < body.startsOn ||
+            meeting.validUntil > body.endsOn ||
+            !body.blocks.some(
+              (block) =>
+                block.weekday === meeting.weekday &&
+                block.startsAt === meeting.startsAt &&
+                block.endsAt === meeting.endsAt,
+            ),
+        );
+        if (outside)
+          conflict(
+            'RESOURCE_IN_USE',
+            'A alteracao deixaria encontros de ofertas ou alocacoes fora da grade ou da vigencia do periodo.',
+          );
+      }
+    }
     if (
       !body.active &&
       recordId &&
@@ -232,8 +262,13 @@ export function academicRoutes(app: FastifyInstance, identity: IdentityService) 
   });
   resource('groups', groupInput, true, async (body, _courseId, session, recordId) => {
     await activePeriod(body.periodId, session);
+    if (!recordId) return;
+    const previous = await db.db
+      .collection<{ _id: string; periodId: string }>('groups')
+      .findOne({ _id: recordId }, { session });
+    // Renaming keeps offerings valid; moving or deactivating a group in use does not.
     if (
-      recordId &&
+      (!body.active || previous?.periodId !== body.periodId) &&
       (await db.db
         .collection('offerings')
         .countDocuments({ groupId: recordId, active: true }, { session }))

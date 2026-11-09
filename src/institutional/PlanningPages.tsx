@@ -22,6 +22,7 @@ import type {
 } from './types';
 import { ActionFeedback, Badge, Heading, LoadingError, Panel, Select } from './ui';
 import s from './Portal.module.css';
+import { mainReason } from './assessmentModel';
 export function MeetingFields({
   meetings,
   onChange,
@@ -185,7 +186,9 @@ export function AllocationForm({
     [teacherId, setTeacher] = useState(record?.teacherId ?? ''),
     [meetings, setMeetings] = useState<Meeting[]>(record?.meetings ?? []),
     [assessment, setAssessment] = useState<Assessment | null>(null),
-    [candidates, setCandidates] = useState<(Assessment & { name: string })[]>([]),
+    [candidates, setCandidates] = useState<(Assessment & { name: string; rank: number | null })[]>(
+      [],
+    ),
     action = useAction();
   const offering = offerings.data?.items.find((o) => o.id === offeringId),
     period = periods.data?.items.find((p) => p.id === offering?.periodId);
@@ -286,14 +289,24 @@ export function AllocationForm({
           Comparar professores
         </Button>
       </div>
+      {candidates.length > 0 && (
+        <p className={s.muted}>
+          Ordem: elegíveis primeiro, da maior para a menor pontuação. Os demais mostram o primeiro
+          motivo que impede a alocação.
+        </p>
+      )}
       {candidates.map((c) => (
         <div className={s.row} key={c.teacherId}>
           <div>
-            <strong>{c.name}</strong>
+            <strong>
+              {c.rank !== null && `${c.rank}º · `}
+              {c.name}
+            </strong>
             <p>
               <Badge value={c.eligibility} />{' '}
               {c.score.value === null ? 'Score pendente' : `${c.score.value} pontos`}
             </p>
+            {mainReason(c) && <p className={s.muted}>{mainReason(c)}</p>}
           </div>
           <Button
             variant="secondary"
@@ -320,7 +333,11 @@ export function AllocationForm({
 }
 export function ApiAllocationsPage() {
   const { courseId } = useScope(),
-    planning = useApi<Planning>(courseId ? `/courses/${courseId}/planning` : null),
+    [includeEnded, setIncludeEnded] = useState(false),
+    // Ended allocations accumulate each semester; list them only on request.
+    planning = useApi<Planning>(
+      courseId ? `/courses/${courseId}/planning${includeEnded ? '' : `?from=${today()}`}` : null,
+    ),
     subjects = useApi<Items<Subject>>(courseId ? `/courses/${courseId}/subjects?limit=100` : null),
     teachers = useApi<Items<User>>(courseId ? `/courses/${courseId}/teachers` : null),
     periods = useApi<Items<Period>>('/periods'),
@@ -344,6 +361,14 @@ export function ApiAllocationsPage() {
         <Button variant="secondary" disabled={!courseId} onClick={() => setSetup(true)}>
           Turmas e ofertas
         </Button>
+        <label className={s.check}>
+          <input
+            type="checkbox"
+            checked={includeEnded}
+            onChange={(e) => setIncludeEnded(e.target.checked)}
+          />
+          Mostrar alocações já encerradas
+        </label>
       </div>
       <LoadingError {...planning} retry={planning.refresh} />
       <ActionFeedback action={action} />
