@@ -879,6 +879,19 @@
       "scenario": "Encerramento do vinculo docente por coordenador de outro curso, pelo proprio professor, com aula futura e depois do cancelamento.",
       "expected": "Outro curso recebe 404 e professor 403; aula futura bloqueia com TEACHER_HAS_ALLOCATIONS; sem aulas futuras o vinculo do curso e encerrado, os demais cursos sao preservados, a solicitacao vira REJECTED e nova solicitacao e aceita.",
       "status": "PLANNED"
+    },
+    {
+      "id": "CASE-075",
+      "requirements": [
+        "REQ-02",
+        "REQ-03",
+        "REQ-05",
+        "REQ-12"
+      ],
+      "layer": "contract",
+      "scenario": "Coordenacao lista solicitacoes; administrador busca professor por e-mail com caracteres especiais; planejamento e ocorrencias filtrados por datas e situacao, incluindo filtros invalidos.",
+      "expected": "Lista traz nome e e-mail de quem pediu; busca literal encontra somente a conta pretendida e papel invalido retorna 422; planejamento fora do intervalo vem vazio, intervalo invertido e situacao desconhecida retornam 422.",
+      "status": "PLANNED"
     }
   ]
 }
