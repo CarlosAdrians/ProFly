@@ -163,22 +163,22 @@ Alterações de front-end e back-end ficam em commits separados. Testes e docume
 
 ## Estado de desenvolvimento
 
-Atualizado em **09/11/2026**. Branch local: `feat/revisao-final-profly`. A interface usa a API por padrão; a demonstração anterior foi preservada como opção explícita.
+Atualizado em **09/11/2026**. Branch: `fix/auditoria-criticos`, com a auditoria e as correções sobre a revisão final. A interface usa a API por padrão; a demonstração anterior foi preservada como opção explícita.
 
 | Parte | Estado atual |
 | --- | --- |
-| Identidade e conta | Sessão real por cookie/CSRF, cadastro detalhado, confirmação de e-mail, recuperação, troca protegida de e-mail/senha e foto privada. |
-| Aprovação por curso | Solicitações encaminhadas após verificar o e-mail; análise exclusiva do coordenador com vínculo ativo no curso, inclusive para quem acumula papel de administrador. Sem aprovação automática. |
+| Identidade e conta | Sessão real por cookie/CSRF, cadastro detalhado com validação em cada etapa, confirmação de e-mail quando o envio está configurado, recuperação, troca protegida de e-mail/senha e foto privada. |
+| Aprovação por curso | O pedido aparece no painel da coordenação (direto, sem envio de e-mail; ou após confirmar o e-mail, com envio). Análise exclusiva do coordenador com vínculo ativo no curso, mostrando quem pediu e as disciplinas pedidas. Encerramento de vínculo com motivo. Sem aprovação automática. |
 | Administração | Cursos, coordenadores, convites, revogação, competências, períodos/grade e limite institucional de carga. Contas mostram a quantidade e os nomes dos cursos vinculados. Primeiro administrador exige configuração explícita. |
 | Perfil e catálogo | Perfil versionado, formação, conhecimentos, experiências, horários pretendidos e dedicação opcional; disciplinas, critérios, turmas e ofertas pela API. |
-| Elegibilidade e score | Árvore explicável e comparação consistente de candidatos, com dados desconhecidos pendentes e pesos/requisitos configuráveis como proposta. |
+| Elegibilidade e score | Árvore explicável e comparação com posição no ranking e motivo principal de cada professor; dados desconhecidos ficam pendentes e pesos/requisitos são proposta configurável. Mudar só horário ou telefone não exige nova análise. |
 | Planejamento | Rascunhos, arraste/formulário, confirmação de cancelamento, reservas globais, versão esperada e publicação atômica; escala anterior e histórico preservados em falha. |
 | Professor | Agenda publicada, últimas 10 aulas, histórico paginado, horas realizadas confirmadas versus meta opcional. |
 | Atestados e afastamentos | Fluxo acadêmico descontinuado e encaminhado ao RH; telas e atalhos removidos, rotas antigas retornam `410`, registros legados preservados sem consulta pelo calendário ou score. |
 | Comprovantes acadêmicos | API de documentos privados por versão/item do perfil, imutáveis, auditados, com quotas e retirada sem apagar o original; integração dos novos controles no frontend pendente. |
 | Notificações | Avisos internos, paginação, total não lido e preferência persistida; e-mails de segurança independentes. |
 | E-mail | SMTP implementado e testado em captura fictícia local. Entrega externa depende de remetente autenticado. |
-| Validação | Fechamento local com comando backend/scripts/verify.mjs; rastreabilidade dos 70 cenários em [aceitação do backend](docs/validation/BACKEND_ACCEPTANCE.md), histórico em [STATUS.md](docs/validation/STATUS.md). |
+| Validação | Testes automáticos do servidor e da interface, testes de navegador no cluster MongoDB Atlas e 76 cenários planejados na [matriz](docs/specs/backend-cases.json); histórico em [STATUS.md](docs/validation/STATUS.md). |
 
 A implementação é destinada à demonstração acadêmica local e não equivale à homologação institucional. Ainda faltam remetente real, configuração inicial da administração, revisão de critérios/grade/limites, definição do RH para a custódia dos registros legados, políticas de privacidade/retenção, infraestrutura HTTPS e verificações de produção. Não inserir dados pessoais reais na prévia de desenvolvimento.
 
@@ -191,24 +191,108 @@ A base está validada para **demonstração acadêmica local** nos cenários doc
 Antes de considerar a operação institucional concluída:
 
 - [ ] Conectar os controles de **comprovantes acadêmicos**, a tela geral de **gestão de usuários** e a navegação das listas adicionais que ainda usam só uma página. As APIs correspondentes já existem.
-- [ ] Resolver e validar a conexão com o **MongoDB definitivo**. A última conferência dessa configuração falhou em TLS; os testes aprovados usam MongoDB local descartável.
-- [ ] Configurar e verificar **remetente real de e-mail, domínio/HTTPS, backup e restauração e capacidade de produção**. A caixa fictícia local não entrega mensagens ao Gmail.
+- [x] Conexão com o **MongoDB Atlas** validada em 09/11/2026, com testes de navegador no cluster. No Windows, use a URI no formato direto (veja [problemas comuns](#problemas-comuns)).
+- [ ] Configurar e verificar **remetente real de e-mail, domínio/HTTPS, backup e restauração e capacidade de produção**. Sem e-mail, o cadastro funciona com a aprovação da coordenação, mas a recuperação de senha depende do envio.
 - [ ] Homologar **grade, carga, requisitos e pesos do score**, além de responsáveis, canal, bases e retenção de dados. Dados clínicos reais continuam bloqueados na prévia.
 
 O detalhe por perfil está no [checklist de entrega](docs/CHECKLIST_PERFIS.md), e as evidências estão na [aceitação do backend](docs/validation/BACKEND_ACCEPTANCE.md). Os pesos demonstrativos, a aprovação da conta fictícia e os registros históricos de teste não representam decisões da instituição.
 
-## Executar a aplicação conectada
+## Executar em qualquer computador
 
-Use Node.js 24. Na raiz:
+Passo a passo para rodar o ProFly conectado ao banco do projeto, por exemplo no computador da apresentação. O guia de uso de cada tela está no [manual do usuário](docs/MANUAL_USUARIO.md).
+
+### 1. Instale os programas
+
+- [Git](https://git-scm.com/downloads)
+- [Node.js 24](https://nodejs.org/) (confira com `node -v`)
+- pnpm, que acompanha o Node: rode `corepack enable` uma vez (no Windows, em um terminal aberto como administrador). Se não funcionar, use `npm install -g pnpm`.
+
+### 2. Baixe o projeto e instale as dependências
+
+```bash
+git clone https://github.com/CarlosAdrians/ProFly.git
+```
+
+```bash
+cd ProFly
+```
+
+```bash
+git checkout fix/auditoria-criticos
+```
+
+Enquanto o pull request não for mesclado, as correções mais recentes estão nessa branch. Depois da mesclagem, use a `main`.
 
 ```bash
 npm ci
+```
+
+```bash
+cd backend && pnpm install && cd ..
+```
+
+### 3. Configure o banco
+
+Copie o modelo de configuração do servidor. No PowerShell:
+
+```powershell
+Copy-Item backend\.env.example backend\.env
+```
+
+No Git Bash, Linux ou macOS: `cp backend/.env.example backend/.env`.
+
+Abra `backend/.env` e ajuste:
+
+| Variável | Valor |
+| --- | --- |
+| `MONGODB_URI` | Endereço do cluster com usuário e senha, entre aspas. Peça ao responsável pelo banco; nunca coloque no Git. |
+| `MONGODB_DATABASE` | `profly_development` (banco usado nas apresentações). |
+| `EMAIL_TRANSPORT` | `disabled`. Assim o cadastro de professor vai direto para a aprovação da coordenação. |
+
+As demais linhas podem ficar como no modelo. No MongoDB Atlas, o IP do computador precisa estar liberado em **Network Access**.
+
+### 4. Inicie o servidor e a interface
+
+Use dois terminais, ambos na pasta `ProFly`. No primeiro:
+
+```bash
+cd backend && pnpm dev
+```
+
+Aguarde a mensagem `ProFly API em 127.0.0.1:3333`. No segundo:
+
+```bash
 npm run dev
 ```
 
-O Vite atende em [127.0.0.1:5174](http://127.0.0.1:5174) e encaminha `/api` para `127.0.0.1:3333`. Inicie também o [backend](backend/README.md), com MongoDB transacional e seu `backend/.env` local. URI e credenciais ficam somente no servidor; nunca em variáveis `VITE_*`. No Atlas, libere o IP em Network Access; se o Windows mostrar `querySrv ECONNREFUSED`, use a URI no formato direto com os três hosts do cluster, como explica o [manual](docs/MANUAL_USUARIO.md#como-executar). `PROFLY_API_TARGET` altera apenas o destino do proxy de desenvolvimento.
+Abra [http://127.0.0.1:5174](http://127.0.0.1:5174). Use exatamente esse endereço (ou `localhost`): por segurança, a interface só abre no próprio computador.
 
-Não há credencial administrativa padrão na aplicação conectada. Crie o primeiro administrador com o procedimento explícito do backend; ele cadastra cursos e convida coordenadores. O professor usa **Cadastrar** e aguarda a análise independente de cada curso pela coordenação, no painel dela. Com envio de e-mail configurado, o professor confirma o e-mail antes; sem envio (`EMAIL_TRANSPORT=disabled`), o cadastro completo cria a conta e encaminha o pedido direto à coordenação. Conectar a API não importa nem apaga cadastros locais antigos.
+### 5. Contas de acesso
+
+O banco `profly_development` já tem contas fictícias de administração, coordenação e professores para demonstração; peça as senhas ao grupo. Elas não ficam no repositório.
+
+Em um banco vazio, crie o primeiro administrador. No PowerShell, dentro de `backend`:
+
+```powershell
+$env:BOOTSTRAP_ADMIN_NAME="Administrador"; $env:BOOTSTRAP_ADMIN_EMAIL="admin@exemplo.com"; $env:BOOTSTRAP_ADMIN_PASSWORD="TroqueEstaSenha1"; pnpm create-admin
+```
+
+Depois entre como administrador para criar cursos, competências, períodos e convidar coordenadores, como descreve o [manual](docs/MANUAL_USUARIO.md#administração).
+
+### Problemas comuns
+
+| Sintoma | Causa e solução |
+| --- | --- |
+| `querySrv ECONNREFUSED` ao iniciar o servidor | O Node no Windows não consegue consultar o endereço `mongodb+srv://`. Use a URI no formato direto: `mongodb://usuario:senha@host1:27017,host2:27017,host3:27017/?tls=true&authSource=admin&replicaSet=NOME&retryWrites=true&w=majority`. Os hosts e o `replicaSet` aparecem no Atlas em *Connect → Drivers* (escolhendo uma versão antiga do driver) ou com `nslookup -type=SRV _mongodb._tcp.ENDERECO_DO_CLUSTER`. |
+| Servidor não conecta ou expira | IP não liberado no Atlas, senha errada ou caracteres especiais na senha sem codificação (`@` vira `%40`, `:` vira `%3A`, `/` vira `%2F`). |
+| Tela "Acesso institucional ainda não configurado" | A interface foi aberta por outro endereço. Use `http://127.0.0.1:5174`. |
+| Tela de serviço indisponível | O servidor não está rodando: confira o primeiro terminal. |
+| `Port 5174 is already in use` | Já existe uma interface aberta. Feche o outro terminal ou reinicie o computador. |
+| `pnpm` não reconhecido | Rode `corepack enable` ou `npm install -g pnpm` e abra um terminal novo. |
+
+### Detalhes técnicos
+
+O Vite atende em `127.0.0.1:5174` e encaminha `/api` para `127.0.0.1:3333`. URI e credenciais ficam somente no servidor, nunca em variáveis `VITE_*`. `PROFLY_API_TARGET` altera apenas o destino do proxy de desenvolvimento. Não há credencial administrativa padrão. O professor usa **Cadastrar** e aguarda a análise de cada curso pela coordenação, no painel dela; com envio de e-mail configurado, confirma o e-mail antes. Conectar a API não importa nem apaga cadastros locais antigos.
 
 ### Demonstração anterior
 
