@@ -1032,10 +1032,10 @@ test('CASE-011/016: edicao de perfil torna analise antiga obsoleta e exige nova 
   assert.equal((await teacher.save(0, teacher.data)).statusCode, 200);
   const first = await teacher.submit(courseA, teacher.subjectA);
   assert.equal(first.statusCode, 201);
-  assert.equal(
-    (await teacher.save(1, { ...teacher.data, desiredWeeklyMinutes: 600 })).statusCode,
-    200,
-  );
+  const changedKnowledge = { ...teacher.data.knowledge![0]!, level: 5 };
+  const academic = await teacher.save(1, { ...teacher.data, knowledge: [changedKnowledge] });
+  assert.equal(academic.statusCode, 200, academic.body);
+  assert.equal(academic.json().reviewRequired, true);
   const stale = await app.inject({
     method: 'POST',
     url: `/api/v1/courses/${courseA}/applications/${first.json().id}/review`,
@@ -1056,11 +1056,11 @@ test('CASE-011/016: edicao de perfil torna analise antiga obsoleta e exige nova 
     headers: coordinatorHeaders,
   });
   assert.equal(detail.json().profile.profileVersion, 2);
-  assert.equal(detail.json().profile.data.desiredWeeklyMinutes, 600);
+  assert.equal(detail.json().profile.data.knowledge[0].level, 5);
   const old = await database.db
     .collection('profileVersions')
     .findOne({ teacherId: teacher.id, profileVersion: 1 });
-  assert.equal(old!.data.desiredWeeklyMinutes, 1200);
+  assert.equal(old!.data.knowledge[0].level, 4);
   const changes = await app.inject({
     method: 'POST',
     url: `/api/v1/courses/${courseA}/applications/${first.json().id}/review`,
@@ -1272,17 +1272,46 @@ test('CASE-018/019/020: ofertas exigem curso, periodo e blocos compativeis e pre
   assert.equal(await database.db.collection('offerings').countDocuments({ code: 'OFFER-TEST' }), 0);
   const saved = await create(url, offering);
   assert.equal(saved.courseId, courseA);
-  assert.equal(
-    (
-      await app.inject({
-        method: 'PUT',
-        url: `/api/v1/admin/periods/${period.id}`,
-        headers: adminHeaders,
-        payload: { expectedVersion: 1, data: periodData },
-      })
-    ).statusCode,
-    409,
-  );
+  const updatePeriod = (expectedVersion: number, data: object) =>
+    app.inject({
+      method: 'PUT',
+      url: `/api/v1/admin/periods/${period.id}`,
+      headers: adminHeaders,
+      payload: { expectedVersion, data },
+    });
+  // Changes that would leave the active offering outside the grade remain refused.
+  for (const data of [
+    { ...periodData, blocks: [periodData.blocks[1]] },
+    { ...periodData, endsOn: '2026-11-30' },
+    { ...periodData, timeZone: 'America/Sao_Paulo' },
+    { ...periodData, active: false },
+  ]) {
+    const refused = await updatePeriod(1, data);
+    assert.equal(refused.statusCode, 409, refused.body);
+    assert.equal(refused.json().error.code, 'RESOURCE_IN_USE');
+  }
+  // Renaming, reviewing the grade and adding a block keep the offering valid.
+  const reviewed = await updatePeriod(1, {
+    ...periodData,
+    name: 'Periodo sintetico revisado',
+    calendarStatus: 'REVIEWED',
+    blocks: [...periodData.blocks, { ...block, startsAt: '20:30', endsAt: '21:20' }],
+  });
+  assert.equal(reviewed.statusCode, 200, reviewed.body);
+  const renamedGroup = await app.inject({
+    method: 'PUT',
+    url: `/api/v1/courses/${courseA}/groups/${groupA.id}`,
+    headers: adminHeaders,
+    payload: { expectedVersion: 1, data: { ...groupData, name: 'Turma renomeada' } },
+  });
+  assert.equal(renamedGroup.statusCode, 200, renamedGroup.body);
+  const disabledGroup = await app.inject({
+    method: 'PUT',
+    url: `/api/v1/courses/${courseA}/groups/${groupA.id}`,
+    headers: adminHeaders,
+    payload: { expectedVersion: 2, data: { ...groupData, active: false } },
+  });
+  assert.equal(disabledGroup.statusCode, 409, disabledGroup.body);
   assert.equal(
     (
       await app.inject({
@@ -2274,4 +2303,125 @@ test('CASE-025/036: periodos com IDs diferentes e datas sobrepostas preservam re
     await database.db.collection('allocations').countDocuments({ teacherId: f.teacher.id }),
     1,
   );
+});
+
+test('CASE-071/072/074: horario mantem analise, publicacao aponta bloqueios e vinculo pode ser encerrado', async () => {
+  const f = await schedulingFixture('review-carry');
+  const allocationData = {
+    offeringId: f.offerings[0].id,
+    teacherId: f.teacher.id,
+    meetings: [f.meeting],
+  };
+  const created = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/allocations`,
+    headers: coordinatorHeaders,
+    payload: allocationData,
+  });
+  assert.equal(created.statusCode, 201, created.body);
+  const eligibility = async () => {
+    const result = await app.inject({
+      method: 'POST',
+      url: `/api/v1/courses/${courseA}/eligibility`,
+      headers: coordinatorHeaders,
+      payload: { ...allocationData, allocationId: created.json().id },
+    });
+    assert.equal(result.statusCode, 200, result.body);
+    return result.json().eligibility as string;
+  };
+  assert.equal(await eligibility(), 'ELIGIBLE');
+
+  // CASE-071: only availability/dedication changes; the analysis remains valid in both courses.
+  const availability = f.teacher.data.availability!;
+  const scheduleOnly = await f.teacher.save(1, {
+    ...f.teacher.data,
+    desiredWeeklyMinutes: 900,
+    availability: {
+      ...availability,
+      windows: [
+        ...availability.windows,
+        { ...availability.windows[0]!, id: randomUUID(), weekday: 2 },
+      ],
+    },
+  });
+  assert.equal(scheduleOnly.statusCode, 200, scheduleOnly.body);
+  assert.equal(scheduleOnly.json().reviewRequired, false);
+  assert.equal(await eligibility(), 'ELIGIBLE');
+  const carried = await database.db
+    .collection('reviews')
+    .find({ teacherId: f.teacher.id, profileVersion: 2 })
+    .toArray();
+  assert.equal(carried.length, 2);
+  assert.ok(carried.every((review) => review.carriedFromVersion === 1));
+  const applications = await database.db
+    .collection('applications')
+    .find({ teacherId: f.teacher.id })
+    .toArray();
+  assert.ok(applications.every((a) => a.status === 'APPROVED' && a.profileVersion === 2));
+
+  // An academic change still requires a new analysis.
+  const academic = await f.teacher.save(2, {
+    ...f.teacher.data,
+    knowledge: [{ ...f.teacher.data.knowledge![0]!, level: 5 }],
+  });
+  assert.equal(academic.statusCode, 200, academic.body);
+  assert.equal(academic.json().reviewRequired, true);
+  assert.equal(await eligibility(), 'PENDING');
+
+  // CASE-072: publication remains atomic but names the blocking allocation.
+  const plan = (
+    await app.inject({ url: `/api/v1/courses/${courseA}/planning`, headers: coordinatorHeaders })
+  )
+    .json()
+    .plans.find((p: { periodId: string }) => p.periodId === f.period.id);
+  const publish = await app.inject({
+    method: 'POST',
+    url: `/api/v1/courses/${courseA}/periods/${f.period.id}/publish`,
+    headers: coordinatorHeaders,
+    payload: { expectedVersion: plan.version },
+  });
+  assert.equal(publish.statusCode, 409, publish.body);
+  const blocking = publish.json().error;
+  assert.equal(blocking.code, 'PUBLICATION_NOT_ELIGIBLE');
+  assert.match(blocking.fieldErrors['allocations.0'][0], /Professor de Teste/);
+  assert.match(blocking.fieldErrors['allocations.0'][0], /Perfil atual precisa ser analisado/);
+
+  // CASE-074: unlinking requires a course coordinator and no future classes.
+  const unlink = (headers: Record<string, string>) =>
+    app.inject({
+      method: 'POST',
+      url: `/api/v1/courses/${courseA}/teachers/${f.teacher.id}/unlink`,
+      headers,
+      payload: { reason: 'Encerramento sintetico' },
+    });
+  assert.equal((await unlink(secondCoordinatorHeaders)).statusCode, 404);
+  assert.equal((await unlink(f.teacher.headers)).statusCode, 403);
+  const busy = await unlink(coordinatorHeaders);
+  assert.equal(busy.statusCode, 409, busy.body);
+  assert.equal(busy.json().error.code, 'TEACHER_HAS_ALLOCATIONS');
+  const cancelled = await app.inject({
+    method: 'DELETE',
+    url: `/api/v1/courses/${courseA}/allocations/${created.json().id}`,
+    headers: coordinatorHeaders,
+    payload: { expectedVersion: created.json().version },
+  });
+  assert.equal(cancelled.statusCode, 200, cancelled.body);
+  const done = await unlink(coordinatorHeaders);
+  assert.equal(done.statusCode, 200, done.body);
+  const listed = await app.inject({
+    url: `/api/v1/courses/${courseA}/teachers`,
+    headers: coordinatorHeaders,
+  });
+  assert.ok(!listed.body.includes(f.teacher.id));
+  const otherCourse = await database.db
+    .collection('memberships')
+    .findOne({ userId: f.teacher.id, courseId: courseB, role: 'teacher' });
+  assert.equal(otherCourse?.active, true);
+  const closed = await database.db
+    .collection('applications')
+    .findOne({ teacherId: f.teacher.id, courseId: courseA });
+  assert.equal(closed?.status, 'REJECTED');
+  assert.equal((await unlink(coordinatorHeaders)).statusCode, 404);
+  const again = await f.teacher.submit(courseA, f.teacher.subjectA, closed!.version, 3);
+  assert.equal(again.statusCode, 201, again.body);
 });

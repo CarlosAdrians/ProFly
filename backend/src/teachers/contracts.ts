@@ -154,6 +154,33 @@ export function missingFields(data: ProfileData): Record<string, string[]> {
   return fields;
 }
 
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === 'object')
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, canonical((value as Record<string, unknown>)[key])]),
+    );
+  return value;
+}
+
+/**
+ * Academic evidence analysed by the coordination. Contact, availability and the optional
+ * weekly dedication are excluded: they are re-checked by the engine on every evaluation and
+ * never confirmed item by item, so changing them must not discard an existing review.
+ */
+export function academicSignature(data: ProfileData): string {
+  return JSON.stringify(
+    canonical({
+      education: data.education ?? [],
+      knowledge: data.knowledge ?? [],
+      teaching: data.teaching ?? null,
+      professional: data.professional ?? null,
+    }),
+  );
+}
+
 export const saveProfile = z.strictObject({
   expectedVersion: z.number().int().min(0),
   data: profileData,

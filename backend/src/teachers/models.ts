@@ -32,4 +32,6 @@ export interface Review extends Entity {
     teaching: 'UNKNOWN' | 'NONE' | 'PROVIDED';
     professional: 'UNKNOWN' | 'NONE' | 'PROVIDED';
   };
+  /** Set when the analysis was kept because only non-academic profile data changed. */
+  carriedFromVersion?: number;
 }

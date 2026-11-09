@@ -9,6 +9,7 @@ import { command, email, name, routeId } from '../shared/http.js';
 import { AppError, conflict, missing } from '../shared/errors.js';
 import { audit, entity, lock, view, type Guard } from '../shared/model.js';
 import {
+  academicSignature,
   missingFields,
   reviewApplication,
   saveProfile,
@@ -17,6 +18,7 @@ import {
 } from './contracts.js';
 import type { Application, ProfileSnapshot, Review, TeacherProfile } from './models.js';
 import { notify } from '../scheduling/service.js';
+import type { Allocation, PublishedAllocation } from '../scheduling/models.js';
 
 export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
   const db = identity.database;
@@ -156,11 +158,41 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
           },
           { session },
         );
+        // Only academic evidence requires a new analysis. When it is unchanged, the reviews of the
+        // previous version stay valid for the new one; availability is re-checked by the engine.
+        const academicChanged =
+          !previous || academicSignature(previous.data) !== academicSignature(record.data);
+        if (previous && !academicChanged) {
+          const now = new Date().toISOString();
+          const carried = await reviews
+            .find({ teacherId: record._id, profileVersion: previous.version }, { session })
+            .toArray();
+          for (const review of carried)
+            await reviews.insertOne(
+              {
+                ...review,
+                ...entity(),
+                profileVersion: record.version,
+                carriedFromVersion: previous.version,
+              },
+              { session },
+            );
+          await applications.updateMany(
+            {
+              teacherId: record._id,
+              profileVersion: previous.version,
+              status: { $in: ['SUBMITTED', 'APPROVED'] },
+            },
+            { $set: { profileVersion: record.version, updatedAt: now }, $inc: { version: 1 } },
+            { session },
+          );
+        }
         await audit(db, session, actor.user._id, 'PROFILE_SAVED', record._id);
         return {
           ...view(record),
           source: 'TEACHER_DECLARED',
           missingFields: missingFields(record.data),
+          reviewRequired: academicChanged,
         };
       });
     },
@@ -450,5 +482,75 @@ export function teacherRoutes(app: FastifyInstance, identity: IdentityService) {
     },
     academicReviewer,
     'applications',
+  );
+
+  command(
+    app,
+    'POST',
+    '/api/v1/courses/:courseId/teachers/:teacherId/unlink',
+    z.strictObject({ reason: z.string().trim().min(3).max(2000) }),
+    async (request, _reply, body) => {
+      const actor = identity.actor(request);
+      const courseId = routeId(request, 'courseId');
+      const teacherId = routeId(request, 'teacherId');
+      return db.transaction(async (session) => {
+        await lock(db, session, 'academics', `course:${courseId}`, `user:${teacherId}`);
+        await active(actor, session);
+        // Same authority as the entry analysis: an active coordinator of this course.
+        await identity.coordinatedCourse(actor, courseId, session);
+        const membership = await identity.memberships.findOne(
+          { userId: teacherId, courseId, role: 'teacher', active: true },
+          { session },
+        );
+        if (!membership) missing();
+        const now = new Date().toISOString();
+        const future = { courseId, teacherId, 'slots.endsAt': { $gt: now } };
+        const [drafts, published] = await Promise.all([
+          db.db
+            .collection<Allocation>('allocations')
+            .countDocuments({ ...future, state: { $ne: 'CANCELLED' } }, { session }),
+          db.db.collection<PublishedAllocation>('publishedAllocations').countDocuments(future, {
+            session,
+          }),
+        ]);
+        if (drafts || published)
+          conflict(
+            'TEACHER_HAS_ALLOCATIONS',
+            'Cancele ou reatribua as aulas futuras deste professor e publique a revisao antes de desvincular.',
+          );
+        await identity.memberships.updateOne(
+          { _id: membership._id },
+          { $set: { active: false, updatedAt: now }, $inc: { version: 1 } },
+          { session },
+        );
+        // Closing the application lets the teacher request entry again later.
+        const application = await applications.findOneAndUpdate(
+          { teacherId, courseId },
+          {
+            $set: {
+              status: 'REJECTED',
+              reviewerId: actor.user._id,
+              reason: `Vinculo encerrado pela coordenacao: ${body.reason}`,
+              reviewedAt: now,
+              updatedAt: now,
+            },
+            $inc: { version: 1 },
+          },
+          { session, returnDocument: 'after' },
+        );
+        await notify(
+          identity,
+          session,
+          teacherId,
+          'APPLICATION',
+          application?._id ?? membership._id,
+          'Seu vinculo com um curso foi encerrado pela coordenacao.',
+        );
+        await audit(db, session, actor.user._id, 'TEACHER_UNLINKED', teacherId, courseId);
+        return { teacherId, courseId, active: false };
+      });
+    },
+    academicReviewer,
+    'teachers',
   );
 }
