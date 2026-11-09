@@ -30,6 +30,12 @@ export function AvailabilityWindow({
       name={group}
       open={expanded}
       onToggle={(e) => setExpanded(e.currentTarget.open)}
+      // A required field inside a closed panel cannot receive focus; open it so the
+      // browser can point to the missing date instead of silently blocking the step.
+      onInvalidCapture={(e) => {
+        e.currentTarget.open = true;
+        setExpanded(true);
+      }}
     >
       <summary>
         <Icon name="clock" size={22} />

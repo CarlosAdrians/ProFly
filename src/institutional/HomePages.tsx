@@ -50,17 +50,25 @@ export function CoordinatorOverview() {
   const applications = useApi<Items<Application>>(
     canReview ? `/courses/${courseId}/applications` : null,
   );
-  const planning = useApi<Planning>(courseId ? `/courses/${courseId}/planning` : null);
+  const start = today(),
+    end = addDate(start, 28),
+    now = new Date().toISOString();
+  // Each panel asks only for its own dates; a whole semester would exceed one page.
+  const planning = useApi<Planning>(
+    courseId ? `/courses/${courseId}/planning?from=${start}` : null,
+  );
   const occurrences = useApi<Items<Occurrence>>(
-    courseId ? `/courses/${courseId}/occurrences` : null,
+    courseId
+      ? `/courses/${courseId}/occurrences?from=${start}&until=${end}&status=PLANNED&limit=500`
+      : null,
+  );
+  const past = useApi<Items<Occurrence>>(
+    courseId ? `/courses/${courseId}/occurrences?until=${start}&status=PLANNED&limit=500` : null,
   );
   const subjects = useApi<Items<Subject>>(
     courseId ? `/courses/${courseId}/subjects?limit=100` : null,
   );
   const teachers = useApi<Items<User>>(courseId ? `/courses/${courseId}/teachers` : null);
-  const start = today(),
-    end = addDate(start, 28),
-    now = new Date().toISOString();
   const upcoming = (occurrences.data?.items ?? [])
     .filter((o) => o.status === 'PLANNED' && o.date >= start && o.date <= end && o.endsAt > now)
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
@@ -71,7 +79,8 @@ export function CoordinatorOverview() {
     }));
   const pending = applications.data?.items.filter((a) => a.status === 'SUBMITTED');
   const drafts = planning.data?.allocations.filter((a) => a.state === 'DRAFT');
-  const awaiting = occurrences.data?.items.filter((o) => o.status === 'PLANNED' && o.endsAt <= now);
+  const awaiting = past.data?.items.filter((o) => o.status === 'PLANNED' && o.endsAt <= now);
+  const moreAwaiting = past.data?.nextOffset != null;
   return (
     <>
       <Heading
@@ -112,7 +121,7 @@ export function CoordinatorOverview() {
             </Panel>
             <Panel title="Para cuidar agora">
               {canReview && <LoadingError {...applications} retry={applications.refresh} />}
-              <LoadingError {...occurrences} retry={occurrences.refresh} />
+              <LoadingError {...past} retry={past.refresh} />
               <div className={s.workList}>
                 {canReview && (
                   <Link to="/professores">
@@ -151,7 +160,7 @@ export function CoordinatorOverview() {
                     <p>
                       {awaiting
                         ? awaiting.length
-                          ? `${awaiting.length} ${awaiting.length === 1 ? 'aula passada a confirmar' : 'aulas passadas a confirmar'}.`
+                          ? `${moreAwaiting ? 'Mais de ' : ''}${awaiting.length} ${awaiting.length === 1 ? 'aula passada a confirmar' : 'aulas passadas a confirmar'}.`
                           : 'Nenhuma aula passada a confirmar na lista.'
                         : 'Consultando histórico…'}
                     </p>
@@ -165,7 +174,7 @@ export function CoordinatorOverview() {
             <div className={s.sectionCaption}>
               <span>
                 {planning.data
-                  ? `${planning.data.published.length} alocações publicadas`
+                  ? `${planning.data.published.length} alocações publicadas com aulas a partir de hoje`
                   : 'Consultando publicações…'}
               </span>
               <Link to="/alocacoes">Abrir alocações</Link>

@@ -29,9 +29,26 @@ export function ApiGuard() {
 export function PortalLayout() {
   const { user } = useApiSession(),
     courses = useApi<Items<CatalogItem>>('/courses'),
-    [selected, setSelected] = useState(''),
+    courseKey = user ? `profly:course:${user.id}` : '',
+    [selected, setSelectedState] = useState(() => {
+      try {
+        return (courseKey && localStorage.getItem(courseKey)) || '';
+      } catch {
+        return '';
+      }
+    }),
     [mode, setMode] = useState(''),
     location = useLocation();
+
+  // Remember the working course per account; storage may be unavailable (private mode).
+  const setSelected = (value: string) => {
+    setSelectedState(value);
+    try {
+      if (courseKey) localStorage.setItem(courseKey, value);
+    } catch {
+      /* the selection still works for this visit */
+    }
+  };
 
   if (!user) return <Navigate to="/login" replace />;
 

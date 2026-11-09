@@ -66,6 +66,8 @@ export function ProfileFields({
                             : 'Ano de conclusão'
                       }
                       type={field === 'completedYear' ? 'number' : 'text'}
+                      required
+                      minLength={field === 'completedYear' ? undefined : 3}
                       min={field === 'completedYear' ? 1900 : undefined}
                       max={field === 'completedYear' ? new Date().getFullYear() : undefined}
                       maxLength={100}
@@ -130,6 +132,7 @@ export function ProfileFields({
                 <div className={s.grid} style={{ flex: 1 }}>
                   <Select
                     label="Conhecimento"
+                    required
                     value={item.competencyId}
                     items={competencies.data?.items ?? []}
                     onChange={(competencyId) =>
@@ -224,18 +227,23 @@ export function ProfileFields({
                           <div className={s.grid}>
                             <TextField
                               label="Instituição ou organização"
+                              required
+                              minLength={3}
                               maxLength={100}
                               value={entry.organization}
                               onChange={(e) => edit({ organization: e.target.value })}
                             />
                             <TextField
                               label="Atividade ou disciplinas ministradas"
+                              required
+                              minLength={3}
                               maxLength={100}
                               value={entry.activity}
                               onChange={(e) => edit({ activity: e.target.value })}
                             />
                             <TextField
                               label="Data de início"
+                              required
                               type="date"
                               max={new Date().toISOString().slice(0, 10)}
                               value={entry.startsOn}
@@ -258,7 +266,7 @@ export function ProfileFields({
                             />
                           </div>
                           <fieldset className={s.subsection}>
-                            <legend>Conhecimentos relacionados</legend>
+                            <legend>Conhecimentos relacionados (marque ao menos um)</legend>
                             {(competencies.data?.items ?? []).map((c) => (
                               <label className={s.check} key={c.id}>
                                 <input

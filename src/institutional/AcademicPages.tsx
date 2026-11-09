@@ -48,10 +48,12 @@ export function ApiTeachersPage() {
           {applications.data?.items.map((a) => (
             <div className={s.row} key={a.id}>
               <div>
-                <Badge value={a.status} />
+                <strong>{a.teacherName ?? 'Professor'}</strong>
+                {a.teacherEmail && <p>{a.teacherEmail}</p>}
                 <p>
-                  Recebida em {new Date(a.createdAt).toLocaleDateString('pt-BR')} · Perfil v
-                  {a.profileVersion}
+                  <Badge value={a.status} /> Recebida em{' '}
+                  {new Date(a.createdAt).toLocaleDateString('pt-BR')} · {a.subjectIds.length}{' '}
+                  {a.subjectIds.length === 1 ? 'disciplina pedida' : 'disciplinas pedidas'}
                 </p>
               </div>
               <Button variant="secondary" onClick={() => setSelected(a.id)}>
@@ -169,6 +171,7 @@ function ReviewForm({
 }) {
   const result = useApi<ReviewDetail>(`/courses/${courseId}/applications/${applicationId}`),
     competencies = useApi<Items<CatalogItem>>('/catalog/competencies?limit=100'),
+    subjects = useApi<Items<Subject>>(`/courses/${courseId}/subjects?limit=100`),
     [decision, setDecision] = useState('APPROVED'),
     [reason, setReason] = useState(''),
     [items, setItems] = useState<Record<string, string>>({}),
@@ -225,6 +228,19 @@ function ReviewForm({
           <h2>{detail.teacher.name}</h2>
           <p>{detail.teacher.email}</p>
           <Badge value={detail.application.status} />
+          <h3>Disciplinas pedidas neste curso</h3>
+          <p className={s.muted}>
+            A aprovação vale para estas disciplinas; somente elas poderão receber o professor na
+            alocação.
+          </p>
+          <ul>
+            {detail.application.subjectIds.map((id) => (
+              <li key={id}>
+                {subjects.data?.items.find((subject) => subject.id === id)?.name ??
+                  (subjects.loading ? 'Carregando…' : 'Disciplina indisponível')}
+              </li>
+            ))}
+          </ul>
           <ProfileSummary data={profile} />
           <h3>Disponibilidade declarada</h3>
           {profile.availability?.windows.map((w) => (

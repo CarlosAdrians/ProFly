@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { useAction } from './actions';
-import { useState } from 'react';
+import { useDeferredValue, useState } from 'react';
 import { Button } from '../components/ui/Button/Button';
 import { TextField } from '../components/ui/TextField/TextField';
 import { ApiModal as Modal } from './ui';
@@ -592,7 +592,11 @@ function PeriodAdmin() {
   );
 }
 function WorkloadAdmin() {
-  const users = useApi<Items<User>>('/admin/users?limit=100'),
+  const [search, setSearch] = useState(''),
+    query = useDeferredValue(search.trim()),
+    users = useApi<Items<User>>(
+      `/admin/users?limit=100&role=teacher${query ? `&q=${encodeURIComponent(query)}` : ''}`,
+    ),
     [selected, setSelected] = useState(''),
     record = useApi<{
       version: number;
@@ -607,16 +611,27 @@ function WorkloadAdmin() {
         O limite vale para o professor em todos os cursos. Dedicação pretendida é uma meta pessoal
         separada.
       </p>
+      <TextField
+        label="Buscar professor (nome ou e-mail)"
+        type="search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      <LoadingError {...users} retry={users.refresh} />
       <Select
         label="Professor"
         value={selected}
-        items={users.data?.items.filter((u) => u.roles.includes('teacher')) ?? []}
+        items={(users.data?.items ?? []).map((u) => ({ id: u.id, name: `${u.name} · ${u.email}` }))}
         onChange={setSelected}
       />
+      {users.data?.nextOffset != null && (
+        <p className={s.muted}>Mostrando os 100 primeiros resultados. Refine a busca.</p>
+      )}
       <LoadingError {...record} retry={record.refresh} />
       {record.data && (
         <WorkloadForm
-          key={`${selected}:${record.data.version}`}
+          // Keyed by teacher only: remounting after saving would discard the success message.
+          key={selected}
           teacherId={selected}
           record={record.data}
           onSaved={record.refresh}
