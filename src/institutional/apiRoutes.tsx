@@ -15,7 +15,6 @@ import { ApiAccountPage, ApiAvailabilityPage, ApiHomePage, HistoryPage } from '.
 import { ApiSubjectsPage, ApiTeachersPage } from './AcademicPages';
 import { ApiAllocationsPage } from './PlanningPages';
 import { ApiCalendarPage } from './CalendarPage';
-import { ApiAbsencesPage } from './AbsencesPage';
 import { ApiAdminPage } from './AdminPage';
 import { LegalPage } from '../features/legal/LegalDocument';
 import { RouteErrorPage } from '../app/RouteErrorPage';
@@ -101,7 +100,7 @@ export const apiRoutes: RouteObject[] = [
                 ),
               },
               { path: '/historico', element: <HistoryPage /> },
-              { path: '/ausencias', element: <ApiAbsencesPage /> },
+              { path: '/ausencias', element: <Navigate to="/inicio" replace /> },
               { path: '/administracao', element: <ApiAdminPage /> },
               { path: '/configuracoes', element: <Navigate to="/conta" replace /> },
               { path: '/notificacoes', element: <Navigate to="/inicio" replace /> },

@@ -70,8 +70,6 @@ export function PortalLayout() {
 
     { to: '/historico', label: 'Histórico', icon: 'historico' as const },
 
-    { to: '/ausencias', label: 'Atestados', icon: 'document' as const },
-
     ...(admin ? [{ to: '/administracao', label: 'Administração', icon: 'shield' as const }] : []),
   ];
 
@@ -84,7 +82,7 @@ export function PortalLayout() {
           <div className={s.navLinks}>
             {links.map((link) => (
               <NavLink key={link.to} to={link.to}>
-                {link.icon === 'document' || link.icon === 'shield' || link.icon === 'historico' ? (
+                {link.icon === 'shield' || link.icon === 'historico' ? (
                   <Icon name={link.icon === 'historico' ? 'clock' : link.icon} size={32} />
                 ) : (
                   <span

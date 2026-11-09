@@ -1,6 +1,5 @@
 import { AvailabilityBoard, TeacherNote, HistoryTimeline } from './TeacherAgenda';
 import agenda from './TeacherAgenda.module.css';
-import { RoomLabel } from './RoomLabel';
 import { useAction } from './actions';
 import { dayLabel, timeLabel, today } from './dates';
 import { addDate } from './calendarModel';
@@ -545,14 +544,6 @@ export function TeacherOverview() {
           </span>
           <Icon name="arrowRight" />
         </Link>
-        <Link to="/ausencias">
-          <Icon name="document" size={24} />
-          <span>
-            <strong>Enviar atestado</strong>
-            <small>Comunique o afastamento à coordenação</small>
-          </span>
-          <Icon name="arrowRight" />
-        </Link>
       </div>
       <Panel title="Últimas 10 aulas">
         <LoadingError {...history} retry={history.refresh} />
@@ -574,9 +565,6 @@ export function OccurrenceList({ items }: { items: Occurrence[] }) {
             <strong>{o.subjectName}</strong>
             <p>
               {o.courseName} · {o.groupName}
-            </p>
-            <p>
-              <RoomLabel room={o.room} />
             </p>
             <p>
               {dayLabel(o.date)} · {timeLabel(o.startsAt)}–{timeLabel(o.endsAt)}

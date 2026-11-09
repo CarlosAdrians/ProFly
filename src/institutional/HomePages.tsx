@@ -7,10 +7,8 @@ import { addDate } from './calendarModel';
 import { Heading, LoadingError, Panel } from './ui';
 import type { Application, Items, Occurrence, Planning, Subject, User } from './types';
 import s from './Portal.module.css';
-import { RoomLabel } from './RoomLabel';
 
 export interface UpcomingClass {
-  room?: string | null;
   id: string;
   date: string;
   startsAt: string;
@@ -39,9 +37,6 @@ export function UpcomingClasses({ items }: { items: UpcomingClass[] }) {
             </time>
             <h3>{item.subjectName}</h3>
             <p>{[item.groupName, item.courseName, item.teacherName].filter(Boolean).join(' · ')}</p>
-            <p>
-              <RoomLabel room={item.room} />
-            </p>
           </div>
         </li>
       ))}
@@ -160,14 +155,6 @@ export function CoordinatorOverview() {
                           : 'Nenhuma aula passada a confirmar na lista.'
                         : 'Consultando histórico…'}
                     </p>
-                  </div>
-                  <Icon name="arrowRight" />
-                </Link>
-                <Link to="/ausencias">
-                  <Icon name="document" size={24} />
-                  <div>
-                    <strong>Atestados recebidos</strong>
-                    <p>Consulte documentos e analise os afastamentos.</p>
                   </div>
                   <Icon name="arrowRight" />
                 </Link>
