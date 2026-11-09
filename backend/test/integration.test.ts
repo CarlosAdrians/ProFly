@@ -1660,8 +1660,9 @@ test('CASE-037/038: disputa de carga sem sobreposicao e disputa de turma sao ser
   assert.ok(results.find((r) => r.statusCode === 409)!.body.includes('Limite semanal'));
 });
 
-test('CASE-035/041..048: ausencia privada, arquivo validado, notificacoes e historico proprio', async () => {
+test('CASE-035/041..048: fluxo de ausencia retirado preserva registros e historico proprio', async () => {
   const f = await schedulingFixture('absence-private');
+  const stranger = await registerTeacher('absence-stranger@profly.test');
   const data = { offeringId: f.offerings[0].id, teacherId: f.teacher.id, meetings: [f.meeting] };
   const evaluate = () =>
     app.inject({
@@ -1671,74 +1672,39 @@ test('CASE-035/041..048: ausencia privada, arquivo validado, notificacoes e hist
       payload: data,
     });
   const initial = (await evaluate()).json();
-  const absence = await f.write(
-    '/api/v1/me/absences',
-    { startsOn: f.from, endsOn: f.until, courseIds: [courseA] },
-    f.teacher.headers,
-  );
-  const pending = (await evaluate()).json();
-  assert.equal(pending.eligibility, 'PENDING');
-  assert.deepEqual(pending.score, initial.score);
-  const stranger = await registerTeacher('absence-stranger@profly.test');
-  assert.equal(
-    (
-      await app.inject({
-        url: `/api/v1/me/absences/${absence.id}/attachment`,
-        headers: stranger.headers,
-      })
-    ).statusCode,
-    404,
-  );
-  const upload = async (bytes: Buffer, type = 'image/png', headers = f.teacher.headers) => {
-    const boundary = 'profly-test-boundary';
-    return app.inject({
-      method: 'POST',
-      url: `/api/v1/me/absences/${absence.id}/attachment`,
-      headers: { ...headers, 'content-type': `multipart/form-data; boundary=${boundary}` },
-      payload: Buffer.concat([
-        Buffer.from(
-          `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="test.png"\r\nContent-Type: ${type}\r\n\r\n`,
-        ),
-        bytes,
-        Buffer.from(`\r\n--${boundary}--\r\n`),
-      ]),
-    });
+  const { entity } = await import('../src/shared/model.js');
+  const legacyAbsence = {
+    ...entity(),
+    teacherId: f.teacher.id,
+    startsOn: f.from,
+    endsOn: f.until,
+    courseIds: [courseA],
+    decisions: { [courseA]: { status: 'ACCEPTED' } },
   };
-  assert.equal((await upload(Buffer.from('not a png'))).statusCode, 415);
-  assert.equal((await upload(Buffer.alloc(config.uploadMaxBytes + 1))).statusCode, 413);
-  const sharp = (await import('sharp')).default;
-  const image = await sharp({ create: { width: 20, height: 20, channels: 3, background: '#fff' } })
-    .png()
-    .toBuffer();
-  assert.equal((await upload(image)).statusCode, 201);
-  assert.equal((await upload(image)).statusCode, 409);
-  const downloaded = await app.inject({
-    url: `/api/v1/courses/${courseA}/absences/${absence.id}/attachment`,
-    headers: coordinatorHeaders,
-  });
-  assert.equal(downloaded.statusCode, 200, downloaded.body);
-  assert.deepEqual(downloaded.rawPayload, image);
-  assert.match(String(downloaded.headers['content-disposition']), /attachment/);
+  await database.db
+    .collection<{ _id: string } & Record<string, unknown>>('absences')
+    .insertOne(legacyAbsence);
+  const before = await database.db.collection('absences').countDocuments();
+  const retired = await app.inject({ url: '/api/v1/me/absences', headers: f.teacher.headers });
+  assert.equal(retired.statusCode, 410, retired.body);
+  assert.equal(retired.json().error.code, 'ABSENCE_FLOW_RETIRED');
   assert.equal(
     (
       await app.inject({
-        url: `/api/v1/courses/${courseB}/absences/${absence.id}/attachment`,
+        method: 'POST',
+        url: `/api/v1/courses/${courseA}/absences/${legacyAbsence._id}/review`,
         headers: coordinatorHeaders,
       })
     ).statusCode,
-    404,
+    410,
   );
-  const reviewed = await app.inject({
-    method: 'POST',
-    url: `/api/v1/courses/${courseA}/absences/${absence.id}/review`,
-    headers: coordinatorHeaders,
-    payload: { expectedVersion: 2, decision: 'ACCEPTED' },
-  });
-  assert.equal(reviewed.statusCode, 200, reviewed.body);
-  const rejected = (await evaluate()).json();
-  assert.equal(rejected.eligibility, 'INELIGIBLE');
-  assert.deepEqual(rejected.score, initial.score);
-  assert.ok(!JSON.stringify(rejected).includes('attachment'));
+  assert.equal(await database.db.collection('absences').countDocuments(), before);
+  const after = (await evaluate()).json();
+  const { evaluatedAt: initialEvaluation, ...initialResult } = initial;
+  const { evaluatedAt: laterEvaluation, ...laterResult } = after;
+  assert.ok(initialEvaluation);
+  assert.ok(laterEvaluation);
+  assert.deepEqual(laterResult, initialResult);
   const prefs = (
     await app.inject({ url: '/api/v1/me/preferences', headers: f.teacher.headers })
   ).json();
@@ -1762,7 +1728,6 @@ test('CASE-035/041..048: ausencia privada, arquivo validado, notificacoes e hist
     await database.db.collection('notices').countDocuments({ userId: f.teacher.id }),
     count,
   );
-  const { entity } = await import('../src/shared/model.js');
   // Isolated past occurrences exercise stable pagination; none is inferred completed by elapsed time.
   const records = Array.from({ length: 16 }, () => ({
     ...entity(),
@@ -2141,22 +2106,6 @@ test('CASE-019/039/040/047: republicacao preserva passado e reavalia somente enc
   const session = await database.db.collection<Session>('sessions').findOne({ userId: user._id });
   assert.ok(session);
   const actor = { user, session };
-  const absence = await f.write(
-    '/api/v1/me/absences',
-    { startsOn: first.date, endsOn: first.date, courseIds: [courseA] },
-    f.teacher.headers,
-  );
-  assert.equal(
-    (
-      await app.inject({
-        method: 'POST',
-        url: `/api/v1/courses/${courseA}/absences/${absence.id}/review`,
-        headers: coordinatorHeaders,
-        payload: { expectedVersion: 1, decision: 'ACCEPTED' },
-      })
-    ).statusCode,
-    200,
-  );
   const after = new Date(`${first.date}T12:00:00Z`);
   after.setUTCDate(after.getUTCDate() + 1);
   const next = {

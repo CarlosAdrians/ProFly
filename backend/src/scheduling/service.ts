@@ -10,7 +10,6 @@ import { evaluate } from './engine.js';
 import { expand, overlaps } from './temporal.js';
 import { roomKey } from './rooms.js';
 import type {
-  Absence,
   Allocation,
   AllocationData,
   Notice,
@@ -170,7 +169,7 @@ export class SchedulingService {
     )
       missing();
     await lock(this.database, session, `user:${data.teacherId}`);
-    const [user, membership, profile, workload, absences, history] = await Promise.all([
+    const [user, membership, profile, workload, history] = await Promise.all([
       this.identity.users.findOne(
         { _id: data.teacherId, state: 'ACTIVE', roles: 'teacher' },
         { session },
@@ -181,7 +180,6 @@ export class SchedulingService {
       ),
       db.collection<TeacherProfile>('profiles').findOne({ _id: data.teacherId }, { session }),
       db.collection<Workload>('workloads').findOne({ _id: data.teacherId }, { session }),
-      db.collection<Absence>('absences').find({ teacherId: data.teacherId }, { session }).toArray(),
       this.occurrences
         .find(
           { teacherId: data.teacherId, subjectId: context.subject._id, status: 'COMPLETED' },
@@ -268,7 +266,7 @@ export class SchedulingService {
         ...retained,
       ].flatMap((a) => a.slots),
       workload,
-      absences,
+      absences: [],
       history,
     });
     return {

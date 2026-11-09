@@ -253,29 +253,15 @@ test('CASE-061: paginacao mantem empate de datas e escopo e recusa cursor invali
     422,
   );
 });
-test('CASE-062: bloqueio de dados de saude ocorre no servidor antes de armazenar arquivo', async () => {
-  const absence = await fixture.call(
-    '/api/v1/me/absences',
-    { startsOn: fixture.from, endsOn: fixture.from, courseIds: [fixture.courseA.id] },
-    fixture.teacher,
-  );
-  const previous = fixture.identity.config.privacy.healthUploads;
-  fixture.identity.config.privacy.healthUploads = 'BLOCKED';
-  try {
-    const response = await fixture.app.inject({
-      method: 'POST',
-      url: `/api/v1/me/absences/${absence.id}/attachment`,
-      headers: fixture.teacher,
-    });
-    assert.equal(response.statusCode, 403);
-    assert.equal(response.json().error.code, 'HEALTH_UPLOADS_DISABLED');
-    assert.equal(
-      await fixture.database.db.collection('certificates').countDocuments({ _id: absence.id }),
-      0,
-    );
-  } finally {
-    fixture.identity.config.privacy.healthUploads = previous;
-  }
+test('CASE-062: fluxo de saude retirado recusa upload antes de armazenar arquivo', async () => {
+  const response = await fixture.app.inject({
+    method: 'POST',
+    url: `/api/v1/me/absences/${crypto.randomUUID()}/attachment`,
+    headers: fixture.teacher,
+  });
+  assert.equal(response.statusCode, 410);
+  assert.equal(response.json().error.code, 'ABSENCE_FLOW_RETIRED');
+  assert.equal(await fixture.database.db.collection('certificates').countDocuments(), 0);
 });
 
 test('CASE-060: exportacao excessiva e recusada sem truncar ou registrar sucesso', async () => {

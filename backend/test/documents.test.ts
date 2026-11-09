@@ -164,39 +164,44 @@ test('CASE-065: comprovantes vinculados ao perfil, privados, imutaveis e retirad
   assert.equal(await f.database.db.collection('academicFiles').countDocuments({ _id: doc.id }), 1);
 });
 
-test('CASE-064/065: PDF de atestado usa bloqueio de saude, original privado e isolamento entre titulares', async () => {
+test('CASE-064/065: atestado legado permanece armazenado com o fluxo academico retirado', async () => {
   const f = fixture;
-  const absence = await f.call(
-    '/api/v1/me/absences',
-    { startsOn: f.from, endsOn: f.until, courseIds: [f.courseA.id] },
-    f.teacher,
-  );
-  const path = `/api/v1/me/absences/${absence.id}/attachment`;
-  assert.equal((await upload(path, passive)).statusCode, 201);
+  const absence = {
+    ...entity(),
+    teacherId: f.teacherId,
+    startsOn: f.from,
+    endsOn: f.until,
+    courseIds: [f.courseA.id],
+    decisions: { [f.courseA.id]: { status: 'ACCEPTED' } },
+    attachment: { bytes: passive.length, type: 'application/pdf' },
+  };
+  await f.database.db
+    .collection<{ _id: string } & Record<string, unknown>>('absences')
+    .insertOne(absence);
+  await f.database.db
+    .collection<{ _id: string } & Record<string, unknown>>('certificates')
+    .insertOne({
+      _id: absence._id,
+      bytes: passive,
+      type: 'application/pdf',
+      sha256: 'legacy-test',
+    });
+  const path = `/api/v1/me/absences/${absence._id}/attachment`;
   const download = await f.app.inject({ url: path, headers: f.teacher });
-  assert.deepEqual(download.rawPayload, passive);
-  assert.match(String(download.headers['content-disposition']), /atestado\.pdf/);
-  assert.equal((await upload(path, passive)).statusCode, 409);
-  const stranger = await f.call('/api/v1/auth/register', {
-    name: 'Outra Pessoa Sintetica',
-    email: 'documents-stranger@profly.test',
-    password: f.password,
-  });
-  await f.call('/api/v1/auth/verify-email', {
-    token: f.messages.findLast((m) => m.email === 'documents-stranger@profly.test')!.token,
-  });
-  const other = await f.login(stranger.user.email);
-  const document = (await f.call('/api/v1/me/academic-documents', undefined, f.teacher)).items[0];
+  assert.equal(download.statusCode, 410);
+  assert.equal(download.json().error.code, 'ABSENCE_FLOW_RETIRED');
   assert.equal(
-    (
-      await f.app.inject({
-        url: `/api/v1/me/academic-documents/${document.id}/file`,
-        headers: other,
-      })
-    ).statusCode,
-    404,
+    await f.database.db
+      .collection<{ _id: string }>('absences')
+      .countDocuments({ _id: absence._id }),
+    1,
   );
-  assert.equal((await f.app.inject({ url: path, headers: other })).statusCode, 404);
+  assert.equal(
+    await f.database.db
+      .collection<{ _id: string }>('certificates')
+      .countDocuments({ _id: absence._id }),
+    1,
+  );
 });
 
 test('CASE-065: paginacao propria e limite de documentos impedem respostas truncadas ou uso ilimitado', async () => {
